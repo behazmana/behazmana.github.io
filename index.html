@@ -783,7 +783,7 @@ const cardActs = m => m.contact || m.email ? `<span class="macts">${m.contact ? 
 const realAv = m => `<span class="av">${m.portrait || m.photos[0] ? rImg(m.portrait || m.photos[0]) : `<span class="ini">${esc(initials(m.name))}</span>`}</span>`;
 const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftText(m.craft, m.craftOther))}${m.city ? ` · ${h(m.city)}` : ''}</span>${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
 const emptyMakers = () => `<div class="s-empty"><p class="say">עוד אין כאן יוצרים, האתר חדש.</p>${AU.maker ? '' : JOINED ? '<p class="small muted">כשנאשר את ההרשמה שלכם, הפרופיל יופיע כאן.</p>'
-  : `<p class="small muted">אם אתם מכינים דברים בידיים, ספרו לנו עליכם. כשנאשר את ההרשמה, הפרופיל שלכם יופיע כאן.</p>
+  : `<p class="small muted">אם אתם יוצרים בידיים, בעץ, בעור, בחימר, בתכשיטים או במתכת, ספרו לנו על העבודה שלכם. כשנאשר את ההרשמה, הפרופיל שלכם יופיע כאן.</p>
   <button type="button" class="btn" data-act="join">להצטרף כיוצרים</button>`}</div>`;
 function makersBlock(list, limit) {
   const st = realState();
@@ -931,7 +931,7 @@ function sendWhy(e) {
   if (code === '413' || /too large|exceed|payload/i.test(msg)) return 'אחת התמונות גדולה מדי (עד 10MB לתמונה).';
   if (/mime|invalid.*type|not supported/i.test(msg)) return 'אחת התמונות בסוג קובץ שאנחנו לא תומכים בו.';
   if (/^(23514|22001)$/.test(code) || /violates check|too long/i.test(msg)) return 'אחד הפרטים ארוך מדי או לא נראה תקין.';
-  return 'משהו אצלנו לא עובד כרגע. נסו שוב מאוחר יותר, או כתבו לנו במייל.';
+  return 'יש תקלה אצלנו כרגע. נסו שוב בעוד כמה דקות, או כתבו לנו במייל.';
 }
 const errCode = e => e && (e.code || e.statusCode || e.status) ? String(e.code || e.statusCode || e.status) : '';
 const showErr = (el, lead, reason) => { el.innerHTML = esc(lead) + (reason ? `<span class="small">${esc(reason)}</span>` : ''); el.hidden = false; el.scrollIntoView({ block: 'nearest' }); };
@@ -1034,7 +1034,7 @@ const privacySheet = () => `<div class="sheet-body">
 const termsSheet = () => `<div class="sheet-body">
   <h2 class="sec-title">תנאי השימוש</h2>
   <ul class="terms">
-    <li>האתר מפגיש בין יוצרים למי שמבקש מהם משהו. התשלום והמסירה נעשים ישירות ביניהם, לא דרך האתר, ואנחנו לא צד לעסקה ביניהם.</li>
+    <li>האתר מפגיש בין יוצרים לבין מי שמזמין מהם יצירה. התשלום והמסירה נעשים ישירות ביניהם, לא דרך האתר, ואנחנו לא צד לעסקה ביניהם.</li>
     <li>דרך האתר לא עובר כסף ואנחנו לא לוקחים עמלה. את המחיר, הזמנים, המסירה והתשלום (למשל בביט או בהעברה בנקאית) מסכמים ישירות מי שמבקש ומי שיוצר.</li>
     <li>היוצרים אחראים לעבודה שלהם, למחירים ולמסירה, ולכך שמותר להם להשתמש בתמונות שהם מעלים.</li>
     <li>בהרשמה אתם מרשים לנו להציג באתר, אחרי שנאשר אתכם, את השם, העיר, התחום, הסיפור והתמונות שלכם.</li>
@@ -1054,12 +1054,12 @@ const termsSheet = () => `<div class="sheet-body">
 
 const visionSheet = () => `<div class="sheet-body vision">
   <h2 class="sec-title">מי אנחנו</h2>
-  <p class="pull">חפץ שנעשה בשבילכם, בידיים של מישהו שאתם יודעים איך קוראים לו.</p>
-  <p>יש דברים שאי אפשר לקנות מוכנים. ארנק עם האותיות של אבא, שולחן שמתאים בדיוק לפינה שלכם. אצלנו כותבים במילים שלכם מה תרצו, מאיזה חומר ועד מתי, בלי מחיר.</p>
+  <p class="pull">חפץ שנעשה בשבילכם, בידיים של יוצר שאתם מכירים בשמו.</p>
+  <p>יש חפצים שאי אפשר לקנות מוכנים. ארנק עם האותיות של אבא, שולחן שמתאים בדיוק לפינה שלכם. אצלנו כותבים במילים שלכם מה תרצו, מאיזה חומר ועד מתי, בלי מחיר.</p>
   <p>את כל הבקשות אנחנו קוראים בעצמנו, ומעבירים כל אחת ליוצרים שמתאימים לה. כל יוצר באתר אושר אצלנו ביד, והשם, העיר והעבודות שלו גלויים לכולם.</p>
   <p>ליוצרים יש באתר מקום משלהם: שם הם רואים את הבקשות שהעברנו אליהם, עונים להן ומציגים באתר את מה שהכינו. מי שביקש רואה לאילו יוצרים הבקשה הגיעה ומה כל אחד ענה.</p>
   <p>דרך האתר לא עובר כסף ואנחנו לא לוקחים עמלה. את המחיר, הזמן והמסירה מסכמים אתם והיוצר, ישירות. האתר עוד בתחילת הדרך, והשימוש בו חינם.</p>
-  <p class="last">כל דבר כאן מתחיל בשיחה.</p>
+  <p class="last">כל יצירה כאן מתחילה בשיחה.</p>
   <button type="button" class="btn ghost block" data-act="closesheet">סגירה</button></div>`;
 
 /* ---------- shop, accounts, tracking ----------
@@ -1107,13 +1107,13 @@ function friendly(e, kind = '') {
     if (/listings_photos_ck/.test(m)) return 'צריך בין תמונה אחת ל־10 תמונות.';
     if (/request_routes_note_ck/.test(m)) return 'ההערה ארוכה מדי (עד 500 תווים).';
     if (/request_routes_price_ck/.test(m)) return 'המחיר צריך להיות בין 0 ל־1,000,000.';
-    if (/requests_token_ck/.test(m)) return 'משהו השתבש, רעננו את הדף ונסו שוב.';
+    if (/requests_token_ck/.test(m)) return 'הפעולה לא הושלמה. רעננו את הדף ונסו שוב.';
   }
   if (c === '23505') {
     if (/request_routes_uq/.test(m)) return 'כבר נשלח ליוצר הזה.';
     return 'כבר יש יוצר מאושר עם אותו מייל או טלפון.';
   }
-  if (c === '23503') return 'משהו השתבש, רעננו את הדף.';
+  if (c === '23503') return 'הפעולה לא הושלמה. רעננו את הדף ונסו שוב.';
   if (c === '42501' || /^40[13]$/.test(c) || /row-level security|permission denied|not allowed/i.test(m)) return /new row violates row-level/i.test(m) ? 'החשבון הזה עדיין לא מאושר כיוצר.' : 'אין לך הרשאה לפעולה הזו. התחברו שוב ונסו שוב.';
   return 'לא הצלחנו, נסו שוב.';
 }
@@ -1209,7 +1209,7 @@ function listingScreen({ id }) {
   if (!l) return `${head('<span class="sr">יצירה</span>')}<div class="stack g">${LFETCH[id] === 'missing' || SHOP.gone ? '<p class="empty">לא מצאנו את היצירה הזו. ייתכן שהיא כבר לא מוצגת.</p>' : LFETCH[id] === 'failed' ? '<div class="s-empty"><p>היצירה לא נטענה. בדקו את החיבור.</p><button type="button" class="btn" data-act="lretry" data-v="' + esc(id) + '">לנסות שוב</button></div>' : '<p class="muted" role="status">טוענים</p>'}</div>`;
   const m = REAL.list.find(x => x.id === l.makerId);
   const av = l.mportrait ? `<span class="av">${rImg(l.mportrait, '')}</span>` : `<span class="av"><span class="ini">${esc(initials(l.mname))}</span></span>`;
-  const contact = l.sold ? `<div class="askline"><p>היצירה הזו נמכרה.</p><button type="button" class="link" data-act="tab" data-v="post">אפשר לכתוב בקשה למשהו דומה</button></div>`
+  const contact = l.sold ? `<div class="askline"><p>היצירה הזו נמכרה.</p><button type="button" class="link" data-act="tab" data-v="post">אפשר לבקש יצירה דומה</button></div>`
     : l.phone || l.email ? `<div class="contact">${l.phone ? `<a class="cbtn2 wa" href="${esc(waListing(l))}" ${OUT}>${svg(UI.wa)}וואטסאפ</a><a class="cbtn2" href="${esc(l.phone.tel)}">${svg(UI.phone)}התקשרו</a>` : ''}${l.email ? `<a class="cbtn2" href="${esc(mailListing(l))}">${svg(UI.mail)}מייל</a>` : ''}</div>`
     : `<div class="askline"><p>אפשר לפנות אליהם דרך האתר:</p><button type="button" class="link" data-act="tab" data-v="post">כתבו בקשה</button></div>`;
   return `${head(`<span class="sr">${esc(l.title)}</span>`)}
@@ -1574,7 +1574,7 @@ const legalLinks = (first = '') => `<div class="links-row">${first}<button type=
 const HOW = [
   ['מגישים בקשה', 'מה, מאיזה חומר ועד מתי. בלי מחיר.', 'בקשה'],
   ['אנחנו קוראים כל בקשה בעצמנו ומוצאים בדיוק מי הכי מתאים לכם.', 'כל יוצר באתר אושר אצלנו ביד.', 'יוצרים'],
-  ['מדברים ישירות', 'מחיר, זמן וכל פרט אחר מסכמים ביניכם.', 'ביחד']];
+  ['מדברים ישירות', 'מחיר, מועד ופרטי המסירה מסכמים ביניכם.', 'ביחד']];
 /* the hero photo settles once (scale 1.04 to 1, 1.2 s). A re-render inside that window carries on from where it was instead of starting over. */
 let DRIFT_T0 = 0;
 function driftAttr() { const now = performance.now(); if (!DRIFT_T0) DRIFT_T0 = now; const t = now - DRIFT_T0; return t < 1150 ? ` data-drift style="animation-delay:-${Math.round(t)}ms"` : ''; }
@@ -1605,13 +1605,13 @@ const SCREENS = {
     return `<header class="top g on-dark"><img class="corner-mark" src="logo/mark-slip.svg" width="32" height="40" alt="בהזמנה"><span class="grow"></span><button type="button" class="link sm" data-act="tab" data-v="mine">החשבון שלי</button></header>
     <section class="hero"><div class="photo"><img${driftAttr()} src="img/h/${HERO.k}-880.jpg" srcset="img/h/${HERO.k}-480.jpg 480w, img/h/${HERO.k}-880.jpg 880w" sizes="(max-width: 440px) 100vw, 440px" width="880" height="640" alt="${esc(HERO.alt)}" loading="eager" fetchpriority="high" decoding="async" draggable="false"></div>
       <div class="slip-wrap g"><div class="slip zig"><img class="logo-big" src="logo/logo-primary-ink.svg" width="168" height="109" alt="">
-        <h1>${reg ? 'שמרנו את החשבון שלכם' : 'שומרים לכם מקום'}</h1><p>${reg ? 'כשיגיע קונה שמתאים לעבודות שלכם, או מישהו שרוצה להזמין מכם משהו, נשלח לכם את הבקשה. ומי שמחפש יצירה, נמצא לו יוצר מתאים ונחזור אליו.' : 'האתר עוד לא פתוח לכולם. אפשר להירשם עכשיו: יוצרים מספרים לנו על העבודות שלהם, ומי שמחפש יצירה כותב לנו מה. כשנמצא התאמה, נשלח הודעה.'}</p>
+        <h1>${reg ? 'שמרנו את החשבון שלכם' : 'שומרים לכם מקום'}</h1><p>${reg ? 'שמרנו את הפרטים שלכם. אם נרשמתם כיוצרים, נשלח לכם בקשה ברגע שיגיע קונה שמתאים לעבודות שלכם, או מי שרוצה להזמין מכם יצירה. אם כתבתם בקשה, נמצא לה יוצר מתאים ונחזור אליכם.' : 'האתר עוד לא נפתח לקהל. אפשר להירשם כבר עכשיו: יוצרים מספרים לנו על העבודות שלהם, ומי שמחפש יצירה כותב לנו מה הוא רוצה שיכינו לו. כשנמצא התאמה, ניצור קשר.'}</p>
         <div class="acts"><button class="btn" data-act="ask">מחפשים יצירה? כתבו לנו מה</button>${JOINED ? '' : '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>'}</div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
       <section aria-labelledby="h-wait"><div class="sec-head"><h2 class="sec-title" id="h-wait">מה קורה אחרי ההרשמה</h2></div>
         <div class="tale zig"><div class="tale-row"><div class="what"><b>קוראים בעצמנו</b><span>כל הרשמה וכל בקשה עוברות דרכנו, בלי רובוטים באמצע.</span></div><span class="stamp" aria-hidden="true">1</span></div>
           <div class="tale-row"><div class="what"><b>מחפשים התאמה</b><span>יוצר שמתאים לבקשה, או בקשה שמתאימה ליוצר.</span></div><span class="stamp" aria-hidden="true">2</span></div>
-          <div class="tale-row"><div class="what"><b>חוזרים אליכם</b><span>במייל או בטלפון שהשארתם, ברגע שיש משהו אמיתי להציע.</span></div><span class="stamp" aria-hidden="true">3</span></div></div></section>
+          <div class="tale-row"><div class="what"><b>חוזרים אליכם</b><span>במייל או בטלפון שהשארתם, ברגע שיש התאמה אמיתית.</span></div><span class="stamp" aria-hidden="true">3</span></div></div></section>
       <footer class="backside g"><img class="logo-line" src="logo/logo-wordmark-ink.svg" width="204" height="96" alt=""><p class="sign">כתבו לנו</p>
           <div class="links-col">${mailLink('שלום מבהזמנה')}</div>
           ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer>
@@ -1623,7 +1623,7 @@ const SCREENS = {
       <p class="muted">כולם נרשמו בעצמם ואושרו אצלנו ביד.</p>
       ${REAL.list.length > 1 && crafts.size > 1 ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button data-act="mcraft" data-v="${k}" aria-pressed="${S.mcraft === k}">${v}</button>`).join('')}</div>` : ''}
       ${REAL.list.length && !list.length ? `<p class="empty">עוד אין יוצרים ב${CRAFTS[S.mcraft] || 'תחום הזה'}.</p>` : makersBlock(list)}
-      ${REAL.list.length ? '<p class="note">רוצים שיכינו לכם משהו? כתבו בקשה, ואנחנו נעביר אותה ליוצרים שמתאימים.</p><button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>' : ''}
+      ${REAL.list.length ? '<p class="note">רוצים יצירה שנעשית במיוחד בשבילכם? כתבו בקשה, ואנחנו נעביר אותה ליוצרים שמתאימים.</p><button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>' : ''}
     </div>`; },
 
   /* a real maker (approved, from public_makers): full story and photos. Every field goes through esc(). */
@@ -1637,7 +1637,7 @@ const SCREENS = {
         : `<div class="askline"><p>אפשר לפנות אליהם דרך האתר. כתבו מה תרצו, ואנחנו נעביר את הבקשה.</p><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
       ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהסדנה</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}
-      ${m.contact || m.email ? `<p class="note">רוצים שיכינו לכם משהו? כתבו בקשה, ואנחנו נעביר אותה ליוצרים שמתאימים.</p>
+      ${m.contact || m.email ? `<p class="note">רוצים יצירה שנעשית במיוחד בשבילכם? כתבו בקשה, ואנחנו נעביר אותה ליוצרים שמתאימים.</p>
       <button class="btn block" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>` : ''}
     </div>`; },
 
@@ -1648,7 +1648,7 @@ const SCREENS = {
   /* joining as a maker. Whoever came here to sign up sees only this form: no tab bar and no way into the site until it is sent. */
   join: () => `${head('להצטרף כיוצרים')}
     <div class="stack tight g">
-      <p class="muted">אם אתם מכינים דברים בידיים ומוכנים לקבל בקשות, ספרו לנו על עצמכם. אנחנו קוראים כל הרשמה בעצמנו ונחזור אליכם כשנספיק.</p>
+      <p class="muted">אם אתם יוצרים בידיים ומוכנים לקבל בקשות מקונים, ספרו לנו על עצמכם. אנחנו קוראים כל הרשמה בעצמנו ונחזור אליכם כשנספיק.</p>
       ${CFG_ON ? '' : '<p class="note" role="note">האתר כרגע לא מחובר לשרת. אפשר למלא ולראות איך זה נראה, אבל שום דבר לא נשלח ולא נשמר.</p>'}
       <form class="f" data-form="join" novalidate>
         <p class="hint">שדות עם כוכבית (<span aria-hidden="true">*</span><span class="sr">כוכבית</span>) הם חובה. הסיפור לא.</p>
@@ -1668,7 +1668,7 @@ const SCREENS = {
           <span class="hint" id="j-ep-h">הטלפון והמייל מוצגים רק אם בחרתם, ורק אחרי שאישרנו אתכם. אפשר לבקש בכל זמן להסתיר או להסיר אותם, ומי שרואה אותם יכול להעתיק אותם.</span></fieldset>
         <div class="field"><span class="lbl" id="j-pr-l">תמונה שלכם ${STAR}<span class="sr">, חובה</span></span><div class="pt-row"><div class="photos" id="portrait" role="group" aria-labelledby="j-pr-l">${portraitHTML()}</div></div>
           <input type="file" id="j-pfile" accept="image/jpeg,image/png,image/webp" hidden aria-label="בחירת תמונה שלכם">
-          <span class="hint">אנשים רוצים לראות מי מכין להם את הדברים. מספיקה תמונה שלכם, בסדנה או ליד עבודה.</span><span class="hint" id="j-prmsg" role="status" aria-live="polite"></span></div>
+          <span class="hint">מי שמזמין יצירה רוצה להכיר את הידיים שמאחוריה. מספיקה תמונה שלכם, בסדנה או ליד עבודה.</span><span class="hint" id="j-prmsg" role="status" aria-live="polite"></span></div>
         <div class="field"><span class="lbl" id="j-ph-l">תמונות של העבודות שלכם ${STAR}<span class="sr">, חובה</span></span><div class="photos" id="photos" role="group" aria-labelledby="j-ph-l">${photosHTML()}</div>
           <input type="file" id="j-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של העבודות">
           <span class="hint">עבודות שהכנתם בעצמכם. לפחות תמונה אחת ועד ${MAX_PHOTOS}. צלמו ליד חלון, על רקע פשוט. התמונות עולות בגודל המקורי, בלי פרטי המיקום והמצלמה שבקובץ. עד 10MB לתמונה (JPG, PNG או WebP).</span><span class="hint" id="j-pmsg" role="status" aria-live="polite">${JP.length ? photoCount() : ''}</span></div>
@@ -1827,7 +1827,7 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
     </div>`;
 SCREENS.sent = ({ demo, tr, ns }) => `${head('<span class="sr">הבקשה</span>')}
     <div class="stack g"><div class="thanks zig"><span class="stamp">${demo ? 'הדגמה' : 'התקבל'}</span><h2 class="display">${demo ? 'זו הייתה הדגמה.' : WAITING() ? 'נרשמתם. תודה.' : 'תודה, קיבלנו את הבקשה.'}</h2>
-      <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : (WAITING() ? 'שמרנו את מה שכתבתם. כשנמצא יוצר שמתאים לבקשה, נחזור אליכם בפרטים שהשארתם. האתר עוד בבנייה, ולכן אין עדיין מה לראות בו.' : 'נקרא אותה בעצמנו, נעביר ליוצרים שמתאימים ונחזור אליכם בפרטים שהשארתם, ברגע שנספיק.')}</p>
+      <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : (WAITING() ? 'שמרנו את מה שכתבתם. כשנמצא יוצר שמתאים לבקשה, נחזור אליכם בפרטים שהשארתם. האתר עוד לא נפתח לקהל, ולכן אין בו עדיין מה לדפדף.' : 'נקרא אותה בעצמנו, נעביר ליוצרים שמתאימים ונחזור אליכם בפרטים שהשארתם, ברגע שנספיק.')}</p>
       ${demo || WAITING() ? '' : ns ? '<p class="small muted">לא הצלחנו לשמור את הבקשה במכשיר הזה, אז היא לא תופיע ברשימת הבקשות שלכם. אפשר לרשום לעצמכם את מה שכתבתם.</p>' : tr ? '<p class="small muted">שמרנו את הבקשה במכשיר הזה, ושם תראו מה קרה איתה. ניקוי נתוני הדפדפן יסתיר אותה.</p><button class="btn" data-act="toreqs">הבקשות שלי</button>' : '<button class="btn" data-act="tab" data-v="mine">הבקשות שלי</button>'}<button class="btn ${WAITING() ? '' : 'ghost'}" data-act="tab" data-v="home">חזרה לדף הבית</button></div></div>`;
 
 const meNote = t => `<p class="note" role="note">${t}</p>`;
@@ -1983,7 +1983,7 @@ function searchHTML() {
   if (realState() === 'loading') return '<p class="muted" role="status">טוענים את היוצרים</p>';
   if (!terms.length) return !REAL.list.length ? emptyMakers() : '<p class="small muted">אפשר לחפש שם, עיר או חפץ: ארנק, ספל, טבעת.</p>';
   if (!REAL.list.length && !lst.length && searchSweeping()) return '<p class="muted" role="status">מחפשים</p>';
-  if (!REAL.list.length && !lst.length && shopOf('all').list.length) return `<div class="s-empty"><p class="say">לא מצאנו משהו שמתאים לזה.</p>
+  if (!REAL.list.length && !lst.length && shopOf('all').list.length) return `<div class="s-empty"><p class="say">לא מצאנו יוצר או יצירה שמתאימים לחיפוש הזה.</p>
       <p class="small muted">כתבו בקשה ואנחנו נעביר אותה ליוצרים שמתאימים.</p>
       <button type="button" class="btn" data-act="askfor">לבקש: ${esc(q)}</button></div>`;
   if (!REAL.list.length && !lst.length) {
@@ -1991,7 +1991,7 @@ function searchHTML() {
     return `<div class="s-empty"><p class="say">עוד אין כאן יוצרים, האתר חדש.</p>
       <p class="small muted">כתבו מה אתם מחפשים, ואנחנו נעביר את הבקשה ליוצרים שמתאימים.</p>
       <button type="button" class="btn" data-act="askfor">לבקש: ${esc(q)}</button>
-      ${canJoin() ? '<p class="small muted">מכינים דברים בידיים? <button type="button" class="link" data-act="join">אפשר להצטרף</button></p>' : ''}</div>`;
+      ${canJoin() ? '<p class="small muted">יוצרים בידיים? <button type="button" class="link" data-act="join">אפשר להצטרף</button></p>' : ''}</div>`;
   }
   const rows = ms => ms.map(m => { const direct = [m.name, m.city, craftText(m.craft, m.craftOther)].some(t => scoreDoc(terms, [[t, 1]]));
       return realRow(m, h, !direct && m.story && termScores(terms, [[m.story, 1]]).some(Boolean) ? `<span class="small clamp">${h(m.story)}</span>` : ''); }).join('');

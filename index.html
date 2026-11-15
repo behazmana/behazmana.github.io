@@ -2314,9 +2314,9 @@ if (GS && document.fonts && document.fonts.ready) document.fonts.ready.then(() =
 /* ---------- where to start ----------
    #admin opens the owner's screen (only with a backend). #join opens the signup form as a gate (unless this device already joined).
    A reload keeps the screen you were on. */
-const joinUrl = () => location.hash === '#join';
+const joinUrl = () => location.hash === '#join' || /[?&]join=1(&|$)/.test(location.search);
 function gateJoin() {
-  if (JOINED) { S.stack = [{ s: 'home' }]; HN = 0; BH = 1; replaceH(location.pathname + location.search); return; }
+  if (JOINED && !CONFIG.WAITLIST) { S.stack = [{ s: 'home' }]; HN = 0; BH = 1; replaceH(location.pathname + location.search); return; }   /* while the site is closed, the link always opens the form: this device may have signed up before */
   clearPhotos(); S.stack = [{ s: 'join', gate: 1 }]; BH = 0;
   const st = history.state; HN = st && st.bz && st.n >= 1 ? st.n : 0; replaceH();
   if (HN < 1) { HN = 0; pushH(); }   /* a guard entry: the back button lands on it and stays on the form */

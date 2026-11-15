@@ -708,7 +708,7 @@ const rImg = (p, alt = '', bucket = BUCKET) => !okPath(p) ? '<div class="art"></
 const isOwner = () => !!(AD.session && AD.session.user && (CONFIG.ADMIN_EMAIL || '').trim() && String(AD.session.user.email || '').toLowerCase() === CONFIG.ADMIN_EMAIL.trim().toLowerCase());
 /* the owner's screen is at #admin; the magic link comes back with ?admin=1 and the login tokens in the hash */
 const ownerIn = () => { if (cur().s === 'wait' && isOwner()) { S.stack = [{ s: 'home' }]; BH = 1; replaceH(); render(true); } };   /* the owner, once signed in, gets the whole site instead of the waiting page */
-const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin'];
+const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin', 'mine', 'myreqs', 'myreq', 'editreq', 'rmaker', 'lform', 'lthanks'];   /* the sign-up pages and the person's own account; not the shop, the makers list or search */
 const WAITING = () => !!CONFIG.WAITLIST && !isOwner();
 const adminUrl = () => /(^#admin)|[?&]admin=1/.test(location.hash + location.search) || (/access_token=/.test(location.hash) && !meUrl());
 const redrawAdmin = () => { if (cur().s === 'radmin') render(); };
@@ -1601,11 +1601,12 @@ const SCREENS = {
           ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer></div>
     </div>`,
 
-  wait: () => `<header class="top g on-dark"><img class="corner-mark" src="logo/mark-slip.svg" width="32" height="40" alt="בהזמנה"><span class="grow"></span></header>
+  wait: () => { const reg = JOINED || MYREQ.length || AD.session;
+    return `<header class="top g on-dark"><img class="corner-mark" src="logo/mark-slip.svg" width="32" height="40" alt="בהזמנה"><span class="grow"></span><button type="button" class="link sm" data-act="tab" data-v="mine">החשבון שלי</button></header>
     <section class="hero"><div class="photo"><img${driftAttr()} src="img/h/${HERO.k}-880.jpg" srcset="img/h/${HERO.k}-480.jpg 480w, img/h/${HERO.k}-880.jpg 880w" sizes="(max-width: 440px) 100vw, 440px" width="880" height="640" alt="${esc(HERO.alt)}" loading="eager" fetchpriority="high" decoding="async" draggable="false"></div>
       <div class="slip-wrap g"><div class="slip zig"><img class="logo-big" src="logo/logo-primary-ink.svg" width="168" height="109" alt="">
-        <h1>אנחנו עוד בונים את בהזמנה</h1><p>מקום שבו כותבים מה רוצים שיכינו בידיים, ויוצרים אמיתיים עונים. האתר עדיין סגור, כי אנחנו מחפשים את היוצרים הראשונים. אפשר להירשם עכשיו, ונחזור אליכם ברגע שנמצא התאמה.</p>
-        <div class="acts"><button class="btn" data-act="ask">מחפשים יצירה? כתבו לנו מה</button>${JOINED ? '<p class="small muted">כבר נרשמתם כיוצרים. נחזור אליכם.</p>' : '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>'}</div></div></div><div class="below-slip"></div></section>
+        <h1>${reg ? 'שמרנו את החשבון שלכם' : 'שומרים לכם מקום'}</h1><p>${reg ? 'כשיגיע קונה שמתאים לעבודות שלכם, או מישהו שרוצה להזמין מכם משהו, נשלח לכם את הבקשה. ומי שמחפש יצירה, נמצא לו יוצר מתאים ונחזור אליו.' : 'האתר עוד לא פתוח לכולם. אפשר להירשם עכשיו: יוצרים מספרים לנו על העבודות שלהם, ומי שמחפש יצירה כותב לנו מה. כשנמצא התאמה, נשלח הודעה.'}</p>
+        <div class="acts"><button class="btn" data-act="ask">מחפשים יצירה? כתבו לנו מה</button>${JOINED ? '' : '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>'}</div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
       <section aria-labelledby="h-wait"><div class="sec-head"><h2 class="sec-title" id="h-wait">מה קורה אחרי ההרשמה</h2></div>
         <div class="tale zig"><div class="tale-row"><div class="what"><b>קוראים בעצמנו</b><span>כל הרשמה וכל בקשה עוברות דרכנו, בלי רובוטים באמצע.</span></div><span class="stamp" aria-hidden="true">1</span></div>
@@ -1614,7 +1615,7 @@ const SCREENS = {
       <footer class="backside g"><img class="logo-line" src="logo/logo-wordmark-ink.svg" width="204" height="96" alt=""><p class="sign">כתבו לנו</p>
           <div class="links-col">${mailLink('שלום מבהזמנה')}</div>
           ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer>
-    </div>`,
+    </div>`; },
 
   makers: () => { const list = REAL.list.filter(m => fitCraft(m.craft)), crafts = new Set(REAL.list.map(m => m.craft));
     return `${head('היוצרים', REAL.list.length ? findBtn() : '')}

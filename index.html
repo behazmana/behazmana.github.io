@@ -955,7 +955,7 @@ function sendWhy(e) {
   if (/requests_title_ck/.test(msg)) return 'הכותרת ארוכה מדי (עד 120 תווים).';
   if (/requests_text_ck/.test(msg)) return 'התיאור ארוך מדי (עד 2000 תווים).';
   if (/requests_contact_ck/.test(msg)) return 'פרטי הקשר לא נראים נכון.';
-  if (/^(23514|22001)$/.test(code) || /violates check|too long/i.test(msg)) return 'אחד הפרטים ארוך מדי או לא נראה תקין.';
+  if (/^(23514|22001)$/.test(code) || /violates check|too long/i.test(msg)) { const c = /constraint "([^"]+)"/.exec(msg); return 'אחד הפרטים לא התקבל, אבל לא הצלחנו לזהות איזה.' + (c ? ` (קוד לתקלה: ${c[1]})` : '') + ' כתבו לנו במייל עם הקוד הזה ונתקן מיד.'; }
   return 'יש תקלה אצלנו כרגע. נסו שוב בעוד כמה דקות, או כתבו לנו במייל.';
 }
 const errCode = e => e && (e.code || e.statusCode || e.status) ? String(e.code || e.statusCode || e.status) : '';

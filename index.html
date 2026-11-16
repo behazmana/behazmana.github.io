@@ -961,9 +961,7 @@ async function submitJoin(f) {
     : picked.includes('other') && Array.from(other).length < 2 ? ['j-other', 'כתבו איזה תחום זה, אפילו מילה אחת.']
     : !email ? ['j-email', 'כתבו כתובת מייל.'] : !EMAIL_RE.test(email) ? ['j-email', 'המייל לא נראה נכון. בדקו שוב.']
     : !phone ? ['j-phone', 'כתבו מספר טלפון.'] : !phoneOK(phone) ? ['j-phone', 'הטלפון לא נראה נכון. בדקו שוב.']
-    : d.phone_public !== 'yes' && d.phone_public !== 'no' ? ['j-pp-yes', 'בחרו אם להציג את הטלפון.']
-    : d.phone_public === 'yes' && !contactPhone(phone) ? ['j-phone', 'כדי להציג את הטלפון באתר, כתבו מספר ישראלי רגיל, למשל 050-1234567.']
-    : d.email_public !== 'yes' && d.email_public !== 'no' ? ['j-ep-yes', 'בחרו אם להציג את המייל.']
+    : !contactPhone(phone) ? ['j-phone', 'הטלפון יוצג באתר, אז כתבו מספר ישראלי רגיל, למשל 050-1234567.']
     : !JP.portrait ? ['j-portrait', 'הוסיפו תמונה שלכם.'] : !JP.length ? ['j-pick', 'הוסיפו לפחות תמונה אחת של העבודות.']
     : !d.consent ? ['j-consent', 'כדי להמשיך, סמנו שאתם מסכימים לתנאי השימוש ולמדיניות הפרטיות.'] : null;
   if (bad) { const el = f.querySelector('#' + bad[0]); if (el.classList.contains('input')) el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; el.focus(); return; }
@@ -983,7 +981,7 @@ async function submitJoin(f) {
       if (error) throw error; jobs[i].path = path;
     }
     stage = ''; btn.textContent = 'שומרים את ההרשמה...';
-    const { error } = await SB.from('makers').insert({ name, city, craft, crafts: picked, ...(picked.includes('other') ? { craft_other: other } : {}), story, email, phone, phone_public: d.phone_public === 'yes', ...(d.email_public === 'yes' ? { email_public: true } : {}), portrait: JP.portrait.path, photos: JP.map(p => p.path), status: 'pending' });
+    const { error } = await SB.from('makers').insert({ name, city, craft, crafts: picked, ...(picked.includes('other') ? { craft_other: other } : {}), story, email, phone, phone_public: true, email_public: true, portrait: JP.portrait.path, photos: JP.map(p => p.path), status: 'pending' });
     if (error) throw error;
   } catch (e) {
     console.error('join failed', errCode(e), e);
@@ -1039,12 +1037,12 @@ const privacySheet = () => `<div class="sheet-body">
   <h2 class="sec-title">מה אנחנו עושים עם הפרטים שלכם</h2>
   <div class="field"><span class="lbl">מה נשמר</span><p>בהרשמה כיוצרים: שם, עיר, תחום, סיפור, התמונה שלכם, תמונות של העבודות, מייל וטלפון. בבקשה: מה שכתבתם בה, המייל או הטלפון שהשארתם, והסכמה שלכם שנעביר אותה. בכניסה ליוצרים: כתובת המייל, ששמורה אצל Supabase Authentication, וההתחברות עצמה, שנשמרת בדפדפן שלכם עד שמתנתקים. ביצירה שיוצר מוסיף: כותרת, תיאור, מחיר ותמונות.</p></div>
   <div class="field"><span class="lbl">למה</span><p>כדי שנוכל לבדוק כל הרשמה ויצירה, להעביר כל בקשה ליוצרים שמתאימים לה, ולתת ליוצרים מקום משלהם באתר. אנחנו לא מוכרים את הפרטים ולא משתמשים בהם לפרסום.</p></div>
-  <div class="field"><span class="lbl">מי רואה</span><p>אחרי שאישרנו יוצר, אלה מופיעים באתר לכולם: שם, עיר, תחום, סיפור ותמונות. הטלפון והמייל של יוצר מופיעים באתר רק אם הוא בחר בהרשמה להציג אותם, וגם אז רק אחרי האישור שלנו. אפשר לבקש מאיתנו בכל זמן להסתיר או להסיר אותם. מי שרואה מספר או מייל מוצגים יכול להעתיק אותם, ולכן בחרו להציג רק מה שנוח לכם שיתפרסם. הטלפון והמייל של מי שבחר לא להציג אותם רק אנחנו רואים.</p></div>
+  <div class="field"><span class="lbl">מי רואה</span><p>אחרי שאישרנו יוצר, אלה מופיעים באתר לכולם: שם, עיר, תחום, סיפור ותמונות. הטלפון והמייל של יוצר מופיעים באתר גם הם, אחרי האישור שלנו, כדי שקונים יוכלו לפנות אליו. מי שרואה מספר או מייל מוצגים יכול להעתיק אותם. אפשר לבקש מאיתנו בכל זמן להסתיר או להסיר אותם.</p></div>
   <div class="field"><span class="lbl">יצירות</span><p>כותרת, תיאור, מחיר ותמונות של יצירה מוצגים לכולם, יחד עם שם היוצר והעיר שלו, רק אחרי שאישרנו אותה. היוצר נשאר הבעלים של הזכויות ביצירה ובתמונות. פרטי מיקום ומצלמה שבקובצי התמונה מוסרים בהעלאה.</p></div>
   <div class="field"><span class="lbl">בקשה ומעקב אחריה</span><p>בקשה עוברת אלינו וליוצרים שמתאימים לה, יחד עם פרטי הקשר שהשארתם, כפי שכתוב ליד כפתור השליחה. ליוצרים שהעברנו אליהם בקשה יש גישה לפרטי הקשר רק כל עוד הבקשה פתוחה. כשסוגרים בקשה, פרטי הקשר נעלמים מהתיבה שלהם והבקשה מסומנת אצלם כסגורה. יוצר שקיבל פרטי קשר רשאי לפנות אליכם, והוא יכול היה להעתיק אותם. כשאנחנו כותבים לכמה יוצרים יחד במייל, הכתובות מוסתרות, ואף אחד מהם לא רואה את המייל של האחרים. בשליחת בקשה המכשיר שלכם יוצר קוד סודי ושומר אותו אצלכם. מי שמחזיק בקוד רואה מה קרה לבקשה, יכול לערוך אותה ולסגור אותה. אם מנקים את נתוני הדפדפן הקוד אובד, ואי אפשר לשחזר אותו מהאתר.</p></div>
   <div class="field"><span class="lbl">איפה זה נשמר, ומי עוזר לנו</span><p>הפרטים והתמונות נשמרים אצל Supabase, שירות אחסון בענן. השרתים שלו כרגע במומבאי שבהודו. קישור הכניסה ליוצרים נשלח למייל מהשירות של Supabase. כשאנחנו שולחים בקשה ליוצרים במייל, היא עוברת דרך תיבת הג׳ימייל שלנו (Google). כדי להציג את האתר, הדפדפן שלכם טוען גופנים מ־Google Fonts וספריות קוד מ־cdnjs (Cloudflare) ומ־jsDelivr, ולכן כתובת ה־IP שלכם מגיעה גם אליהם. תמונה שהועלתה שמורה בקישור ציבורי שקשה מאוד לנחש, והיא מוצגת באתר רק אחרי שאישרנו.</p></div>
   <div class="field"><span class="lbl">במכשיר שלכם</span><p>האתר זוכר במכשיר הזה את כותרות הבקשות ששלחתם ואת הקוד הסודי של כל אחת, ואם כבר נרשמתם. מי שנכנס כיוצר נשאר מחובר בדפדפן עד שמתנתק. זה נשמר רק אצלכם, ואפשר למחוק את זה בניקוי נתוני האתר בדפדפן.</p></div>
-  <div class="field"><span class="lbl">כמה זמן שומרים, ואיך מבקשים למחוק</span><p>אנחנו שומרים הרשמות, בקשות ויצירות עד שנמחק אותן. כתבו לנו ונמחק את הפרופיל והתמונות שלכם, יצירה, או את הבקשה ששלחתם, בכל זמן. אם בחרתם להציג את הטלפון או המייל ושיניתם את דעתכם, כתבו לנו ונסתיר אותם. נעדכן אתכם כשזה נעשה.</p><div class="links-col">${mailLink('בקשת מחיקה מבהזמנה')}</div></div>
+  <div class="field"><span class="lbl">כמה זמן שומרים, ואיך מבקשים למחוק</span><p>אנחנו שומרים הרשמות, בקשות ויצירות עד שנמחק אותן. כתבו לנו ונמחק את הפרופיל והתמונות שלכם, יצירה, או את הבקשה ששלחתם, בכל זמן. אם שיניתם את דעתכם לגבי הטלפון או המייל שמוצגים באתר, כתבו לנו ונסתיר אותם. נעדכן אתכם כשזה נעשה.</p><div class="links-col">${mailLink('בקשת מחיקה מבהזמנה')}</div></div>
   <button type="button" class="btn block" data-act="closesheet">הבנתי</button></div>`;
 const termsSheet = () => `<div class="sheet-body">
   <h2 class="sec-title">תנאי השימוש</h2>
@@ -1053,7 +1051,7 @@ const termsSheet = () => `<div class="sheet-body">
     <li>דרך האתר לא עובר כסף ואנחנו לא לוקחים עמלה. את המחיר, הזמנים, המסירה והתשלום (למשל בביט או בהעברה בנקאית) מסכמים ישירות מי שמבקש ומי שיוצר.</li>
     <li>היוצרים אחראים לעבודה שלהם, למחירים ולמסירה, ולכך שמותר להם להשתמש בתמונות שהם מעלים.</li>
     <li>בהרשמה אתם מרשים לנו להציג באתר, אחרי שנאשר אתכם, את השם, העיר, התחום, הסיפור והתמונות שלכם.</li>
-    <li>את הטלפון והמייל שלכם נציג באתר, עם כפתורי וואטסאפ, שיחה ומייל, רק אם בחרתם בזה בהרשמה וגם אז רק אחרי שאישרנו אתכם. אפשר לבקש בכל זמן להסתיר או להסיר אותם. מי שרואה אותם באתר יכול להעתיק אותם.</li>
+    <li>את הטלפון והמייל שלכם נציג באתר, עם כפתורי וואטסאפ, שיחה ומייל, אחרי שאישרנו אתכם. אפשר לבקש בכל זמן להסתיר או להסיר אותם. מי שרואה אותם באתר יכול להעתיק אותם.</li>
     <li>יוצר שאושר נכנס לאזור שלו באתר בקישור שנשלח למייל. הוא יכול לראות בקשות שהעברנו אליו, להשיב להן, ולהוסיף יצירות.</li>
     <li>מי ששולח בקשה מסכים שנעביר אותה ואת פרטי הקשר שלו ליוצרים שמתאימים. יוצר שקיבל בקשה רשאי לפנות למי שכתב אותה. אפשר לערוך ולסגור בקשה בכל זמן.</li>
     <li>יצירה: חייבת להיות עבודה שלכם, עם תיאור ומחיר בשקלים כמו שהם באמת, בלי תוכן לא חוקי או מסוכן. אנחנו יכולים לסרב ליצירה, להסתיר אותה או להסיר אותה, וכל יצירה שנערכה חוזרת לאישור. הזכויות ביצירה ובתמונות נשארות אצלכם.</li>
@@ -1061,7 +1059,7 @@ const termsSheet = () => `<div class="sheet-body">
     <li>אנחנו יכולים לאשר פרופיל, לדחות אותו או להסיר אותו.</li>
     <li>אסור להעלות תוכן שאינו שלכם, או תוכן פוגעני.</li>
     <li>אפשר לבקש בכל זמן למחוק את הפרופיל, יצירה או בקשה. כתבו לנו.</li>
-    <li>הטלפון והמייל שלכם מוצגים רק אם בחרתם. אנחנו שומרים אותם כמתואר במדיניות הפרטיות.</li>
+    <li>הטלפון והמייל שלכם מוצגים באתר אחרי שאישרנו אתכם. אפשר לבקש בכל זמן להסיר אותם. אנחנו שומרים אותם כמתואר במדיניות הפרטיות.</li>
   </ul>
   <div class="links-col">${mailLink('שאלה על תנאי השימוש בבהזמנה')}</div>
   <p class="small muted">זו גרסה ראשונה, והיא עוד עשויה להשתנות.</p>
@@ -1614,7 +1612,7 @@ const SCREENS = {
           <div class="reply"><h2 id="h-reply">ספרו לנו מה תרצו</h2><p>כמה מילים מספיקות: מה, מאיזה חומר ועד מתי. את המחיר היוצרים יציעו.</p><button class="btn" data-act="tab" data-v="post">לכתוב בקשה</button>${canJoin() ? '<button class="btn ghost" data-act="join">יוצרים? אפשר להצטרף</button>' : ''}</div></section>
         <footer class="backside g"><img class="logo-line" src="logo/logo-wordmark-ink.svg" width="204" height="96" alt=""><p class="sign">כתבו לנו</p>
           <div class="links-col">${mailLink('שלום מבהזמנה')}</div>
-          <p>האתר עוד חדש. אנחנו קוראים כל בקשה וכל הרשמה בעצמנו, וחוזרים אליכם כשמספיקים.</p>
+          <p>האתר עוד חדש. אנחנו קוראים כל בקשה וכל הרשמה בעצמנו, וחוזרים אליכם ברגע שיש התאמה.</p>
           ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer></div>
     </div>`,
 
@@ -1677,15 +1675,7 @@ const SCREENS = {
           <span class="sr" id="j-other-live" role="status" aria-live="polite"></span></fieldset>
         <div class="field" id="j-other-f" hidden><label for="j-other">איזה תחום? ${STAR}</label><input class="input" id="j-other" name="craft_other" maxlength="40" autocomplete="off" aria-required="true" placeholder="למשל: זכוכית, בדים, נייר"></div>
         <div class="field"><label for="j-email">מייל ${STAR}</label><input class="input" id="j-email" name="email" type="email" dir="ltr" maxlength="120" autocomplete="email" inputmode="email" aria-required="true"></div>
-        <div class="field"><label for="j-phone">טלפון ${STAR}</label><input class="input" id="j-phone" name="phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" inputmode="tel" aria-required="true" aria-describedby="j-contact-h"><span class="hint" id="j-contact-h">אנחנו משתמשים בו כדי לחזור אליכם. אם להציג אותו באתר, תחליטו בשאלה הבאה.</span></div>
-        <fieldset class="field" role="radiogroup" aria-required="true" aria-describedby="j-pp-h"><legend class="lbl" id="j-pp-l">הטלפון באתר ${STAR}<span class="sr">, חובה</span></legend>
-          <label class="opt"><input type="radio" name="phone_public" value="yes" id="j-pp-yes"><span class="grow">כן, להציג את הטלפון שלי באתר, כדי שקונים יוצרים קשר בוואטסאפ או בשיחה</span></label>
-          <label class="opt"><input type="radio" name="phone_public" value="no" id="j-pp-no"><span class="grow">לא, אני לא רוצה לפרסם את הטלפון שלי באתר</span></label>
-          <span class="hint" id="j-pp-h">אפשר לבקש בכל זמן להסתיר אותו. מי שרואה אותו באתר יכול להעתיק אותו.</span></fieldset>
-        <fieldset class="field" role="radiogroup" aria-required="true" aria-describedby="j-ep-h"><legend class="lbl" id="j-ep-l">המייל באתר ${STAR}<span class="sr">, חובה</span></legend>
-          <label class="opt"><input type="radio" name="email_public" value="yes" id="j-ep-yes"><span class="grow">כן, להציג את המייל שלי באתר, כדי שקונים יכתבו לי</span></label>
-          <label class="opt"><input type="radio" name="email_public" value="no" id="j-ep-no"><span class="grow">לא, אני לא רוצה לפרסם את המייל שלי באתר</span></label>
-          <span class="hint" id="j-ep-h">הטלפון והמייל מוצגים רק אם בחרתם, ורק אחרי שאישרנו אתכם. אפשר לבקש בכל זמן להסתיר או להסיר אותם, ומי שרואה אותם יכול להעתיק אותם.</span></fieldset>
+        <div class="field"><label for="j-phone">טלפון ${STAR}</label><input class="input" id="j-phone" name="phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" inputmode="tel" aria-required="true" aria-describedby="j-contact-h"><span class="hint" id="j-contact-h">אנחנו נציג באתר את המייל ואת הטלפון שלכם, אחרי שנאשר אתכם, כדי שקונים יוכלו לפנות אליכם. אפשר לבקש מאיתנו בכל זמן להסיר אותם.</span></div>
         <div class="field"><span class="lbl" id="j-pr-l">תמונה שלכם ${STAR}<span class="sr">, חובה</span></span><div class="pt-row"><div class="photos" id="portrait" role="group" aria-labelledby="j-pr-l">${portraitHTML()}</div></div>
           <input type="file" id="j-pfile" accept="image/jpeg,image/png,image/webp" hidden aria-label="בחירת תמונה שלכם">
           <span class="hint">מי שמזמין יצירה רוצה להכיר את הידיים שמאחוריה. מספיקה תמונה שלכם, בסדנה או ליד עבודה.</span><span class="hint" id="j-prmsg" role="status" aria-live="polite"></span></div>
@@ -1879,7 +1869,7 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
     </div>`;
 SCREENS.sent = ({ demo, tr, ns }) => `${head('<span class="sr">הבקשה</span>')}
     <div class="stack g"><div class="thanks zig"><span class="stamp">${demo ? 'הדגמה' : 'התקבל'}</span><h2 class="display">${demo ? 'זו הייתה הדגמה.' : WAITING() ? 'נרשמתם. תודה.' : 'תודה, קיבלנו את הבקשה.'}</h2>
-      <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : (WAITING() ? 'שמרנו את מה שכתבתם. כשנמצא יוצר שמתאים לבקשה, נחזור אליכם בפרטים שהשארתם. האתר עוד לא נפתח לקהל, ולכן אין בו עדיין מה לדפדף.' : 'נקרא אותה בעצמנו, נעביר ליוצרים שמתאימים ונחזור אליכם בפרטים שהשארתם, ברגע שנספיק.')}</p>
+      <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : (WAITING() ? 'שמרנו את מה שכתבתם. כשנמצא יוצר שמתאים לבקשה, נחזור אליכם בפרטים שהשארתם. האתר עוד לא נפתח לקהל, ולכן אין בו עדיין מה לדפדף.' : 'נקרא אותה בעצמנו, נעביר ליוצרים שמתאימים ונחזור אליכם בפרטים שהשארתם, ברגע שנמצא יוצר שמתאים.')}</p>
       ${demo || WAITING() ? '' : ns ? '<p class="small muted">לא הצלחנו לשמור את הבקשה במכשיר הזה, אז היא לא תופיע ברשימת הבקשות שלכם. אפשר לרשום לעצמכם את מה שכתבתם.</p>' : tr ? '<p class="small muted">שמרנו את הבקשה במכשיר הזה, ושם תראו מה קרה איתה. ניקוי נתוני הדפדפן יסתיר אותה.</p><button class="btn" data-act="toreqs">הבקשות שלי</button>' : '<button class="btn" data-act="tab" data-v="mine">הבקשות שלי</button>'}<button class="btn ${WAITING() ? '' : 'ghost'}" data-act="tab" data-v="home">חזרה לדף הבית</button></div></div>`;
 
 const meNote = t => `<p class="note" role="note">${t}</p>`;

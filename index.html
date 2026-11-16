@@ -1665,7 +1665,7 @@ const SCREENS = {
   /* joining as a maker. Whoever came here to sign up sees only this form: no tab bar and no way into the site until it is sent. */
   join: () => `${head('להצטרף כיוצרים')}
     <div class="stack tight g">
-      <p class="muted">אם אתם יוצרים בידיים ומוכנים לקבל בקשות מקונים, ספרו לנו על עצמכם. אנחנו קוראים כל הרשמה בעצמנו ונחזור אליכם כשנספיק.</p>
+      <p class="muted">אם אתם יוצרים בידיים ומוכנים לקבל בקשות מקונים, ספרו לנו על עצמכם. אנחנו קוראים כל הרשמה בעצמנו ונחזור אליכם כשנמצא קונה מתאים לכם.</p>
       ${CFG_ON ? '' : '<p class="note" role="note">האתר כרגע לא מחובר לשרת. אפשר למלא ולראות איך זה נראה, אבל שום דבר לא נשלח ולא נשמר.</p>'}
       <form class="f" data-form="join" novalidate>
         <p class="hint">שדות עם כוכבית (<span aria-hidden="true">*</span><span class="sr">כוכבית</span>) הם חובה. הסיפור לא.</p>
@@ -1703,7 +1703,7 @@ const SCREENS = {
 
   joined: ({ name = '', demo }) => `${head('<span class="sr">תודה</span>')}
     <div class="stack g"><div class="thanks zig"><span class="stamp">${demo ? 'הדגמה' : 'התקבל'}</span><h2 class="display">תודה${name ? `, ${esc(name)}` : ''}.${demo ? ' זו הייתה הדגמה.' : ''}</h2>
-      <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : 'קיבלנו. נקרא את ההרשמה בעצמנו ונחזור אליכם במייל או בטלפון, כשנספיק. אחרי שנאשר, הפרופיל יעלה לאתר.'}</p>
+      <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : 'קיבלנו. נקרא את ההרשמה בעצמנו ונחזור אליכם במייל או בטלפון כשנמצא קונה מתאים לכם. אחרי שנאשר, הפרופיל יעלה לאתר.'}</p>
       <button class="btn" data-act="seesite">${WAITING() ? 'חזרה לדף הראשי' : 'לאתר'}</button></div></div>`,
 
   /* the owner's screen, only at #admin: magic-link login, then what waits for a decision */

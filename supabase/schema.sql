@@ -1631,3 +1631,112 @@ as
   where rr.maker_id = (select public.my_maker_id());
 revoke all on public.my_inbox from public, anon, authenticated;
 grant select on public.my_inbox to authenticated;
+
+-- =====================================================================
+-- 10. A maker can work in several crafts (checkboxes at signup).
+-- makers.crafts holds all of them (wood, leather, ceramic, jewelry, metal, other); makers.craft stays as the first one,
+-- so everything that already reads craft keeps working. Old rows get crafts = {craft}.
+-- =====================================================================
+alter table public.makers add column if not exists crafts text[] not null default '{}';
+update public.makers set crafts = array[craft] where coalesce(array_length(crafts, 1), 0) = 0;
+-- four more crafts: glass, textile, paper, art (the single craft column accepts them too)
+alter table public.makers drop constraint if exists makers_craft_ck;
+alter table public.makers add constraint makers_craft_ck check (craft in ('wood','leather','ceramic','jewelry','metal','glass','textile','paper','art','other'));
+alter table public.requests drop constraint if exists requests_crafts_ck;
+alter table public.requests add constraint requests_crafts_ck check (coalesce(array_length(crafts, 1), 0) <= 10);
+alter table public.makers drop constraint if exists makers_crafts_ck;
+alter table public.makers add constraint makers_crafts_ck
+  check (crafts <@ array['wood','leather','ceramic','jewelry','metal','glass','textile','paper','art','other']::text[] and coalesce(array_length(crafts, 1), 0) between 1 and 10);
+grant insert (crafts) on public.makers to anon, authenticated;
+
+create or replace view public.public_makers
+  with (security_invoker = false)
+as
+  select id, name, city, craft, story, photos, portrait,
+         case when phone_public then phone end as contact_phone,
+         craft_other,
+         case when email_public then email end as contact_email,
+         crafts
+  from public.makers
+  where status = 'approved';
+revoke all on public.public_makers from anon, authenticated;
+grant select on public.public_makers to anon, authenticated;
+
+create or replace view public.my_maker
+  with (security_invoker = false)
+as
+  select id, name, city, craft, craft_other, story, photos, portrait,
+         phone_public, email_public, status, created_at, crafts
+  from public.makers
+  where email is not null
+    and lower(btrim(email)) = lower(btrim(coalesce(auth.jwt() ->> 'email', '')));
+revoke all on public.my_maker from anon, authenticated;
+grant select on public.my_maker to authenticated;
+
+-- the buyer's edit of a request accepts the new crafts too
+create or replace function public.update_request(
+  p_token   uuid,
+  p_title   text,
+  p_crafts  text[],
+  p_text    text,
+  p_due     text,
+  p_contact text
+)
+returns boolean
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v public.requests%rowtype;
+  c text;
+  n_crafts int;
+begin
+  if p_token is null then
+    return false;
+  end if;
+  select * into v from public.requests r where r.token = p_token;
+  if not found then
+    perform public.request_token_miss();
+    return false;
+  end if;
+  if v.status = 'closed' then
+    raise exception 'request closed' using errcode = '22023';
+  end if;
+
+  n_crafts := coalesce(array_length(p_crafts, 1), 0);
+  if n_crafts > 10 then
+    raise exception 'too many crafts' using errcode = '22023';
+  end if;
+  foreach c in array coalesce(p_crafts, '{}'::text[]) loop
+    if c is null or c not in ('wood', 'leather', 'ceramic', 'jewelry', 'metal', 'glass', 'textile', 'paper', 'art', 'other') then
+      raise exception 'bad craft' using errcode = '22023';
+    end if;
+  end loop;
+  if p_title is null or char_length(btrim(p_title)) not between 1 and 120 then
+    raise exception 'bad title' using errcode = '22023';
+  end if;
+  if char_length(coalesce(p_text, '')) > 2000 then
+    raise exception 'text too long' using errcode = '22023';
+  end if;
+  if char_length(coalesce(p_due, '')) > 80 then
+    raise exception 'due too long' using errcode = '22023';
+  end if;
+  if p_contact is null or char_length(btrim(p_contact)) not between 5 and 120 then
+    raise exception 'bad contact' using errcode = '22023';
+  end if;
+
+  update public.requests
+     set title     = btrim(p_title),
+         crafts    = coalesce(p_crafts, '{}'::text[]),
+         "text"    = coalesce(p_text, ''),
+         due       = coalesce(p_due, ''),
+         contact   = btrim(p_contact),
+         edited_at = now()
+   where id = v.id;
+  return true;
+end
+$$;
+revoke all on function public.update_request(uuid, text, text[], text, text, text) from public, anon, authenticated;
+grant execute on function public.update_request(uuid, text, text[], text, text, text) to anon, authenticated;

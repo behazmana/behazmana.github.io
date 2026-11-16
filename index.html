@@ -945,6 +945,16 @@ function sendWhy(e) {
   if (!navigator.onLine || /failed to fetch|networkerror|network request failed|load failed|timed? ?out/i.test(msg)) return 'נראה שאין חיבור לאינטרנט. בדקו ונסו שוב.';
   if (code === '413' || /too large|exceed|payload/i.test(msg)) return 'אחת התמונות גדולה מדי (עד 10MB לתמונה).';
   if (/mime|invalid.*type|not supported/i.test(msg)) return 'אחת התמונות בסוג קובץ שאנחנו לא תומכים בו.';
+  if (/makers_crafts_ck/.test(msg)) return 'האתר התעדכן בזמן שמילאתם. רעננו את הדף, מלאו שוב ושלחו.';
+  if (/makers_story_ck/.test(msg)) return 'הסיפור ארוך מדי (עד 1000 תווים).';
+  if (/makers_name_ck/.test(msg)) return 'השם ארוך מדי (עד 80 תווים).';
+  if (/makers_city_ck/.test(msg)) return 'שם העיר ארוך מדי (עד 60 תווים).';
+  if (/makers_phone_ck/.test(msg)) return 'הטלפון לא נראה נכון (בין 7 ל־30 תווים).';
+  if (/makers_email_ck/.test(msg)) return 'המייל לא נראה נכון.';
+  if (/makers_craft_other_ck|makers_craft_other_req_ck/.test(msg)) return 'כתבו את התחום ב״אחר״ במילה או שתיים (עד 40 תווים).';
+  if (/requests_title_ck/.test(msg)) return 'הכותרת ארוכה מדי (עד 120 תווים).';
+  if (/requests_text_ck/.test(msg)) return 'התיאור ארוך מדי (עד 2000 תווים).';
+  if (/requests_contact_ck/.test(msg)) return 'פרטי הקשר לא נראים נכון.';
   if (/^(23514|22001)$/.test(code) || /violates check|too long/i.test(msg)) return 'אחד הפרטים ארוך מדי או לא נראה תקין.';
   return 'יש תקלה אצלנו כרגע. נסו שוב בעוד כמה דקות, או כתבו לנו במייל.';
 }

@@ -1533,3 +1533,101 @@ create policy "owner reads maker photos" on storage.objects
 
 select indexname from pg_indexes where schemaname = 'public' and indexname in ('makers_email_unique', 'makers_phone_unique');
 select proname, prosecdef from pg_proc where proname in ('request_for_edit', 'update_request', 'norm_phone');
+
+-- =====================================================================
+-- 9. Request targeting: where, how it is received, what for, by when, budget.
+--    All optional. The buyer picks them from lists; nothing here is free text except the city, which is length-limited.
+--    Safe to run again.
+-- =====================================================================
+alter table public.requests add column if not exists city      text;
+alter table public.requests add column if not exists delivery  text[] not null default '{}';
+alter table public.requests add column if not exists occasion  text;
+alter table public.requests add column if not exists due_date  date;
+alter table public.requests add column if not exists budget    text;
+
+alter table public.requests drop constraint if exists requests_city_ck;
+alter table public.requests add constraint requests_city_ck
+  check (city is null or char_length(btrim(city)) between 2 and 60);
+alter table public.requests drop constraint if exists requests_delivery_ck;
+alter table public.requests add constraint requests_delivery_ck
+  check (coalesce(array_length(delivery, 1), 0) <= 3 and delivery <@ array['pickup', 'ship', 'brings']::text[]);
+alter table public.requests drop constraint if exists requests_occasion_ck;
+alter table public.requests add constraint requests_occasion_ck
+  check (occasion is null or occasion in ('gift', 'home', 'wedding', 'business', 'memorial', 'kids', 'other'));
+alter table public.requests drop constraint if exists requests_due_date_ck;
+alter table public.requests add constraint requests_due_date_ck
+  check (due_date is null or due_date between date '2020-01-01' and date '2100-01-01');
+alter table public.requests drop constraint if exists requests_budget_ck;
+alter table public.requests add constraint requests_budget_ck
+  check (budget is null or budget in ('b1', 'b2', 'b3', 'b4'));
+
+grant insert (city, delivery, occasion, due_date, budget) on public.requests to anon, authenticated;
+
+-- the owner's list and the maker's inbox get the new columns at the END (the only place create or replace view allows)
+create or replace view public.admin_requests
+  with (security_invoker = false)
+as
+  select r.id,
+         r.created_at,
+         r.title,
+         r.crafts,
+         r."text" as "text",
+         r.due,
+         r.contact,
+         r.consent,
+         r.status,
+         r.closed_by_buyer_at,
+         coalesce(c.total, 0)::int    as route_count,
+         coalesce(c.sent, 0)::int     as routes_sent,
+         coalesce(c.seen, 0)::int     as routes_seen,
+         coalesce(c.thinking, 0)::int as routes_thinking,
+         coalesce(c.offered, 0)::int  as routes_offered,
+         coalesce(c.declined, 0)::int as routes_declined,
+         r.city,
+         r.delivery,
+         r.occasion,
+         r.due_date,
+         r.budget
+  from public.requests r
+  left join lateral (
+    select count(*)                                    as total,
+           count(*) filter (where rr.status = 'sent')     as sent,
+           count(*) filter (where rr.status = 'seen')     as seen,
+           count(*) filter (where rr.status = 'thinking') as thinking,
+           count(*) filter (where rr.status = 'offered')  as offered,
+           count(*) filter (where rr.status = 'declined') as declined
+    from public.request_routes rr
+    where rr.request_id = r.id
+  ) c on true
+  where public.is_owner();
+revoke all on public.admin_requests from public, anon, authenticated;
+grant select on public.admin_requests to authenticated;
+
+create or replace view public.my_inbox
+  with (security_invoker = false)
+as
+  select rr.id              as route_id,
+         rr.request_id      as request_id,
+         rr.status          as route_status,
+         rr.seen_at         as seen_at,
+         rr.offer_note      as offer_note,
+         rr.offer_price_ils as offer_price_ils,
+         rr.created_at      as routed_at,
+         r.title            as title,
+         r.crafts           as crafts,
+         r."text"           as "text",
+         r.due              as due,
+         case when r.status = 'closed' then null else r.contact end as contact,
+         r.created_at       as created_at,
+         r.status           as request_status,
+         r.edited_at        as edited_at,
+         r.city             as city,
+         r.delivery         as delivery,
+         r.occasion         as occasion,
+         r.due_date         as due_date,
+         r.budget           as budget
+  from public.request_routes rr
+  join public.requests r on r.id = rr.request_id
+  where rr.maker_id = (select public.my_maker_id());
+revoke all on public.my_inbox from public, anon, authenticated;
+grant select on public.my_inbox to authenticated;

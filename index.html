@@ -1271,13 +1271,15 @@ const signinOK = () => CFG_ON && AU.probe !== 'gone';
 
 /* ---- the maker's inbox (my_inbox) ---- */
 const IBCOLS = 'route_id,request_id,route_status,seen_at,offer_note,offer_price_ils,routed_at,title,crafts,text,due,contact,created_at,request_status';
+const IBNEW = 'city,delivery,occasion,due_date,budget';
 const IBPAGE = 20;
-const normIb = r => ({ route: String(r.route_id), rid: String(r.request_id || ''), rs: String(r.route_status || 'sent'), offerNote: r.offer_note == null ? '' : cleanBlock(r.offer_note, 500), offerPrice: intOrNull(r.offer_price_ils), routedAt: String(r.routed_at || ''), title: cleanText(r.title, 120), crafts: Array.isArray(r.crafts) ? r.crafts.map(c => String(c).slice(0, 30)) : [], text: cleanBlock(r.text, 2000), due: cleanText(r.due, 80), contact: r.contact == null ? '' : String(r.contact).slice(0, 120), created: String(r.created_at || ''), rstatus: String(r.request_status || ''), edited: r.edited_at ? String(r.edited_at) : '', err: '' });
+const normIb = r => ({ route: String(r.route_id), rid: String(r.request_id || ''), rs: String(r.route_status || 'sent'), offerNote: r.offer_note == null ? '' : cleanBlock(r.offer_note, 500), offerPrice: intOrNull(r.offer_price_ils), routedAt: String(r.routed_at || ''), title: cleanText(r.title, 120), crafts: Array.isArray(r.crafts) ? r.crafts.map(c => String(c).slice(0, 30)) : [], text: cleanBlock(r.text, 2000), due: cleanText(r.due, 80), contact: r.contact == null ? '' : String(r.contact).slice(0, 120), created: String(r.created_at || ''), rstatus: String(r.request_status || ''), edited: r.edited_at ? String(r.edited_at) : '', city: r.city || '', delivery: Array.isArray(r.delivery) ? r.delivery : [], occasion: r.occasion || '', due_date: r.due_date || '', budget: r.budget || '', err: '' });
 async function loadInbox(more) {
   const ib = AU.inbox; if (!SB || !AU.maker || ib.busy) return;
   ib.busy = true; if (!more && !ib.list.length) ib.st = 'loading'; ib.err = ''; meRedraw();
   const from = more ? ib.list.length : 0, q = cols => s => s.from('my_inbox').select(cols).order('routed_at', { ascending: false }).range(from, from + IBPAGE - 1);
-  let r = await dbq(q(IBCOLS + ',edited_at'));
+  let r = await dbq(q(IBCOLS + ',edited_at,' + IBNEW));
+  if (r.error && !r.gone && !r.off) r = await dbq(q(IBCOLS + ',edited_at'));
   if (r.error && !r.gone && !r.off) r = await dbq(q(IBCOLS));   /* edited_at arrives with the newest database update */
   ib.busy = false;
   if (r.gone) ib.st = 'gone';
@@ -1305,7 +1307,7 @@ function inboxCard(it) {
       <span class="rq-t">${esc(it.title)}</span>
       <span class="row wrap">${stChip(closed ? 'נסגרה' : RT_MAKER[it.rs] || it.rs, closed ? '' : it.rs === 'sent' ? 'new' : it.rs === 'offered' ? 'go' : it.rs === 'declined' ? 'dim' : '')}${it.edited ? stChip(`הבקשה עודכנה ב־${dateHe(it.edited)}`, 'edit') : ''}${craftTags(it.crafts)}</span>
       <span class="small muted">${it.due ? `עד מתי: ${esc(it.due)} · ` : ''}הגיעה אליכם ב־${esc(dateHe(it.routedAt))}</span></button>
-    ${open ? `<div class="rq-body">${it.text ? `<p class="rstory">${esc(it.text)}</p>` : ''}
+    ${open ? `<div class="rq-body">${it.text ? `<p class="rstory">${esc(it.text)}</p>` : ''}${factsHTML(it)}
       ${it.rs === 'offered' ? `<div class="note"><b>ההצעה שלכם:</b> ${esc(it.offerNote)}<br>${priceHTML(it.offerPrice)}</div>` : ''}
       ${closed ? '' : `<div><span class="lbl">פרטי הקשר של מי שביקש</span>${buyerContact(it.contact, it.title)}</div>`}
       ${acts}<p class="form-err" role="alert" ${it.err ? '' : 'hidden'}>${esc(it.err)}</p></div>` : ''}</article>`;
@@ -1698,6 +1700,28 @@ const SCREENS = {
     return `${head('ניהול')}<div class="stack g">${body}</div>`; }
 };
 
+/* ---------- request targeting: lists the buyer picks from, and how they read back ---------- */
+const CITIES = [['תל אביב-יפו',32.08,34.78],['ירושלים',31.77,35.21],['חיפה',32.79,34.99],['ראשון לציון',31.97,34.80],['פתח תקווה',32.09,34.89],['אשדוד',31.80,34.65],['נתניה',32.33,34.86],['באר שבע',31.25,34.79],['בני ברק',32.08,34.83],['חולון',32.01,34.77],['רמת גן',32.07,34.82],['בת ים',32.02,34.75],['אשקלון',31.67,34.57],['רחובות',31.89,34.81],['הרצליה',32.16,34.84],['כפר סבא',32.18,34.91],['חדרה',32.43,34.92],['מודיעין-מכבים-רעות',31.90,35.01],['לוד',31.95,34.90],['רמלה',31.93,34.87],['רעננה',32.18,34.87],['הוד השרון',32.15,34.89],['רמת השרון',32.15,34.84],['גבעתיים',32.07,34.81],['קריית אתא',32.81,35.11],['קריית גת',31.61,34.76],['נהריה',33.00,35.10],['עכו',32.93,35.08],['כרמיאל',32.91,35.30],['טבריה',32.79,35.53],['נצרת',32.70,35.30],['נוף הגליל',32.70,35.33],['עפולה',32.61,35.29],['בית שאן',32.50,35.50],['צפת',32.96,35.50],['קריית שמונה',33.21,35.57],['מעלות-תרשיחא',33.02,35.27],['שדרות',31.52,34.60],['נתיבות',31.42,34.59],['אופקים',31.31,34.62],['דימונה',31.07,35.03],['ערד',31.26,35.21],['אילת',29.56,34.95],['מצפה רמון',30.61,34.80],['קריית ביאליק',32.84,35.08],['קריית מוצקין',32.84,35.07],['קריית ים',32.85,35.07],['טירת כרמל',32.76,34.97],['נשר',32.77,35.04],['יקנעם עילית',32.66,35.10],['זכרון יעקב',32.57,34.95],['פרדס חנה-כרכור',32.47,34.97],['בנימינה',32.52,34.95],['קיסריה',32.50,34.90],['קריית טבעון',32.72,35.13],['מגדל העמק',32.68,35.24],['מעלה אדומים',31.78,35.30],['בית שמש',31.75,34.99],['מבשרת ציון',31.80,35.15],['ביתר עילית',31.69,35.12],['מודיעין עילית',31.94,35.04],['אלעד',32.05,34.95],['ראש העין',32.10,34.96],['יבנה',31.88,34.74],['גדרה',31.81,34.78],['נס ציונה',31.93,34.80],['קריית אונו',32.06,34.86],['אור יהודה',32.03,34.85],['יהוד-מונוסון',32.03,34.89],['גני תקווה',32.06,34.87],['שוהם',32.00,34.95],['כוכב יאיר',32.22,34.99],['קלנסווה',32.28,34.98],['טייבה',32.27,35.01],['טירה',32.23,34.95],['אום אל-פחם',32.52,35.15],['באקה אל-גרביה',32.42,35.04],['סחנין',32.86,35.30],['שפרעם',32.81,35.17],['טמרה',32.85,35.20],['רהט',31.39,34.75],['כפר קאסם',32.11,34.98],['קדימה-צורן',32.28,34.92],['אבן יהודה',32.27,34.88],['כפר יונה',32.32,34.93],['פרדסיה',32.31,34.91],['אור עקיבא',32.51,34.92],['גבעת שמואל',32.08,34.85],['ראש פינה',32.97,35.55],['קצרין',32.99,35.69],['חצור הגלילית',32.98,35.54],['עומר',31.27,34.85],['להבים',31.37,34.82],['מיתר',31.33,34.93],['ירוחם',30.99,34.93],['קריית מלאכי',31.73,34.74],['באר יעקב',31.94,34.84],['מזכרת בתיה',31.85,34.84],['גן יבנה',31.79,34.71],['שלומי',33.07,35.15],['עתלית',32.69,34.94],['דלית אל-כרמל',32.69,35.05],['יפיע',32.69,35.28],['גבעת זאב',31.86,35.17],['אריאל',32.10,35.17],['מעלה אפרים',32.12,35.38]];
+const normCity = t => String(t || '').replace(/["'׳״\-–.,()]/g, ' ').replace(/קרית/g, 'קריית').replace(/\s+/g, ' ').trim();
+const CITY_N = CITIES.map(([n, la, lo]) => ({ n, k: normCity(n), la, lo }));
+function cityPoint(name) {
+  const q = normCity(name); if (q.length < 3) return null;
+  const a = CITY_N.find(c => c.k === q) || CITY_N.find(c => c.k.includes(q) && q.length >= 4) || CITY_N.find(c => q.includes(c.k) && c.k.length >= 4);
+  return a ? { la: a.la, lo: a.lo, n: a.n } : null;
+}
+const kmBetween = (a, b) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(b.la - a.la), dn = r(b.lo - a.lo), h = Math.sin(dl / 2) ** 2 + Math.cos(r(a.la)) * Math.cos(r(b.la)) * Math.sin(dn / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(h))); };
+const DELIV = { pickup: 'איסוף אצל היוצר', ship: 'משלוח אליי', brings: 'שהיוצר יגיע אליי' };
+const OCC = { gift: 'מתנה', home: 'לבית', wedding: 'לחתונה או לאירוע', business: 'לעסק', memorial: 'להנצחה', kids: 'לילדים', other: 'אחר' };
+const BUDGETS = { b1: [0, 200, 'עד 200 ₪'], b2: [200, 500, '200 עד 500 ₪'], b3: [500, 1500, '500 עד 1,500 ₪'], b4: [1500, Infinity, 'מעל 1,500 ₪'] };
+function reqFacts(o) {
+  const f = [], dl = (Array.isArray(o.delivery) ? o.delivery : []).filter(k => DELIV[k]).map(k => DELIV[k]);
+  if (o.city) f.push(['עיר', cleanText(o.city, 60)]); if (dl.length) f.push(['קבלה', dl.join(', ')]); if (OCC[o.occasion]) f.push(['למה', OCC[o.occasion]]);
+  if (o.due_date && /^\d{4}-\d{2}-\d{2}/.test(String(o.due_date))) f.push(['תאריך יעד', dateHe(String(o.due_date).slice(0, 10))]); if (BUDGETS[o.budget]) f.push(['תקציב', BUDGETS[o.budget][2]]);
+  return f;
+}
+const factsHTML = o => { const f = reqFacts(o); return f.length ? `<dl class="specs">${f.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''; };
+const todayStr = () => new Date().toLocaleDateString('en-CA');
+
 /* ---------- the request form (new and edit share one layout) ---------- */
 let PT = null;                                       // the token of the request being sent: kept across retries so a retry never saves it twice
 const hasCraft = c => Object.prototype.hasOwnProperty.call(CRAFTS, c);
@@ -1716,7 +1740,14 @@ function postForm({ edit = false, token = '', title = '', hint, vals = null } = 
             <label class="tile"><input type="checkbox" id="pc-other" name="otherOn" value="1" ${otherOn ? 'checked' : ''}><span class="face">${svg(UI.c_other)}<span class="tl">אחר</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label></div>
           <input class="input" id="p-other" name="other" maxlength="60" aria-label="איזה תחום אחר?" placeholder="איזה? למשל זכוכית או טקסטיל" value="${esc(other)}" ${otherOn ? '' : 'hidden'}>
           <span class="hint">עגילים מעץ? סמנו גם ״תכשיטים״ וגם ״עץ״.</span></fieldset>
-        <div class="field"><label for="p-text">פרטים <span class="m">(לא חובה)</span></label><textarea class="input" id="p-text" name="text" maxlength="1900" placeholder="מידות, צבעים, למי זה מיועד">${esc(text)}</textarea></div>
+        <div class="field"><label for="p-text">איך זה אמור להיראות? <span class="m">(לא חובה, אבל זה עוזר מאוד)</span></label><textarea class="input" id="p-text" name="text" maxlength="1900" placeholder="חומר, צבע, מידות, סגנון, מה לכתוב או לחרוט עליו, ולמי זה מיועד">${esc(text)}</textarea></div>
+        ${edit ? '' : `<fieldset class="field target"><legend class="lbl">כדי שנמצא את היוצר הנכון <span class="m">(לא חובה)</span></legend>
+          <span class="hint">ככל שתפרטו יותר, כך ההתאמה תהיה טובה יותר.</span>
+          <div class="field"><label for="p-city">באיזו עיר אתם?</label><input class="input" id="p-city" name="city" list="p-cities" maxlength="60" autocomplete="off" placeholder="בחרו מהרשימה או הקלידו"><datalist id="p-cities">${CITIES.map(c => `<option value="${esc(c[0])}"></option>`).join('')}</datalist></div>
+          <fieldset class="field"><legend class="lbl">איך תרצו לקבל?</legend>${Object.entries(DELIV).map(([k, v]) => `<label class="opt"><input type="checkbox" name="delivery" value="${k}"><span class="grow">${v}</span></label>`).join('')}</fieldset>
+          <div class="field"><label for="p-occ">למה זה מיועד?</label><select class="input" id="p-occ" name="occasion"><option value="">לא חשוב</option>${Object.entries(OCC).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+          <div class="field"><label for="p-date">תאריך יעד</label><input class="input" id="p-date" name="due_date" type="date" min="${todayStr()}"></div>
+          <div class="field"><label for="p-budget">תקציב משוער</label><select class="input" id="p-budget" name="budget"><option value="">עוד לא יודעים</option>${Object.entries(BUDGETS).map(([k, v]) => `<option value="${k}">${v[2]}</option>`).join('')}</select></div></fieldset>`}
         <div class="field"><label for="p-due">עד מתי? <span class="m">(לא חובה)</span></label><input class="input" id="p-due" name="due" maxlength="80" placeholder="למשל לפני יום ההולדת, ב־12.12" value="${esc(due)}"></div>
         <div class="field"><label for="p-contact">איך חוזרים אליכם?</label><input class="input" id="p-contact" name="contact" dir="auto" maxlength="120" autocomplete="email" placeholder="מייל או טלפון" aria-required="true" aria-describedby="p-contact-h" value="${esc(contact)}"><span class="hint" id="p-contact-h">${edit ? 'הפרטים נשארים אצלנו. ליוצרים שקיבלו את הבקשה הם מוצגים כל עוד היא פתוחה.' : 'אנחנו מעבירים אותם רק ליוצרים שמתאימים לבקשה.'}</span></div>
         <p class="form-err" id="p-err" role="alert" hidden></p>
@@ -1729,9 +1760,11 @@ function readPost(f) {
   const title = String(d.title || '').trim(), crafts = fd.getAll('crafts').filter(hasCraft), otherOn = !!d.otherOn, other = otherOn ? String(d.other || '').trim() : '', contact = String(d.contact || '').trim();
   const bad = !title ? ['p-title', 'כתבו מה תרצו שיכינו בשבילכם.'] : !crafts.length && !otherOn ? ['pc-wood', 'בחרו לפחות תחום אחד, או ״אחר״.']
     : otherOn && !other ? ['p-other', 'כתבו איזה תחום, או בטלו את הסימון של ״אחר״.']
-    : !contact ? ['p-contact', 'השאירו מייל או טלפון, כדי שנוכל לחזור אליכם.'] : !(EMAIL_RE.test(contact) || phoneOK(contact)) ? ['p-contact', 'המייל או הטלפון לא נראים נכון. בדקו שוב.'] : null;
+    : !contact ? ['p-contact', 'השאירו מייל או טלפון, כדי שנוכל לחזור אליכם.'] : !(EMAIL_RE.test(contact) || phoneOK(contact)) ? ['p-contact', 'המייל או הטלפון לא נראים נכון. בדקו שוב.']
+    : String(d.due_date || '') && !(/^\d{4}-\d{2}-\d{2}$/.test(String(d.due_date)) && String(d.due_date) >= todayStr()) ? ['p-date', 'תאריך היעד כבר עבר. בחרו תאריך עתידי, או השאירו ריק.'] : null;
+  const city = String(d.city || '').trim().slice(0, 60), delivery = fd.getAll('delivery').filter(k => DELIV[k]), occasion = OCC[d.occasion] ? String(d.occasion) : '', budget = BUDGETS[d.budget] ? String(d.budget) : '', due_date = /^\d{4}-\d{2}-\d{2}$/.test(String(d.due_date || '')) ? String(d.due_date) : '';
   const body = String(d.text || '').trim();
-  return { bad, title, crafts: [...crafts, ...(other ? ['other'] : [])], text: (body + (other ? `${body ? '\n' : ''}תחום נוסף: ${other}` : '')).slice(0, 2000), due: String(d.due || '').trim(), contact };
+  return { bad, city, delivery, occasion, budget, due_date, title, crafts: [...crafts, ...(other ? ['other'] : [])], text: (body + (other ? `${body ? '\n' : ''}תחום נוסף: ${other}` : '')).slice(0, 2000), due: String(d.due || '').trim(), contact };
 }
 function showBad(f, bad) {
   const el = f.querySelector('#' + bad[0]), err = f.querySelector('#p-err');
@@ -1751,7 +1784,9 @@ async function submitPost(f) {
   const row = { title: v.title, crafts: v.crafts, text: v.text, due: v.due, contact: v.contact, consent: true, status: 'new' };
   let tracked = true, kept = true;
   try {
-    let { error } = await SB.from('requests').insert({ ...row, token: PT });
+    const extra = { city: v.city || null, delivery: v.delivery || [], occasion: v.occasion || null, due_date: v.due_date || null, budget: v.budget || null };
+    let { error } = await SB.from('requests').insert({ ...row, ...extra, token: PT });
+    if (error && /city|delivery|occasion|due_date|budget/.test(String(error.message || '')) && (errCode(error) === 'PGRST204' || /column/i.test(String(error.message || '')))) ({ error } = await SB.from('requests').insert({ ...row, token: PT }));   /* the newest database update is not applied yet: the request still goes through */
     if (error && (errCode(error) === 'PGRST204' || /'token' column/i.test(String(error.message || '')))) { tracked = false; ({ error } = await SB.from('requests').insert(row)); }   /* the database update is not applied yet: never block a real request */
     else if (error && errCode(error) === '23505') error = null;                                                                                                        /* our own retry after a dropped connection: it was saved */
     if (error) throw error;
@@ -1898,6 +1933,7 @@ const reqRow = r => { const mt = mailtoFor(r), ro = AD.ro, rs = routesOf(r), nt 
           <h3 class="sub-title" style="margin:0">${esc(r.title)}</h3>
           ${r.text ? `<p class="small rstory">${esc(r.text)}</p>` : ''}
           <dl class="specs"><div><dt>עד מתי</dt><dd>${esc(r.due || 'גמיש')}</dd></div><div><dt>פרטי קשר (פרטיים)</dt><dd dir="auto">${esc(r.contact)}</dd></div></dl>
+          ${factsHTML(r)}
           <p class="small muted">${esc(dateHe(r.created_at))} · ${mt.mails.length ? plural(mt.mails.length, 'יוצר מאושר אחד עם מייל בתחום', 'יוצרים מאושרים עם מייל בתחום') : 'עוד אין יוצרים מאושרים עם מייל בתחום הזה'}${mt.noMail ? ` · ${mt.noMail} בלי מייל תקין` : ''}</p>
           ${ro ? `<div class="row wrap">${[['routes_offered', 'הצעות', 'go'], ['routes_thinking', 'חושבים', ''], ['routes_seen', 'ראו', ''], ['routes_sent', 'עוד לא ראו', ''], ['routes_declined', 'לא מתאים', 'dim']].filter(([k]) => +r[k] > 0).map(([k, l, c]) => stChip(`${l}: ${r[k]}`, c)).join('') || '<span class="small muted">עוד לא הועברה ליוצרים</span>'}</div>
           ${rs.length ? `<ul class="route-list">${rs.map(x => `<li class="route"><div class="route-top"><b>${esc(mkName(x.maker_id))}</b>${stChip(RT_ADMIN[x.status] || x.status, x.status === 'offered' ? 'go' : x.status === 'declined' ? 'dim' : '')}</div>${x.status === 'offered' ? `<p class="small">${esc(cleanBlock(x.offer_note, 500))} · ${priceHTML(intOrNull(x.offer_price_ils))}</p>` : ''}</li>`).join('')}</ul>` : ''}` : ''}
@@ -1933,28 +1969,98 @@ async function loadRoutes(ids) {
     chunk.forEach(id => { AD.routes[id] = []; }); r.data.forEach(x => { (AD.routes[x.request_id] || (AD.routes[x.request_id] = [])).push(x); });
   }
 }
-/* match suggestion: craft is the gate; a city named in the request, shared words with the maker's story, and the maker's open load adjust the order. Pre-selects up to 4, the owner decides. */
 const MATCH_N = 4, MATCH_MIN = 3;
+/* ---------- matching a request to makers ----------
+   The request is read the way a person would read it: what the thing is (a wallet, a cutting board), what it is made of, how it should look,
+   whether it is engraved or made to measure. Each of those is looked for in what the maker actually makes (the titles and descriptions of their
+   listed pieces count the most, then their own story). Then place, how the buyer wants to receive it, budget, deadline and the maker's current
+   load adjust the order. Craft is the gate. Everything is added up as points, and every point has a reason shown to the owner,
+   who decides. Nothing here sends anything. */
+const finalLetters = w => w.replace(/ך/g, 'כ').replace(/ם/g, 'מ').replace(/ן/g, 'נ').replace(/ף/g, 'פ').replace(/ץ/g, 'צ');
+const wordsOf = t => (String(t || '').replace(/[\u0591-\u05c7"'׳״]/g, '').toLowerCase().match(/[\u05d0-\u05eaa-z0-9]+/g) || []).map(finalLetters);
+function stemSet(w) {
+  const out = new Set([w]), cand = [w];
+  for (const pre of ['ו', 'ה', 'ב', 'ל', 'מ', 'כ', 'ש', 'וה', 'וב', 'ול', 'שה', 'מה', 'לה', 'בה', 'כש', 'וש']) if (w.startsWith(pre) && w.length - pre.length >= 3) cand.push(w.slice(pre.length));
+  for (const c of cand) { out.add(c); for (const suf of ['ים', 'ות', 'יות', 'ה', 'ת', 'י']) if (c.endsWith(suf) && c.length - suf.length >= 3) out.add(c.slice(0, -suf.length)); }
+  return out;
+}
+const bag = text => { const all = new Set(); wordsOf(text).forEach(w => stemSet(w).forEach(x => { if (x.length >= 3) all.add(x); })); return all; };
+const inBag = (B, word) => { for (const x of stemSet(finalLetters(word))) if (x.length >= 3 && B.has(x)) return true; return false; };
+const PRODUCT_CRAFT = { קרש: ['wood'], שולחן: ['wood', 'metal'], כיסא: ['wood'], כסא: ['wood'], מדף: ['wood', 'metal'], ארון: ['wood'], שידה: ['wood'], מיטה: ['wood'], שעון: ['wood', 'metal'], קופסה: ['wood'], ארגז: ['wood'], כף: ['wood'], מצקת: ['wood'], ספסל: ['wood', 'metal'], מגש: ['wood', 'ceramic'], מנורה: ['wood', 'metal', 'ceramic'], מסגרת: ['wood', 'metal'], ארנק: ['leather'], חגורה: ['leather'], תיק: ['leather'], נרתיק: ['leather'], כיסוי: ['leather'], רצועה: ['leather'], מחזיק: ['leather'], נעל: ['leather'], סנדל: ['leather'], ספל: ['ceramic'], כוס: ['ceramic'], קערה: ['ceramic'], צלחת: ['ceramic'], אגרטל: ['ceramic'], כד: ['ceramic'], קנקן: ['ceramic'], עציץ: ['ceramic'], אריח: ['ceramic'], צנצנת: ['ceramic'], טבעת: ['jewelry'], צמיד: ['jewelry'], שרשרת: ['jewelry'], עגיל: ['jewelry'], תליון: ['jewelry'], סיכה: ['jewelry'], נזם: ['jewelry'], תכשיט: ['jewelry'], סכין: ['metal'], גריל: ['metal'], פסל: ['metal', 'ceramic'], שער: ['metal'], מעקה: ['metal'], שלט: ['metal', 'wood'], פמוט: ['metal', 'ceramic', 'wood'], נברשת: ['metal'], ידית: ['metal', 'wood'] };
+const MATERIALS = ['עץ', 'אלון', 'אגוז', 'זית', 'אורן', 'בוק', 'שיש', 'עור', 'כסף', 'זהב', 'נחושת', 'פליז', 'ברזל', 'פלדה', 'נירוסטה', 'אלומיניום', 'חימר', 'קרמיקה', 'פורצלן', 'חרס', 'זכוכית', 'בד', 'אבן', 'בטון', 'שרף', 'קנבס', 'קש', 'נייר'];
+const LOOKS = ['מודרני', 'מינימליסטי', 'כפרי', 'וינטג', 'תעשייתי', 'עתיק', 'מסורתי', 'בוהו', 'סקנדינבי', 'עדין', 'גדול', 'קטן', 'צבעוני', 'טבעי', 'גולמי', 'מבריק', 'מט', 'רטרו', 'אלגנטי', 'יוקרתי', 'פשוט', 'אדום', 'כחול', 'ירוק', 'שחור', 'לבן', 'חום', 'בז', 'אפור', 'צהוב', 'ורוד', 'סגול', 'טורקיז', 'כתום', 'תכלת', 'בורדו', 'קרם', 'זהוב', 'כסוף'];
+const CUSTOMS = ['חריטה', 'חרוט', 'לחרוט', 'שם', 'שמות', 'אותיות', 'ראשי', 'הקדשה', 'תאריך', 'מידה', 'מידות', 'בהתאמה', 'אישי', 'תיקון', 'לתקן', 'שיפוץ', 'סדרה'];
+const MATCH_STOP = new Set('את של עם על אני אנחנו רוצה רוצים צריך צריכה מאוד בבקשה לי לנו זה הזה הזאת מה איך כמו אבל או גם יש אם כי אל עד לא כן פה למי בשביל אפשר היה היו תרצו תרצה אשמח שיכינו להכין הכנה'.split(' ').map(finalLetters));
+/* what the request says: { products, materials, looks, customs, rest } (words as the buyer wrote them, the rest are the other meaningful words) */
+function understand(r) {
+  const text = `${r.title || ''} ${r.text || ''}`, ws = wordsOf(text), B = bag(text);
+  const pick = list => list.filter(w => inBag(B, w));
+  const products = Object.keys(PRODUCT_CRAFT).filter(w => inBag(B, w));
+  const materials = pick(MATERIALS), looks = pick(LOOKS), customs = pick(CUSTOMS);
+  const known = new Set([...products, ...materials, ...looks, ...customs].flatMap(w => [...stemSet(finalLetters(w))]));
+  const rest = [...new Set(ws.filter(w => w.length >= 3 && !MATCH_STOP.has(w) && ![...stemSet(w)].some(x => known.has(x))))];
+  return { products, materials, looks, customs, rest };
+}
+const MK_EVID = {};   /* per maker: the words of what they make (listing titles, listing descriptions, their story) */
+function evidenceOf(m) {
+  const L = (AD.mlist && AD.mlist[m.id]) || [], key = m.id + '|' + L.length + '|' + (m.story || '').length;
+  if (MK_EVID[m.id] && MK_EVID[m.id].key === key) return MK_EVID[m.id];
+  const titles = L.map(x => cleanText(x.title, 120)).filter(Boolean), descs = L.map(x => cleanText(x.description, 600)).join(' ');
+  const prices = L.map(x => +x.price_ils).filter(x => x > 0);
+  return (MK_EVID[m.id] = { key, titles, titleBag: bag(titles.join(' ')), descBag: bag(descs), storyBag: bag(`${m.story || ''} ${craftText(m.craft, m.craft_other)}`), prices, L });
+}
 function matchMakers(r, done) {
-  const keys = new Set(r.crafts || []), text = cleanText(`${r.title || ''} ${r.text || ''}`, 4000).toLowerCase();
+  const keys = new Set(r.crafts || []), u = understand(r), ev = AD.approved.map(evidenceOf), N = Math.max(1, ev.length);
+  const df = w => ev.filter(e => inBag(e.titleBag, w) || inBag(e.descBag, w) || inBag(e.storyBag, w)).length;
+  const implied = new Set(u.products.flatMap(p => PRODUCT_CRAFT[p] || []));
   const load = {}; Object.values(AD.routes || {}).forEach(a => (a || []).forEach(x => { if (['sent', 'seen', 'thinking'].includes(x.status)) load[x.maker_id] = (load[x.maker_id] || 0) + 1; }));
-  return AD.approved.map(m => {
-    const why = []; let sc = 0;
-    if (keys.has(m.craft)) { sc += 100; why.push('מתאים לתחום'); }
-    const city = cleanText(m.city, 60).toLowerCase(); if (city && text.includes(city)) { sc += 20; why.push('העיר מוזכרת בבקשה'); }
-    const words = new Set(cleanText(m.story, 600).toLowerCase().split(/[^֐-׿a-z0-9]+/).filter(w => w.length >= 3)); let hit = 0;
-    words.forEach(w => { if (text.includes(w)) hit++; }); if (hit) { sc += Math.min(25, hit * 5); why.push('מילים משותפות'); }
-    const l = load[m.id] || 0; if (l) { sc -= 10 * l; why.push(`${l} פתוחות אצלו`); } else why.push('פנוי');
-    return { m, sc, why, craftOk: keys.has(m.craft), done: done.has(m.id) };
+  const buyer = r.city ? cityPoint(r.city) : null, dl = Array.isArray(r.delivery) ? r.delivery : [], pickupOnly = dl.length > 0 && dl.every(k => k === 'pickup');
+  const band = BUDGETS[r.budget] || null, days = r.due_date ? Math.round((new Date(String(r.due_date).slice(0, 10)) - new Date(todayStr())) / 86400000) : null, urgent = days !== null && days >= 0 && days <= 14;
+  return AD.approved.map((m, i) => {
+    const e = ev[i], why = []; let sc = 0;
+    const chosen = keys.has(m.craft), viaProduct = !chosen && implied.has(m.craft);
+    if (chosen) { sc += 60; why.push('מתאים לתחום'); } else if (viaProduct) { sc += 40; why.push('המוצר שביקשו שייך לתחום שלו'); }
+    let pHit = 0; const shownP = [];
+    for (const p of u.products) {
+      if (pHit >= 70) break;
+      const t = e.L.find(x => inBag(bag(x.title), p));
+      if (t) { pHit += 35; shownP.push(`הכין: ${cleanText(t.title, 40)}`); } else if (inBag(e.descBag, p) || inBag(e.storyBag, p)) { pHit += 18; shownP.push(`כותב על ${p}`); }
+    }
+    if (pHit) { sc += pHit; why.push(...shownP.slice(0, 2)); }
+    let mHit = 0; const mats = [];
+    for (const w of u.materials) { if (inBag(e.titleBag, w) || inBag(e.descBag, w)) { mHit += 12; mats.push(w); } else if (inBag(e.storyBag, w)) { mHit += 8; mats.push(w); } }
+    if (mHit) { sc += Math.min(24, mHit); why.push(`עובד ב${mats.slice(0, 2).join(' וב')}`); }
+    let lHit = 0; for (const w of u.looks) if (inBag(e.titleBag, w) || inBag(e.descBag, w) || inBag(e.storyBag, w)) lHit += 5;
+    if (lHit) { sc += Math.min(15, lHit); why.push('הסגנון מוזכר אצלו'); }
+    let cHit = 0; for (const w of u.customs) if (inBag(e.titleBag, w) || inBag(e.descBag, w) || inBag(e.storyBag, w)) cHit += 8;
+    if (cHit) { sc += Math.min(16, cHit); why.push('עושה גם התאמה אישית'); }
+    let gHit = 0; for (const w of u.rest) { if (inBag(e.titleBag, w) || inBag(e.descBag, w) || inBag(e.storyBag, w)) gHit += Math.min(6, 2 * Math.log(1 + N / Math.max(1, df(w)))); }
+    if (gHit >= 3) { sc += Math.min(20, Math.round(gHit)); why.push('מילים משותפות'); }
+    const mp = m.city ? cityPoint(m.city) : null;
+    if (buyer && mp) {
+      const km = kmBetween(buyer, mp), w = pickupOnly ? (km <= 10 ? 30 : km <= 30 ? 22 : km <= 60 ? 12 : km <= 120 ? 4 : -15) : (km <= 30 ? 8 : km <= 100 ? 4 : 0);
+      sc += w; if (km <= 120 || pickupOnly) why.push(km <= 3 ? 'באותה עיר' : `כ־${km} ק״מ`);
+    } else if (r.city && m.city && normCity(r.city) === normCity(m.city)) { sc += pickupOnly ? 25 : 8; why.push('באותה עיר'); }
+    if (band && e.prices.length) { const inBand = e.prices.some(x => x >= band[0] && x <= band[1]), far = e.prices.every(x => x > (band[1] === Infinity ? 1e9 : band[1] * 2) || x < band[0] / 2); if (inBand) { sc += 8; why.push('מחירי היצירות שלו בטווח התקציב'); } else if (far) { sc -= 6; why.push('מחירי היצירות שלו רחוקים מהתקציב'); } }
+    const l = load[m.id] || 0; if (l) { sc -= Math.min(40, (urgent ? 20 : 10) * l); why.push(`${l} בקשות פתוחות אצלו`); } else why.push(urgent ? 'פנוי, והבקשה דחופה' : 'פנוי');
+    return { m, sc: Math.round(sc), why, gate: chosen || viaProduct, done: done.has(m.id), km: buyer && mp ? kmBetween(buyer, mp) : null };
   }).sort((a, b) => b.sc - a.sc);
 }
-const routeSheet = r => { const done = new Set(routesOf(r).map(x => x.maker_id)), list = matchMakers(r, done), pick = new Set(list.filter(x => x.craftOk && !x.done).slice(0, MATCH_N).map(x => x.m.id)), few = pick.size < MATCH_MIN;
+const understoodHTML = u => { const rows = [['מוצר', u.products], ['חומר', u.materials], ['איך זה אמור להיראות', u.looks], ['התאמה אישית', u.customs]].filter(([, a]) => a.length); return rows.length ? `<dl class="specs">${rows.map(([k, a]) => `<div><dt>${k}</dt><dd>${esc(a.join(', '))}</dd></div>`).join('')}</dl>` : '<p class="small muted">לא זיהינו בטקסט מוצר או חומר מוכרים. ההצעות מבוססות בעיקר על התחום.</p>'; };
+const routeSheet = r => { const done = new Set(routesOf(r).map(x => x.maker_id)), list = matchMakers(r, done), u = understand(r), ok = list.filter(x => x.gate && !x.done), others = list.filter(x => !x.gate && !x.done && x.sc >= 25);
+  const pick = new Set([...ok.slice(0, MATCH_N), ...(ok.length < MATCH_MIN ? others.slice(0, MATCH_MIN - ok.length) : [])].map(x => x.m.id)), few = pick.size < MATCH_MIN;
   return `<form class="sheet-body" data-form="rroutes" data-v="${esc(r.id)}" novalidate>
     <div><h2 class="sec-title">להעביר ליוצרים</h2><p class="small muted" style="margin-top:4px">${esc(oneLine(r.title, 80))}</p></div>
-    <p class="small muted">סימנו מראש עד ${MATCH_N} יוצרים מתאימים. אפשר לשנות לפני השליחה.${few ? ` יש רק ${pick.size} בתחום הזה, כדאי להוסיף ידנית.` : ''}</p>
-    <fieldset class="field"><legend class="lbl">יוצרים מאושרים</legend>${list.map(({ m, why, done: d }) => `<label class="opt"><input type="checkbox" name="mk" value="${esc(m.id)}" ${pick.has(m.id) ? 'checked' : ''} ${d ? 'disabled' : ''}><span class="grow"><b>${esc(cleanText(m.name, 80) || 'יוצר')}</b> <span class="small muted">${esc(craftText(m.craft, m.craft_other))}${m.city ? ` · ${esc(cleanText(m.city, 60))}` : ''} · ${d ? 'כבר הועבר' : esc(why.join(', '))}</span></span></label>`).join('') || '<p class="empty">עוד אין יוצרים מאושרים.</p>'}</fieldset>
+    <section aria-label="מה הבנו מהבקשה"><span class="lbl">מה הבנו מהבקשה</span>${understoodHTML(u)}${factsHTML(r)}</section>
+    <p class="small muted">סימנו מראש עד ${MATCH_N} יוצרים מתאימים, לפי מה שהם באמת מכינים, המקום, התקציב והעומס. אפשר לשנות לפני השליחה.${few ? ` יש רק ${pick.size} מתאימים, כדאי להוסיף ידנית.` : ''}</p>
+    <fieldset class="field"><legend class="lbl">יוצרים מאושרים</legend>${list.map(({ m, why, done: d }) => `<label class="opt"><input type="checkbox" name="mk" value="${esc(m.id)}" ${pick.has(m.id) ? 'checked' : ''} ${d ? 'disabled' : ''}><span class="grow"><b>${esc(cleanText(m.name, 80) || 'יוצר')}</b> <span class="small muted">${esc(craftText(m.craft, m.craft_other))}${m.city ? ` · ${esc(cleanText(m.city, 60))}` : ''} · ${d ? 'כבר הועבר' : esc(why.slice(0, 5).join(', '))}</span></span></label>`).join('') || '<p class="empty">עוד אין יוצרים מאושרים.</p>'}</fieldset>
     <div id="rt-res" role="status" aria-live="polite"></div>
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">סגירה</button><button type="submit" class="btn block">העברה</button></div></form>`; };
+async function loadApprovedListings() {
+  if (AD.mlistSt === 'busy' || AD.mlistSt === 'done') return; AD.mlistSt = 'busy'; const out = {};
+  try { for (let from = 0; from < 3000; from += 500) { const r = await dbq(s => s.from('listings').select('maker_id,title,description,price_ils').eq('status', 'approved').range(from, from + 499)); if (r.error || !Array.isArray(r.data)) break; r.data.forEach(x => { if (x && x.maker_id) (out[x.maker_id] || (out[x.maker_id] = [])).push(x); }); if (r.data.length < 500) break; } } catch (e) { /* the suggestion then rests on the story and the craft only */ }
+  AD.mlist = out; AD.mlistSt = 'done';
+}
 async function submitRoutes(f, id) {
   const r = AD.requests.find(x => x.id === id), res = f.querySelector('#rt-res'), ids = [...f.querySelectorAll('input[name="mk"]:checked')].map(x => x.value); if (!r) return;
   if (!ids.length) { res.innerHTML = '<p class="form-err">בחרו לפחות יוצר אחד.</p>'; return; }
@@ -2203,7 +2309,7 @@ Object.assign(ACT, {
     EDIT.st = 'ok'; EDIT.data = { token: t, title: cleanText(d.title, 120), crafts: (Array.isArray(d.crafts) ? d.crafts : []).map(c => String(c).slice(0, 30)), text: cleanBlock(d.text, 2000), due: cleanText(d.due, 80), contact: String(d.contact || '').slice(0, 120) };
     go('editreq', { token: t }); },
   toreqs: () => { tab('mine'); go('myreqs'); },
-  rroutesopen: v => { const r = AD.requests.find(x => x.id === v); if (r) openSheet(routeSheet(r), 'להעביר ליוצרים'); },
+  rroutesopen: async v => { const r = AD.requests.find(x => x.id === v); if (!r) return; if (AD.mlistSt !== 'done') await loadApprovedListings(); openSheet(routeSheet(r), 'להעביר ליוצרים'); },
   copynotify: async v => { const r = AD.requests.find(x => x.id === v); if (!r) return; const list = notifyFor(r).mails.join(', ');
     try { await navigator.clipboard.writeText(list); toast('רשימת המיילים הועתקה. אפשר להדביק אותה בשדה ״עותק מוסתר״'); } catch (e) { toast('ההעתקה לא הצליחה, נסו שוב'); } },
   lpapprove: async v => { const l = adFind(v); if (!l) return; const r = await dbq(s => s.from('listings').update({ status: 'approved' }).eq('id', v).select('id'));

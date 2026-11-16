@@ -1740,3 +1740,14 @@ end
 $$;
 revoke all on function public.update_request(uuid, text, text[], text, text, text) from public, anon, authenticated;
 grant execute on function public.update_request(uuid, text, text[], text, text, text) to anon, authenticated;
+
+-- =====================================================================
+-- 11. A signup from an old (cached) page has no crafts: fill it from craft, so it is not refused.
+-- =====================================================================
+create or replace function public.makers_default_crafts() returns trigger language plpgsql set search_path = '' as $$
+begin
+  if coalesce(array_length(new.crafts, 1), 0) = 0 then new.crafts := array[new.craft]; end if;
+  return new;
+end
+$$;
+create trigger makers_default_crafts_tr before insert on public.makers for each row execute function public.makers_default_crafts();

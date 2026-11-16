@@ -238,6 +238,9 @@ legend { padding: 0; margin-bottom: 8px; }
 .field > label, .field .lbl { font-weight: 700; font-size: var(--fs-2); }
 .field > label .m, .field .lbl .m { font-weight: 400; font-size: var(--fs-1); color: var(--muted); }
 .hint { font-size: var(--fs-1); color: var(--muted); }
+.look { gap: 6px; margin-top: 8px; }
+.look .sec-title { margin: 0; }
+.look-sub { margin: 0 0 4px; }
 .input { border: 0; background: var(--paper); padding: 12px 14px; min-height: 48px; width: 100%; min-width: 0; outline: none; font-size: var(--fs-2); }
 .input:focus { outline: 3px solid var(--stamp); outline-offset: 0; }
 textarea.input { min-height: 112px; resize: vertical; }
@@ -1271,9 +1274,9 @@ const signinOK = () => CFG_ON && AU.probe !== 'gone';
 
 /* ---- the maker's inbox (my_inbox) ---- */
 const IBCOLS = 'route_id,request_id,route_status,seen_at,offer_note,offer_price_ils,routed_at,title,crafts,text,due,contact,created_at,request_status';
-const IBNEW = 'city,delivery,occasion,due_date,budget';
+const IBNEW = 'city,delivery,occasion,due_date';
 const IBPAGE = 20;
-const normIb = r => ({ route: String(r.route_id), rid: String(r.request_id || ''), rs: String(r.route_status || 'sent'), offerNote: r.offer_note == null ? '' : cleanBlock(r.offer_note, 500), offerPrice: intOrNull(r.offer_price_ils), routedAt: String(r.routed_at || ''), title: cleanText(r.title, 120), crafts: Array.isArray(r.crafts) ? r.crafts.map(c => String(c).slice(0, 30)) : [], text: cleanBlock(r.text, 2000), due: cleanText(r.due, 80), contact: r.contact == null ? '' : String(r.contact).slice(0, 120), created: String(r.created_at || ''), rstatus: String(r.request_status || ''), edited: r.edited_at ? String(r.edited_at) : '', city: r.city || '', delivery: Array.isArray(r.delivery) ? r.delivery : [], occasion: r.occasion || '', due_date: r.due_date || '', budget: r.budget || '', err: '' });
+const normIb = r => ({ route: String(r.route_id), rid: String(r.request_id || ''), rs: String(r.route_status || 'sent'), offerNote: r.offer_note == null ? '' : cleanBlock(r.offer_note, 500), offerPrice: intOrNull(r.offer_price_ils), routedAt: String(r.routed_at || ''), title: cleanText(r.title, 120), crafts: Array.isArray(r.crafts) ? r.crafts.map(c => String(c).slice(0, 30)) : [], text: cleanBlock(r.text, 2000), due: cleanText(r.due, 80), contact: r.contact == null ? '' : String(r.contact).slice(0, 120), created: String(r.created_at || ''), rstatus: String(r.request_status || ''), edited: r.edited_at ? String(r.edited_at) : '', city: r.city || '', delivery: Array.isArray(r.delivery) ? r.delivery : [], occasion: r.occasion || '', due_date: r.due_date || '', err: '' });
 async function loadInbox(more) {
   const ib = AU.inbox; if (!SB || !AU.maker || ib.busy) return;
   ib.busy = true; if (!more && !ib.list.length) ib.st = 'loading'; ib.err = ''; meRedraw();
@@ -1712,11 +1715,10 @@ function cityPoint(name) {
 const kmBetween = (a, b) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(b.la - a.la), dn = r(b.lo - a.lo), h = Math.sin(dl / 2) ** 2 + Math.cos(r(a.la)) * Math.cos(r(b.la)) * Math.sin(dn / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(h))); };
 const DELIV = { pickup: 'איסוף אצל היוצר', ship: 'משלוח אליי', brings: 'שהיוצר יגיע אליי' };
 const OCC = { gift: 'מתנה', home: 'לבית', wedding: 'לחתונה או לאירוע', business: 'לעסק', memorial: 'להנצחה', kids: 'לילדים', other: 'אחר' };
-const BUDGETS = { b1: [0, 200, 'עד 200 ₪'], b2: [200, 500, '200 עד 500 ₪'], b3: [500, 1500, '500 עד 1,500 ₪'], b4: [1500, Infinity, 'מעל 1,500 ₪'] };
 function reqFacts(o) {
   const f = [], dl = (Array.isArray(o.delivery) ? o.delivery : []).filter(k => DELIV[k]).map(k => DELIV[k]);
   if (o.city) f.push(['עיר', cleanText(o.city, 60)]); if (dl.length) f.push(['קבלה', dl.join(', ')]); if (OCC[o.occasion]) f.push(['למה', OCC[o.occasion]]);
-  if (o.due_date && /^\d{4}-\d{2}-\d{2}/.test(String(o.due_date))) f.push(['תאריך יעד', dateHe(String(o.due_date).slice(0, 10))]); if (BUDGETS[o.budget]) f.push(['תקציב', BUDGETS[o.budget][2]]);
+  if (o.due_date && /^\d{4}-\d{2}-\d{2}/.test(String(o.due_date))) f.push(['תאריך יעד', dateHe(String(o.due_date).slice(0, 10))]);
   return f;
 }
 const factsHTML = o => { const f = reqFacts(o); return f.length ? `<dl class="specs">${f.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''; };
@@ -1740,15 +1742,16 @@ function postForm({ edit = false, token = '', title = '', hint, vals = null } = 
             <label class="tile"><input type="checkbox" id="pc-other" name="otherOn" value="1" ${otherOn ? 'checked' : ''}><span class="face">${svg(UI.c_other)}<span class="tl">אחר</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label></div>
           <input class="input" id="p-other" name="other" maxlength="60" aria-label="איזה תחום אחר?" placeholder="איזה? למשל זכוכית או טקסטיל" value="${esc(other)}" ${otherOn ? '' : 'hidden'}>
           <span class="hint">עגילים מעץ? סמנו גם ״תכשיטים״ וגם ״עץ״.</span></fieldset>
-        <div class="field"><label for="p-text">איך זה אמור להיראות? <span class="m">(לא חובה, אבל זה עוזר מאוד)</span></label><textarea class="input" id="p-text" name="text" maxlength="1900" placeholder="חומר, צבע, מידות, סגנון, מה לכתוב או לחרוט עליו, ולמי זה מיועד">${esc(text)}</textarea></div>
-        ${edit ? '' : `<fieldset class="field target"><legend class="lbl">כדי שנמצא את היוצר הנכון <span class="m">(לא חובה)</span></legend>
-          <span class="hint">ככל שתפרטו יותר, כך ההתאמה תהיה טובה יותר.</span>
+        <div class="field look"><h2 class="sec-title" id="p-look">איך היצירה אמורה להיראות?</h2>
+          <p class="small muted look-sub">ככל שתפרטו יותר, כך נמצא לכם את היוצר שמתאים בדיוק לבקשה שלכם.</p>
+          <textarea class="input" id="p-text" name="text" rows="5" maxlength="1900" aria-labelledby="p-look" placeholder="חומר, צבע, מידות, סגנון, מה לחרוט עליה, ולמי היא מיועדת">${esc(text)}</textarea></div>
+        ${edit ? '' : `<fieldset class="field target"><legend class="lbl">עוד כמה פרטים <span class="m">(לא חובה)</span></legend>
+          <span class="hint">בחירות קצרות שעוזרות לנו לקרב אתכם ליוצר הנכון.</span>
           <div class="field"><label for="p-city">באיזו עיר אתם?</label><input class="input" id="p-city" name="city" list="p-cities" maxlength="60" autocomplete="off" placeholder="בחרו מהרשימה או הקלידו"><datalist id="p-cities">${CITIES.map(c => `<option value="${esc(c[0])}"></option>`).join('')}</datalist></div>
           <fieldset class="field"><legend class="lbl">איך תרצו לקבל?</legend>${Object.entries(DELIV).map(([k, v]) => `<label class="opt"><input type="checkbox" name="delivery" value="${k}"><span class="grow">${v}</span></label>`).join('')}</fieldset>
           <div class="field"><label for="p-occ">למה זה מיועד?</label><select class="input" id="p-occ" name="occasion"><option value="">לא חשוב</option>${Object.entries(OCC).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
-          <div class="field"><label for="p-date">תאריך יעד</label><input class="input" id="p-date" name="due_date" type="date" min="${todayStr()}"></div>
-          <div class="field"><label for="p-budget">תקציב משוער</label><select class="input" id="p-budget" name="budget"><option value="">עוד לא יודעים</option>${Object.entries(BUDGETS).map(([k, v]) => `<option value="${k}">${v[2]}</option>`).join('')}</select></div></fieldset>`}
-        <div class="field"><label for="p-due">עד מתי? <span class="m">(לא חובה)</span></label><input class="input" id="p-due" name="due" maxlength="80" placeholder="למשל לפני יום ההולדת, ב־12.12" value="${esc(due)}"></div>
+          <div class="field"><label for="p-date">תאריך יעד</label><input class="input" id="p-date" name="due_date" type="date" min="${todayStr()}"></div></fieldset>`}
+        ${edit ? `<div class="field"><label for="p-due">עד מתי? <span class="m">(לא חובה)</span></label><input class="input" id="p-due" name="due" maxlength="80" placeholder="למשל לפני יום ההולדת, ב־12.12" value="${esc(due)}"></div>` : ''}
         <div class="field"><label for="p-contact">איך חוזרים אליכם?</label><input class="input" id="p-contact" name="contact" dir="auto" maxlength="120" autocomplete="email" placeholder="מייל או טלפון" aria-required="true" aria-describedby="p-contact-h" value="${esc(contact)}"><span class="hint" id="p-contact-h">${edit ? 'הפרטים נשארים אצלנו. ליוצרים שקיבלו את הבקשה הם מוצגים כל עוד היא פתוחה.' : 'אנחנו מעבירים אותם רק ליוצרים שמתאימים לבקשה.'}</span></div>
         <p class="form-err" id="p-err" role="alert" hidden></p>
         <button class="btn block" type="submit">${edit ? 'שמירת השינויים' : 'שליחת הבקשה'}</button>
@@ -1762,9 +1765,9 @@ function readPost(f) {
     : otherOn && !other ? ['p-other', 'כתבו איזה תחום, או בטלו את הסימון של ״אחר״.']
     : !contact ? ['p-contact', 'השאירו מייל או טלפון, כדי שנוכל לחזור אליכם.'] : !(EMAIL_RE.test(contact) || phoneOK(contact)) ? ['p-contact', 'המייל או הטלפון לא נראים נכון. בדקו שוב.']
     : String(d.due_date || '') && !(/^\d{4}-\d{2}-\d{2}$/.test(String(d.due_date)) && String(d.due_date) >= todayStr()) ? ['p-date', 'תאריך היעד כבר עבר. בחרו תאריך עתידי, או השאירו ריק.'] : null;
-  const city = String(d.city || '').trim().slice(0, 60), delivery = fd.getAll('delivery').filter(k => DELIV[k]), occasion = OCC[d.occasion] ? String(d.occasion) : '', budget = BUDGETS[d.budget] ? String(d.budget) : '', due_date = /^\d{4}-\d{2}-\d{2}$/.test(String(d.due_date || '')) ? String(d.due_date) : '';
+  const city = String(d.city || '').trim().slice(0, 60), delivery = fd.getAll('delivery').filter(k => DELIV[k]), occasion = OCC[d.occasion] ? String(d.occasion) : '', due_date = /^\d{4}-\d{2}-\d{2}$/.test(String(d.due_date || '')) ? String(d.due_date) : '';
   const body = String(d.text || '').trim();
-  return { bad, city, delivery, occasion, budget, due_date, title, crafts: [...crafts, ...(other ? ['other'] : [])], text: (body + (other ? `${body ? '\n' : ''}תחום נוסף: ${other}` : '')).slice(0, 2000), due: String(d.due || '').trim(), contact };
+  return { bad, city, delivery, occasion, due_date, title, crafts: [...crafts, ...(other ? ['other'] : [])], text: (body + (other ? `${body ? '\n' : ''}תחום נוסף: ${other}` : '')).slice(0, 2000), due: String(d.due || '').trim(), contact };
 }
 function showBad(f, bad) {
   const el = f.querySelector('#' + bad[0]), err = f.querySelector('#p-err');
@@ -1784,9 +1787,9 @@ async function submitPost(f) {
   const row = { title: v.title, crafts: v.crafts, text: v.text, due: v.due, contact: v.contact, consent: true, status: 'new' };
   let tracked = true, kept = true;
   try {
-    const extra = { city: v.city || null, delivery: v.delivery || [], occasion: v.occasion || null, due_date: v.due_date || null, budget: v.budget || null };
+    const extra = { city: v.city || null, delivery: v.delivery || [], occasion: v.occasion || null, due_date: v.due_date || null };
     let { error } = await SB.from('requests').insert({ ...row, ...extra, token: PT });
-    if (error && /city|delivery|occasion|due_date|budget/.test(String(error.message || '')) && (errCode(error) === 'PGRST204' || /column/i.test(String(error.message || '')))) ({ error } = await SB.from('requests').insert({ ...row, token: PT }));   /* the newest database update is not applied yet: the request still goes through */
+    if (error && /city|delivery|occasion|due_date/.test(String(error.message || '')) && (errCode(error) === 'PGRST204' || /column/i.test(String(error.message || '')))) ({ error } = await SB.from('requests').insert({ ...row, token: PT }));   /* the newest database update is not applied yet: the request still goes through */
     if (error && (errCode(error) === 'PGRST204' || /'token' column/i.test(String(error.message || '')))) { tracked = false; ({ error } = await SB.from('requests').insert(row)); }   /* the database update is not applied yet: never block a real request */
     else if (error && errCode(error) === '23505') error = null;                                                                                                        /* our own retry after a dropped connection: it was saved */
     if (error) throw error;
@@ -1973,7 +1976,7 @@ const MATCH_N = 4, MATCH_MIN = 3;
 /* ---------- matching a request to makers ----------
    The request is read the way a person would read it: what the thing is (a wallet, a cutting board), what it is made of, how it should look,
    whether it is engraved or made to measure. Each of those is looked for in what the maker actually makes (the titles and descriptions of their
-   listed pieces count the most, then their own story). Then place, how the buyer wants to receive it, budget, deadline and the maker's current
+   listed pieces count the most, then their own story). Then place, how the buyer wants to receive it, deadline and the maker's current
    load adjust the order. Craft is the gate. Everything is added up as points, and every point has a reason shown to the owner,
    who decides. Nothing here sends anything. */
 const finalLetters = w => w.replace(/ך/g, 'כ').replace(/ם/g, 'מ').replace(/ן/g, 'נ').replace(/ף/g, 'פ').replace(/ץ/g, 'צ');
@@ -1987,7 +1990,8 @@ function stemSet(w) {
 const bag = text => { const all = new Set(); wordsOf(text).forEach(w => stemSet(w).forEach(x => { if (x.length >= 3) all.add(x); })); return all; };
 const inBag = (B, word) => { for (const x of stemSet(finalLetters(word))) if (x.length >= 3 && B.has(x)) return true; return false; };
 const PRODUCT_CRAFT = { קרש: ['wood'], שולחן: ['wood', 'metal'], כיסא: ['wood'], כסא: ['wood'], מדף: ['wood', 'metal'], ארון: ['wood'], שידה: ['wood'], מיטה: ['wood'], שעון: ['wood', 'metal'], קופסה: ['wood'], ארגז: ['wood'], כף: ['wood'], מצקת: ['wood'], ספסל: ['wood', 'metal'], מגש: ['wood', 'ceramic'], מנורה: ['wood', 'metal', 'ceramic'], מסגרת: ['wood', 'metal'], ארנק: ['leather'], חגורה: ['leather'], תיק: ['leather'], נרתיק: ['leather'], כיסוי: ['leather'], רצועה: ['leather'], מחזיק: ['leather'], נעל: ['leather'], סנדל: ['leather'], ספל: ['ceramic'], כוס: ['ceramic'], קערה: ['ceramic'], צלחת: ['ceramic'], אגרטל: ['ceramic'], כד: ['ceramic'], קנקן: ['ceramic'], עציץ: ['ceramic'], אריח: ['ceramic'], צנצנת: ['ceramic'], טבעת: ['jewelry'], צמיד: ['jewelry'], שרשרת: ['jewelry'], עגיל: ['jewelry'], תליון: ['jewelry'], סיכה: ['jewelry'], נזם: ['jewelry'], תכשיט: ['jewelry'], סכין: ['metal'], גריל: ['metal'], פסל: ['metal', 'ceramic'], שער: ['metal'], מעקה: ['metal'], שלט: ['metal', 'wood'], פמוט: ['metal', 'ceramic', 'wood'], נברשת: ['metal'], ידית: ['metal', 'wood'] };
-const MATERIALS = ['עץ', 'אלון', 'אגוז', 'זית', 'אורן', 'בוק', 'שיש', 'עור', 'כסף', 'זהב', 'נחושת', 'פליז', 'ברזל', 'פלדה', 'נירוסטה', 'אלומיניום', 'חימר', 'קרמיקה', 'פורצלן', 'חרס', 'זכוכית', 'בד', 'אבן', 'בטון', 'שרף', 'קנבס', 'קש', 'נייר'];
+const WOODS = ['אלון', 'אגוז', 'זית', 'אורן', 'בוק', 'אקליפטוס', 'שיטה', 'ארז', 'מייפל', 'דובדבן'];
+const MATERIALS = ['עץ', ...WOODS, 'שיש', 'עור', 'כסף', 'זהב', 'נחושת', 'פליז', 'ברזל', 'פלדה', 'נירוסטה', 'אלומיניום', 'חימר', 'קרמיקה', 'פורצלן', 'חרס', 'זכוכית', 'בד', 'אבן', 'בטון', 'שרף', 'קנבס', 'קש', 'נייר'];
 const LOOKS = ['מודרני', 'מינימליסטי', 'כפרי', 'וינטג', 'תעשייתי', 'עתיק', 'מסורתי', 'בוהו', 'סקנדינבי', 'עדין', 'גדול', 'קטן', 'צבעוני', 'טבעי', 'גולמי', 'מבריק', 'מט', 'רטרו', 'אלגנטי', 'יוקרתי', 'פשוט', 'אדום', 'כחול', 'ירוק', 'שחור', 'לבן', 'חום', 'בז', 'אפור', 'צהוב', 'ורוד', 'סגול', 'טורקיז', 'כתום', 'תכלת', 'בורדו', 'קרם', 'זהוב', 'כסוף'];
 const CUSTOMS = ['חריטה', 'חרוט', 'לחרוט', 'שם', 'שמות', 'אותיות', 'ראשי', 'הקדשה', 'תאריך', 'מידה', 'מידות', 'בהתאמה', 'אישי', 'תיקון', 'לתקן', 'שיפוץ', 'סדרה'];
 const MATCH_STOP = new Set('את של עם על אני אנחנו רוצה רוצים צריך צריכה מאוד בבקשה לי לנו זה הזה הזאת מה איך כמו אבל או גם יש אם כי אל עד לא כן פה למי בשביל אפשר היה היו תרצו תרצה אשמח שיכינו להכין הכנה'.split(' ').map(finalLetters));
@@ -1996,10 +2000,11 @@ function understand(r) {
   const text = `${r.title || ''} ${r.text || ''}`, ws = wordsOf(text), B = bag(text);
   const pick = list => list.filter(w => inBag(B, w));
   const products = Object.keys(PRODUCT_CRAFT).filter(w => inBag(B, w));
-  const materials = pick(MATERIALS), looks = pick(LOOKS), customs = pick(CUSTOMS);
-  const known = new Set([...products, ...materials, ...looks, ...customs].flatMap(w => [...stemSet(finalLetters(w))]));
+  const rawMat = pick(MATERIALS), species = rawMat.filter(w => WOODS.includes(w)), solid = /עץ\s+מלא/.test(String(text).replace(/[\u0591-\u05c7]/g, ''));
+  const materials = [...new Set(rawMat.map(w => WOODS.includes(w) ? (solid ? 'עץ מלא' : 'עץ') : w === 'עץ' && solid ? 'עץ מלא' : w))], looks = pick(LOOKS), customs = pick(CUSTOMS);
+  const known = new Set([...products, ...rawMat, ...looks, ...customs].flatMap(w => [...stemSet(finalLetters(w))]));
   const rest = [...new Set(ws.filter(w => w.length >= 3 && !MATCH_STOP.has(w) && ![...stemSet(w)].some(x => known.has(x))))];
-  return { products, materials, looks, customs, rest };
+  return { products, materials, species, looks, customs, rest };
 }
 const MK_EVID = {};   /* per maker: the words of what they make (listing titles, listing descriptions, their story) */
 function evidenceOf(m) {
@@ -2015,7 +2020,7 @@ function matchMakers(r, done) {
   const implied = new Set(u.products.flatMap(p => PRODUCT_CRAFT[p] || []));
   const load = {}; Object.values(AD.routes || {}).forEach(a => (a || []).forEach(x => { if (['sent', 'seen', 'thinking'].includes(x.status)) load[x.maker_id] = (load[x.maker_id] || 0) + 1; }));
   const buyer = r.city ? cityPoint(r.city) : null, dl = Array.isArray(r.delivery) ? r.delivery : [], pickupOnly = dl.length > 0 && dl.every(k => k === 'pickup');
-  const band = BUDGETS[r.budget] || null, days = r.due_date ? Math.round((new Date(String(r.due_date).slice(0, 10)) - new Date(todayStr())) / 86400000) : null, urgent = days !== null && days >= 0 && days <= 14;
+  const days = r.due_date ? Math.round((new Date(String(r.due_date).slice(0, 10)) - new Date(todayStr())) / 86400000) : null, urgent = days !== null && days >= 0 && days <= 14;
   return AD.approved.map((m, i) => {
     const e = ev[i], why = []; let sc = 0;
     const chosen = keys.has(m.craft), viaProduct = !chosen && implied.has(m.craft);
@@ -2028,7 +2033,8 @@ function matchMakers(r, done) {
     }
     if (pHit) { sc += pHit; why.push(...shownP.slice(0, 2)); }
     let mHit = 0; const mats = [];
-    for (const w of u.materials) { if (inBag(e.titleBag, w) || inBag(e.descBag, w)) { mHit += 12; mats.push(w); } else if (inBag(e.storyBag, w)) { mHit += 8; mats.push(w); } }
+    const matWords = [...new Set([...u.materials.map(w => w === 'עץ מלא' ? 'עץ' : w), ...u.species])];
+    for (const w of matWords) { const sp = WOODS.includes(w), pts = sp ? 4 : 12, ptsS = sp ? 3 : 8, alts = w === 'עץ' ? ['עץ', ...WOODS] : [w]; if (alts.some(x => inBag(e.titleBag, x) || inBag(e.descBag, x))) { mHit += pts; mats.push(w); } else if (alts.some(x => inBag(e.storyBag, x))) { mHit += ptsS; mats.push(w); } }
     if (mHit) { sc += Math.min(24, mHit); why.push(`עובד ב${mats.slice(0, 2).join(' וב')}`); }
     let lHit = 0; for (const w of u.looks) if (inBag(e.titleBag, w) || inBag(e.descBag, w) || inBag(e.storyBag, w)) lHit += 5;
     if (lHit) { sc += Math.min(15, lHit); why.push('הסגנון מוזכר אצלו'); }
@@ -2041,7 +2047,6 @@ function matchMakers(r, done) {
       const km = kmBetween(buyer, mp), w = pickupOnly ? (km <= 10 ? 30 : km <= 30 ? 22 : km <= 60 ? 12 : km <= 120 ? 4 : -15) : (km <= 30 ? 8 : km <= 100 ? 4 : 0);
       sc += w; if (km <= 120 || pickupOnly) why.push(km <= 3 ? 'באותה עיר' : `כ־${km} ק״מ`);
     } else if (r.city && m.city && normCity(r.city) === normCity(m.city)) { sc += pickupOnly ? 25 : 8; why.push('באותה עיר'); }
-    if (band && e.prices.length) { const inBand = e.prices.some(x => x >= band[0] && x <= band[1]), far = e.prices.every(x => x > (band[1] === Infinity ? 1e9 : band[1] * 2) || x < band[0] / 2); if (inBand) { sc += 8; why.push('מחירי היצירות שלו בטווח התקציב'); } else if (far) { sc -= 6; why.push('מחירי היצירות שלו רחוקים מהתקציב'); } }
     const l = load[m.id] || 0; if (l) { sc -= Math.min(40, (urgent ? 20 : 10) * l); why.push(`${l} בקשות פתוחות אצלו`); } else why.push(urgent ? 'פנוי, והבקשה דחופה' : 'פנוי');
     return { m, sc: Math.round(sc), why, gate: chosen || viaProduct, done: done.has(m.id), km: buyer && mp ? kmBetween(buyer, mp) : null };
   }).sort((a, b) => b.sc - a.sc);
@@ -2052,7 +2057,7 @@ const routeSheet = r => { const done = new Set(routesOf(r).map(x => x.maker_id))
   return `<form class="sheet-body" data-form="rroutes" data-v="${esc(r.id)}" novalidate>
     <div><h2 class="sec-title">להעביר ליוצרים</h2><p class="small muted" style="margin-top:4px">${esc(oneLine(r.title, 80))}</p></div>
     <section aria-label="מה הבנו מהבקשה"><span class="lbl">מה הבנו מהבקשה</span>${understoodHTML(u)}${factsHTML(r)}</section>
-    <p class="small muted">סימנו מראש עד ${MATCH_N} יוצרים מתאימים, לפי מה שהם באמת מכינים, המקום, התקציב והעומס. אפשר לשנות לפני השליחה.${few ? ` יש רק ${pick.size} מתאימים, כדאי להוסיף ידנית.` : ''}</p>
+    <p class="small muted">סימנו מראש עד ${MATCH_N} יוצרים מתאימים, לפי מה שהם באמת מכינים, המקום והעומס. אפשר לשנות לפני השליחה.${few ? ` יש רק ${pick.size} מתאימים, כדאי להוסיף ידנית.` : ''}</p>
     <fieldset class="field"><legend class="lbl">יוצרים מאושרים</legend>${list.map(({ m, why, done: d }) => `<label class="opt"><input type="checkbox" name="mk" value="${esc(m.id)}" ${pick.has(m.id) ? 'checked' : ''} ${d ? 'disabled' : ''}><span class="grow"><b>${esc(cleanText(m.name, 80) || 'יוצר')}</b> <span class="small muted">${esc(craftText(m.craft, m.craft_other))}${m.city ? ` · ${esc(cleanText(m.city, 60))}` : ''} · ${d ? 'כבר הועבר' : esc(why.slice(0, 5).join(', '))}</span></span></label>`).join('') || '<p class="empty">עוד אין יוצרים מאושרים.</p>'}</fieldset>
     <div id="rt-res" role="status" aria-live="polite"></div>
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">סגירה</button><button type="submit" class="btn block">העברה</button></div></form>`; };

@@ -3592,12 +3592,20 @@ function meMode() {
   const pend = AU.rows.some(r => r.status === 'pending'), rej = AU.rows.some(r => r.status === 'rejected');
   return pend ? 'pending' : rej ? 'rejected' : 'nonmaker';
 }
+async function loadAccountRequests() {
+  if (!SB || !AD.session) return;
+  const r = await dbq(s => s.from('my_requests').select('token,title,created_at').order('created_at', { ascending: false }).limit(50));
+  if (r.gone || r.error || !Array.isArray(r.data) || !r.data.length) return;
+  const have = new Set(MYREQ.map(x => x.token)); let add = 0;
+  r.data.forEach(x => { const t = String(x.token || '').toLowerCase(); if (UUID_RE.test(t) && !have.has(t)) { MYREQ.push({ token: t, title: cleanText(x.title, 120), createdAt: String(x.created_at || '') }); have.add(t); add++; } });
+  if (add) { MYREQ.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); MYREQ = MYREQ.slice(0, 50); saveMyReq(); meRedraw(); }
+}
 async function loadMe(force) {
   const uid = AD.session && AD.session.user ? String(AD.session.user.id || '') : '';
   if (!SB || !uid) return;
   if (!force && AU.uid === uid && (AU.st === 'loading' || AU.st === 'ready')) return;
   if (AU.uid !== uid) AU = freshAU();
-  AU.uid = uid; AU.st = 'loading'; meRedraw();
+  AU.uid = uid; AU.st = 'loading'; meRedraw(); loadAccountRequests();
   const r = await dbq(s => s.from('my_maker').select(MCOLS).order('created_at', { ascending: false }));
   if (!AD.session || String(AD.session.user.id) !== uid) return;
   if (r.gone) { AU.st = 'gone'; AU.probe = 'gone'; }
@@ -4117,7 +4125,7 @@ async function submitPost(f) {
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
   const v = readPost(f); if (v.bad) { showBad(f, v.bad); return; }
   err.hidden = true;
-  const sent = (demo, tracked, kept = true) => { S.stack = [{ s: 'home' }, { s: 'sent', demo, tr: !!tracked && kept, ns: !!tracked && !kept }]; replaceH(); render(true); };
+  const sent = (demo, tracked, kept = true) => { S.stack = [{ s: 'home' }, { s: 'sent', demo, tr: !!tracked && kept, ns: !!tracked && !kept, em: EMAIL_RE.test(String(v.contact || '').trim()) ? String(v.contact).trim() : '' }]; replaceH(); render(true); };
   if (!CFG_ON) { sent(true); return; }
   /* never say "sent" when nothing was saved: the library is still loading, or it could not load at all */
   if (!SB) { err.textContent = AD.failed ? 'אין חיבור לשרת כרגע, אז הבקשה לא נשמרה. אפשר לרענן את הדף ולנסות שוב.' : 'החיבור עדיין נטען. נסו שוב בעוד רגע.'; err.hidden = false; err.scrollIntoView({ block: 'nearest' }); return; }
@@ -4157,7 +4165,7 @@ const signinBody = () => SI.sent ? `<div><h2 class="sec-title">שלחנו קיש
     <p class="form-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
     <div class="field"><button type="button" class="btn ghost block" id="si-resend" data-act="siresend" ${Date.now() - SI.sent >= RESEND_MS && !SI.busy ? '' : 'disabled'}>לא הגיע?</button><span class="small muted" id="si-wait"></span></div>
     <button type="button" class="btn block" data-act="closesheet">סגירה</button>`
-  : `<form class="sheet-body" data-form="signin" novalidate><div><h2 class="sec-title">כניסה ליוצרים</h2><p style="margin-top:6px">נשלח קישור כניסה למייל. כתבו את המייל שבו נרשמתם כיוצרים.</p></div>
+  : `<form class="sheet-body" data-form="signin" novalidate><div><h2 class="sec-title">כניסה</h2><p style="margin-top:6px">נשלח קישור כניסה למייל. כתבו את המייל שבו נרשמתם, כיוצרים או כמי ששלח בקשה.</p></div>
     <div class="field"><label for="si-email">מייל</label><input class="input" id="si-email" name="email" type="email" dir="ltr" maxlength="120" autocomplete="email" inputmode="email" aria-required="true" value="${esc(SI.email)}" ${SI.err ? 'aria-invalid="true"' : ''}></div>
     <p class="form-err" id="si-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
     <button type="submit" class="btn block" ${SI.busy ? 'disabled' : ''}>${SI.busy ? 'שולחים...' : 'שליחת קישור כניסה'}</button></form>`;
@@ -4202,10 +4210,11 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
       ${CFG_ON ? '' : '<p class="note" role="note">האתר כרגע לא מחובר לשרת. אפשר למלא ולראות איך זה נראה, אבל שום דבר לא נשלח ולא נשמר.</p>'}
       ${postForm({ title, hint })}
     </div>`;
-SCREENS.sent = ({ demo, tr, ns }) => `${head('<span class="sr">הבקשה</span>')}
+SCREENS.sent = ({ demo, tr, ns, em }) => `${head('<span class="sr">הבקשה</span>')}
     <div class="stack g"><div class="thanks zig"><span class="stamp">${demo ? 'הדגמה' : 'התקבל'}</span><h2 class="display">${demo ? 'זו הייתה הדגמה.' : WAITING() ? 'נרשמתם. תודה.' : 'תודה, קיבלנו את הבקשה.'}</h2>
       <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : (WAITING() ? 'שמרנו את מה שכתבתם. כשנמצא יוצר שמתאים לבקשה, נחזור אליכם בפרטים שהשארתם. האתר עוד לא נפתח לקהל, ולכן אין בו עדיין מה לדפדף.' : 'נקרא אותה בעצמנו, נעביר ליוצרים שמתאימים ונחזור אליכם בפרטים שהשארתם, ברגע שנמצא יוצר שמתאים.')}</p>
-      ${demo || WAITING() ? '' : ns ? '<p class="small muted">לא הצלחנו לשמור את הבקשה במכשיר הזה, אז היא לא תופיע ברשימת הבקשות שלכם. אפשר לרשום לעצמכם את מה שכתבתם.</p>' : tr ? '<p class="small muted">שמרנו את הבקשה במכשיר הזה, ושם תראו מה קרה איתה. ניקוי נתוני הדפדפן יסתיר אותה.</p><button class="btn" data-act="toreqs">הבקשות שלי</button>' : '<button class="btn" data-act="tab" data-v="mine">הבקשות שלי</button>'}<button class="btn ${WAITING() ? '' : 'ghost'}" data-act="tab" data-v="home">חזרה לדף הבית</button></div></div>`;
+      ${demo || WAITING() ? '' : ns ? '<p class="small muted">לא הצלחנו לשמור את הבקשה במכשיר הזה, אז היא לא תופיע ברשימת הבקשות שלכם. אפשר לרשום לעצמכם את מה שכתבתם.</p>' : tr ? '<p class="small muted">שמרנו את הבקשה במכשיר הזה, ושם תראו מה קרה איתה. ניקוי נתוני הדפדפן יסתיר אותה.</p><button class="btn" data-act="toreqs">הבקשות שלי</button>' : '<button class="btn" data-act="tab" data-v="mine">הבקשות שלי</button>'}<button class="btn ${WAITING() ? '' : 'ghost'}" data-act="tab" data-v="home">חזרה לדף הבית</button></div>
+      ${!demo && em && CFG_ON && !AD.session ? `<section class="panel"><h2 class="sec-title">רוצים לשמור את הבקשות בחשבון?</h2><p class="small muted" style="margin:6px 0 10px">לא חובה. נשלח קישור כניסה אל <span dir="ltr">${esc(em)}</span>, ומכל מכשיר תראו שם את הבקשות שלכם.</p><button type="button" class="btn ghost" data-act="buyeracct" data-v="${esc(em)}">שליחת קישור כניסה</button></section>` : ''}</div>`;
 
 const meNote = t => `<p class="note" role="note">${t}</p>`;
 const joinCard = () => canJoin() ? '<button class="entry" data-act="join"><span class="t">יוצרים? אפשר להצטרף</span><span class="small muted">לספר לנו על העבודות שלכם</span></button>' : '';
@@ -4612,7 +4621,8 @@ Object.assign(ACT, {
   shopmore: () => { loadShop(S.scraft, true); render(); },
   shopretry: () => { SHOP.gone = false; const sh = shopOf(S.scraft); sh.st = 'idle'; loadShop(S.scraft); render(); },
   scraft: v => { S.scraft = v; if (shopOf(v).st === 'idle') loadShop(v); render(); const b = document.querySelector(`.filters [data-v="${v}"]`); if (b) b.focus({ preventScroll: true }); },
-  signin: () => { SI.sent = 0; SI.err = ''; SI.busy = false; clearInterval(SI.t); SI.t = 0; openSheet(signinSheet(), 'כניסה ליוצרים'); const i = document.getElementById('si-email'); if (i) i.focus({ preventScroll: true }); },
+  signin: () => { SI.sent = 0; SI.err = ''; SI.busy = false; clearInterval(SI.t); SI.t = 0; openSheet(signinSheet(), 'כניסה'); const i = document.getElementById('si-email'); if (i) i.focus({ preventScroll: true }); },
+  buyeracct: v => { SI.sent = 0; SI.err = ''; SI.busy = false; SI.email = v; clearInterval(SI.t); SI.t = 0; openSheet(signinSheet(), 'כניסה'); sendLink(v); },
   siresend: () => { if (Date.now() - SI.sent >= RESEND_MS) sendLink(SI.email); },
   signout: async () => { try { if (SB) await SB.auth.signOut(); } catch (e) { /* the local session goes either way */ } AD.session = null; AD.loaded = false; resetMe(); render(); toast('התנתקתם'); },
   meretry: () => loadMe(true),

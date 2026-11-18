@@ -1848,3 +1848,18 @@ end
 $$;
 revoke all on function public.notify_new_listing() from public, anon, authenticated;
 create or replace trigger listings_notify after insert on public.listings for each row execute function public.notify_new_listing();
+
+-- =====================================================================
+-- 14. A signed-in person sees the requests written with their own email, on any device.
+--     Read-only view, filtered by the email in the login token (no one else's rows, nothing for visitors).
+-- =====================================================================
+create or replace view public.my_requests
+  with (security_invoker = false)
+as
+  select id, token, title, crafts, status, created_at
+  from public.requests
+  where contact is not null
+    and lower(btrim(contact)) = lower(btrim(coalesce(auth.jwt() ->> 'email', '')));
+
+revoke all on public.my_requests from public, anon, authenticated;
+grant select on public.my_requests to authenticated;

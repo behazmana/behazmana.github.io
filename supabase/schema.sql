@@ -1801,3 +1801,50 @@ begin
   return new;
 end
 $$;
+
+-- =====================================================================
+-- 13. A phone notification (ntfy.sh, free, no account) when a request arrives or a listing is published.
+-- The message holds NO personal details: only that something new arrived, and a link to the admin screen.
+-- The topic name below is the secret: whoever knows it can read the notifications. Keep the real one out of the repository.
+-- =====================================================================
+create extension if not exists pg_net with schema extensions;
+
+create or replace function public.notify_owner(p_title text, p_message text, p_click text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform net.http_post(
+    url     := 'https://ntfy.sh/',
+    headers := '{"Content-Type": "application/json"}'::jsonb,
+    body    := jsonb_build_object('topic', '__TOPIC__', 'title', p_title, 'message', p_message, 'click', p_click, 'priority', 4)
+  );
+exception when others then
+  null;   -- a notification problem must never stop a request or a listing from being saved
+end
+$$;
+revoke all on function public.notify_owner(text, text, text) from public, anon, authenticated;
+
+create or replace function public.notify_new_request() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform public.notify_owner('בקשה חדשה בבהזמנה', 'הגיעה בקשה חדשה. פתחו את מסך הניהול כדי לקרוא אותה.', 'https://behazmana.github.io/#admin');
+  return new;
+end
+$$;
+revoke all on function public.notify_new_request() from public, anon, authenticated;
+create or replace trigger requests_notify after insert on public.requests for each row execute function public.notify_new_request();
+
+create or replace function public.notify_new_listing() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.status = 'approved' then
+    perform public.notify_owner('יצירה חדשה באתר', 'יוצר פרסם יצירה חדשה. אפשר לראות אותה ולהסיר אותה במסך הניהול.', 'https://behazmana.github.io/#admin');
+  end if;
+  return new;
+end
+$$;
+revoke all on function public.notify_new_listing() from public, anon, authenticated;
+create or replace trigger listings_notify after insert on public.listings for each row execute function public.notify_new_listing();

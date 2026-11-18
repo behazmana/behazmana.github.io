@@ -1819,7 +1819,7 @@ begin
   perform net.http_post(
     url     := 'https://ntfy.sh/',
     headers := '{"Content-Type": "application/json"}'::jsonb,
-    body    := jsonb_build_object('topic', '__TOPIC__', 'title', p_title, 'message', p_message, 'click', p_click, 'priority', 4, 'email', 'behazmana1@gmail.com')
+    body    := jsonb_build_object('topic', '__TOPIC__', 'title', p_title, 'message', p_message, 'click', p_click, 'priority', 4)
   );
 exception when others then
   null;   -- a notification problem must never stop a request or a listing from being saved

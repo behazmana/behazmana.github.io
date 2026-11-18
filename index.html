@@ -1064,7 +1064,7 @@ const termsSheet = () => `<div class="sheet-body">
     <li>את הטלפון והמייל שלכם נציג באתר, עם כפתורי וואטסאפ, שיחה ומייל, אחרי שאישרנו אתכם. אפשר לבקש בכל זמן להסתיר או להסיר אותם. מי שרואה אותם באתר יכול להעתיק אותם.</li>
     <li>יוצר שאושר נכנס לאזור שלו באתר בקישור שנשלח למייל. הוא יכול לראות בקשות שהעברנו אליו, להשיב להן, ולהוסיף יצירות.</li>
     <li>מי ששולח בקשה מסכים שנעביר אותה ואת פרטי הקשר שלו ליוצרים שמתאימים. יוצר שקיבל בקשה רשאי לפנות למי שכתב אותה. אפשר לערוך ולסגור בקשה בכל זמן.</li>
-    <li>יצירה: חייבת להיות עבודה שלכם, עם תיאור ומחיר בשקלים כמו שהם באמת, בלי תוכן לא חוקי או מסוכן. אנחנו יכולים לסרב ליצירה, להסתיר אותה או להסיר אותה, וכל יצירה שנערכה חוזרת לאישור. הזכויות ביצירה ובתמונות נשארות אצלכם.</li>
+    <li>יצירה: חייבת להיות עבודה שלכם, עם תיאור ומחיר בשקלים כמו שהם באמת, בלי תוכן לא חוקי או מסוכן. אנחנו יכולים להסתיר או להסיר יצירה בכל זמן, גם אחרי שהיא פורסמה. הזכויות ביצירה ובתמונות נשארות אצלכם.</li>
     <li>דרך האתר לא קונים: המחיר והמסירה של יצירה מסכמים ישירות היוצר ומי שמעוניין בה.</li>
     <li>אנחנו יכולים לאשר פרופיל, לדחות אותו או להסיר אותו.</li>
     <li>אסור להעלות תוכן שאינו שלכם, או תוכן פוגעני.</li>
@@ -1397,7 +1397,7 @@ function myListingsHTML() {
   if (my.st === 'idle' || my.st === 'loading') return '<p class="muted" role="status">טוענים את היצירות</p>';
   if (my.st === 'gone') return '<div class="s-empty"><p>היצירות יעלו בקרוב.</p></div>';
   if (my.st === 'failed') return '<div class="s-empty"><p>היצירות לא נטענו.</p><button type="button" class="btn" data-act="mlretry">לנסות שוב</button></div>';
-  return `${add}${my.list.length ? `<div class="rq-list">${my.list.map(myCard).join('')}</div>` : '<div class="s-empty"><p class="say">עוד לא הוספתם יצירות.</p><p class="small muted">כל יצירה עוברת אישור אצלנו לפני שהיא מופיעה באתר.</p></div>'}${my.err ? '<p class="note" role="alert">לא הצלחנו לטעון עוד. נסו שוב.</p>' : ''}${my.more ? `<button type="button" class="btn ghost block" data-act="mlmore" ${my.busy ? 'disabled' : ''}>עוד</button>` : ''}`;
+  return `${add}${my.list.length ? `<div class="rq-list">${my.list.map(myCard).join('')}</div>` : '<div class="s-empty"><p class="say">עוד לא הוספתם יצירות.</p><p class="small muted">יצירה שתוסיפו תופיע באתר מיד אחרי השליחה.</p></div>'}${my.err ? '<p class="note" role="alert">לא הצלחנו לטעון עוד. נסו שוב.</p>' : ''}${my.more ? `<button type="button" class="btn ghost block" data-act="mlmore" ${my.busy ? 'disabled' : ''}>עוד</button>` : ''}`;
 }
 /* the add / edit form. Photos use the same helpers as the join form (preparePhoto, photosHTML, addPhotos): up to 10, as they are, up to 10 MB each. */
 const LP = [];                                    // photos of the listing form: { blob, type, name, url, path } (path = already in the bucket)
@@ -1418,7 +1418,7 @@ const lForm = ({ id }) => {
   const v = cur0 || { title: '', desc: '', price: null };
   return `${head(ed ? 'עריכת יצירה' : 'יצירה חדשה')}
   <div class="stack tight g">
-    ${ed ? '<p class="note" role="note">אחרי שמירה, היצירה תחזור לאישור אצלנו ולא תופיע באתר עד שנאשר אותה שוב.</p>' : '<p class="muted">כל יצירה עוברת אישור אצלנו לפני שהיא מופיעה באתר.</p>'}
+    ${ed ? '<p class="note" role="note">השינויים יופיעו באתר מיד אחרי השמירה.</p>' : '<p class="muted">יצירה שתוסיפו תופיע באתר מיד אחרי השליחה.</p>'}
     <form class="f" data-form="listing" data-v="${esc(id || '')}" novalidate>
       <div class="field"><label for="l-title">שם היצירה</label><input class="input" id="l-title" name="title" maxlength="80" autocomplete="off" aria-required="true" value="${esc(v.title)}"><span class="hint">בין 2 ל־80 תווים.</span></div>
       <div class="field"><label for="l-desc">תיאור <span class="m">(לא חובה)</span></label><textarea class="input" id="l-desc" name="description" rows="5" maxlength="1500" aria-describedby="l-count">${esc(v.desc)}</textarea><span class="hint" id="l-count">${Array.from(v.desc).length} מתוך 1500</span></div>
@@ -1428,7 +1428,7 @@ const lForm = ({ id }) => {
         <input type="file" id="l-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של היצירה">
         <span class="hint">מתמונה אחת עד ${MAX_LP}. התמונות עולות בגודל המקורי, בלי פרטי המיקום והמצלמה שבקובץ. עד 10MB לתמונה (JPG, PNG או WebP).</span><span class="hint" id="l-pmsg" role="status" aria-live="polite">${LP.length ? photoCount(LP, MAX_LP) : ''}</span></div>
       <p class="form-err" id="l-err" role="alert" hidden></p>
-      <button class="btn block" type="submit">${ed ? 'שמירת השינויים' : 'שליחה לאישור'}</button>
+      <button class="btn block" type="submit">${ed ? 'שמירת השינויים' : 'פרסום היצירה'}</button>
     </form></div>`;
 };
 async function submitListing(f) {
@@ -1490,7 +1490,7 @@ async function saveListing(f, vals) {
     console.warn('listing failed', errCode(e), e); LF.busy = false;
     const msg = e && (e.storage || e.plain) ? e.message : friendly(e);
     showErr(err, id ? 'השינויים לא נשמרו. מה שמילאתם עדיין כאן.' : 'היצירה לא נשלחה. מה שמילאתם עדיין כאן.', stage + msg);
-    btn.disabled = false; btn.textContent = id ? 'שמירת השינויים' : 'שליחה לאישור'; return;
+    btn.disabled = false; btn.textContent = id ? 'שמירת השינויים' : 'פרסום היצירה'; return;
   }
   LF.saved = true; LF.busy = false; clearListingForm(false); AU.my.st = 'idle'; AU.my.list = []; ME.tab = 'listings'; loadMyListings();
   if (id) { S.stack = [{ s: 'home' }, { s: 'mine' }]; replaceH(); render(true); toast('השינויים נשמרו. היצירה תופיע שוב באתר אחרי שנאשר אותה שוב.'); }
@@ -1870,7 +1870,7 @@ Object.assign(SCREENS, {
   myreq: p => myReqScreen(p),
   editreq: p => editScreen(p),
   lform: p => lForm(p),
-  lthanks: () => `${head('<span class="sr">היצירה</span>')}<div class="stack g"><div class="thanks zig"><span class="stamp">התקבל</span><h2 class="display">תודה.</h2><p>היצירה נשלחה לאישור. כשנאשר אותה היא תופיע באתר.</p><button class="btn" data-act="mtab" data-v="listings">ליצירות שלי</button><button class="btn ghost" data-act="mladd">להוסיף עוד יצירה</button></div></div>`
+  lthanks: () => `${head('<span class="sr">היצירה</span>')}<div class="stack g"><div class="thanks zig"><span class="stamp">התקבל</span><h2 class="display">תודה.</h2><p>היצירה פורסמה ומוצגת עכשיו באתר.</p><button class="btn" data-act="mtab" data-v="listings">ליצירות שלי</button><button class="btn ghost" data-act="mladd">להוסיף עוד יצירה</button></div></div>`
 });
 SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
     <div class="stack tight g">

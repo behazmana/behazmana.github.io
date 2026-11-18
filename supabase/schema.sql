@@ -1751,3 +1751,53 @@ begin
 end
 $$;
 create trigger makers_default_crafts_tr before insert on public.makers for each row execute function public.makers_default_crafts();
+
+-- =====================================================================
+-- 12. A listing of an approved maker is shown at once (no approval step). Edits keep the status;
+--     a listing the owner hid or rejected stays that way. Old pending listings stay pending until the owner decides.
+-- =====================================================================
+create or replace function public.listings_guard_insert()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  if current_user not in ('postgres', 'supabase_admin', 'service_role') and not public.is_owner() then
+    if new.status is distinct from 'pending'
+       or new.availability is distinct from 'available'
+       or new.admin_note is not null
+       or new.maker_id is distinct from public.my_maker_id() then
+      raise exception 'not allowed' using errcode = '42501';
+    end if;
+    new.status := 'approved';   -- an approved maker's new listing is shown at once; the owner can still hide it
+  end if;
+  return new;
+end
+$$;
+
+create or replace function public.listings_guard()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  if current_user not in ('postgres', 'supabase_admin', 'service_role') and not public.is_owner() then
+    if new.id is distinct from old.id
+       or new.created_at is distinct from old.created_at
+       or new.maker_id is distinct from old.maker_id
+       or new.status is distinct from old.status
+       or new.admin_note is distinct from old.admin_note then
+      raise exception 'not allowed' using errcode = '42501';
+    end if;
+    if new.title is distinct from old.title
+       or new.description is distinct from old.description
+       or new.price_ils is distinct from old.price_ils
+       or new.photos is distinct from old.photos then
+      null;   -- content changed: the status stays as it is (a listing the owner hid stays hidden, a shown one stays shown)
+    end if;
+  end if;
+  return new;
+end
+$$;

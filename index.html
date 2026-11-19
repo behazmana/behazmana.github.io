@@ -2959,7 +2959,7 @@ const reviewKitSheet = m => { const url = reviewLink(m.id), msg = `היי, אש�
 const reviewSheet = m => `<form class="sheet-body" data-form="review" data-v="${esc(m.id)}" novalidate>
     <div><h2 class="sec-title">ביקורת על ${esc(m.name)}</h2><p class="small muted" style="margin-top:4px">הביקורת תופיע בדף של היוצר מיד.</p></div>
     <div class="field"><label for="rv-name">השם שיופיע</label><input class="input" id="rv-name" name="name" maxlength="60" autocomplete="given-name" aria-required="true"></div>
-    <fieldset class="field"><legend class="lbl">דירוג (5 הוא הכי טוב)</legend><div class="row wrap">${[1, 2, 3, 4, 5].map(i => `<label class="opt"><input type="radio" name="stars" value="${i}"><span>${i}</span></label>`).join('')}</div></fieldset>
+    <fieldset class="field"><legend class="lbl">דירוג (5 הוא הכי טוב)</legend><div style="display:flex;gap:6px 16px;flex-wrap:wrap">${[1, 2, 3, 4, 5].map(i => `<label class="opt" style="flex:none;width:auto;padding:6px 4px"><input type="radio" name="stars" value="${i}"><span>${i}</span></label>`).join('')}</div></fieldset>
     <div class="field"><label for="rv-body">מה תרצו לספר <span class="m">(לא חובה)</span></label><textarea class="input" id="rv-body" name="body" rows="4" maxlength="800" aria-required="true"></textarea><span class="hint">מספיק לבחור דירוג. אם בא לכם, ספרו מה הזמנתם ואיך היה לעבוד איתם. עד 800 תווים.</span></div>
     <p class="form-err" id="rv-err" role="alert" hidden></p>
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="submit" class="btn block">שליחה</button></div></form>`;

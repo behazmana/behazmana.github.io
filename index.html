@@ -3250,7 +3250,7 @@ async function cleanPhoto(file) {
   const img = await decodeImg(file), W = img.naturalWidth, H = img.naturalHeight;
   if (!W || !H || W * H > 150e6) throw new Error('size');
   let blob = null, shrunk = false;
-  for (const [side, q] of [[1600, .82], [1600, .74], [1300, .70]]) {   /* 1600px on the long side is sharper than any phone screen, and keeps a photo near a quarter of a megabyte */
+  for (const [side, q] of [[2400, .86], [2400, .78], [2000, .75]]) {   /* 2400px on the long side is sharper than any phone screen, and keeps a photo near half a megabyte */
     const k = side ? Math.min(1, side / Math.max(W, H)) : 1, w = Math.max(1, Math.round(W * k)), h = Math.max(1, Math.round(H * k));
     const c = document.createElement('canvas'); c.width = w; c.height = h;
     let b = null;

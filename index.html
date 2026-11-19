@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ierrrodoriperjrmfbun.supabase.co; connect-src 'self' https://ierrrodoriperjrmfbun.supabase.co wss://ierrrodoriperjrmfbun.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ierrrodoriperjrmfbun.supabase.co; connect-src 'self' https://fonts.googleapis.com https://ierrrodoriperjrmfbun.supabase.co wss://ierrrodoriperjrmfbun.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>בהזמנה · מה תרצו שיכינו לכם?</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -255,7 +255,7 @@ select.input { appearance: auto; }
 .pick input:checked + span { background: var(--ink); color: var(--paper); }
 .pick input:focus-visible + span { outline: 3px solid var(--stamp); outline-offset: 2px; }
 .opt { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--paper); margin-bottom: 4px; }
-.opt input { accent-color: var(--stamp); width: 20px; height: 20px; flex: none; }
+.opt input { accent-color: var(--stamp); width: 24px; height: 24px; flex: none; }
 .opt .grow { flex: 1; }
 .field > label.opt { font-weight: 400; }
 .photos { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -2839,7 +2839,7 @@ const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPAB
 
 const CRAFTS = { wood: 'עץ', leather: 'עור', ceramic: 'קרמיקה', jewelry: 'תכשיטים', metal: 'מתכת', glass: 'זכוכית', textile: 'בדים', paper: 'נייר', art: 'ציור' };
 const UI = {
-  back: '<path d="M9 6l6 6-6 6"/>', gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  back: '<path d="M9 6l6 6-6 6"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>',
   home: '<path d="M4 11l8-7 8 7v9H4z"/>', plus: '<path d="M12 5v14M5 12h14"/>',
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
@@ -3622,7 +3622,7 @@ const cleanBlock = (s, n = 2000) => Array.from(String(s == null ? '' : s).replac
 const NF = new Intl.NumberFormat('he-IL');
 const priceText = p => p === null ? 'מחיר בפנייה' : p === 0 ? 'חינם' : '₪' + NF.format(p);
 const priceHTML = p => p === null || p === 0 ? esc(priceText(p)) : `<bdi dir="ltr">${esc(priceText(p))}</bdi>`;
-const intOrNull = v => v === null || v === undefined || v === '' ? null : Number.isInteger(+v) && +v >= 0 && +v <= 1000000 ? +v : null;
+const intOrNull = v => v === null || v === undefined || v === '' ? null : Number.isInteger(+v) && +v >= 0 && +v <= 999999999 ? +v : null;
 const isGone = e => { if (!e) return false; const c = String(e.code || ''), st = String(e.status || e.statusCode || ''), m = String(e.message || '');
   return /^(42P01|PGRST205|PGRST202|42883)$/.test(c) || st === '404' || (/could not find the (table|function)|schema cache|relation .* does not exist|function .* does not exist/i.test(m) && !/column/i.test(m)); };
 const isOff = e => !!e && (!navigator.onLine || /failed to fetch|networkerror|network request failed|load failed/i.test(String(e.message || '')));
@@ -3652,10 +3652,10 @@ function friendly(e, kind = '') {
   if (c === '23514') {
     if (/listings_title_ck/.test(m)) return 'הכותרת צריכה להיות בין 2 ל־80 תווים.';
     if (/listings_desc_ck/.test(m)) return 'התיאור ארוך מדי (עד 1500 תווים).';
-    if (/listings_price_ck/.test(m)) return 'המחיר צריך להיות בין 0 ל־1,000,000.';
+    if (/listings_price_ck/.test(m)) return 'כתבו את המחיר כמספר שלם.';
     if (/listings_photos_ck/.test(m)) return 'צריך בין תמונה אחת ל־10 תמונות.';
     if (/request_routes_note_ck/.test(m)) return 'ההערה ארוכה מדי (עד 500 תווים).';
-    if (/request_routes_price_ck/.test(m)) return 'המחיר צריך להיות בין 0 ל־1,000,000.';
+    if (/request_routes_price_ck/.test(m)) return 'כתבו את המחיר כמספר שלם.';
     if (/requests_token_ck/.test(m)) return 'הפעולה לא הושלמה. רעננו את הדף ונסו שוב.';
   }
   if (c === '23505') {
@@ -3893,14 +3893,14 @@ async function routeAct(id, payload, done) {
 const offerSheet = it => `<form class="sheet-body" data-form="offer" data-v="${esc(it.route)}" novalidate>
     <div><h2 class="sec-title">${it.rs === 'offered' ? 'עריכת ההצעה' : 'להציע'}</h2><p class="small muted" style="margin-top:4px">${esc(it.title)}</p></div>
     <div class="field"><label for="of-note">הערה למי שביקש</label><textarea class="input" id="of-note" name="note" rows="4" maxlength="500" aria-describedby="of-h" aria-required="true">${esc(it.offerNote)}</textarea><span class="hint" id="of-h">למשל: מה תכינו, מאיזה חומר וכמה זמן זה ייקח. עד 500 תווים.</span></div>
-    <div class="field"><label for="of-price">מחיר בשקלים <span class="m">(לא חובה)</span></label><input class="input" id="of-price" name="price" inputmode="numeric" dir="ltr" maxlength="9" autocomplete="off" value="${it.offerPrice === null ? '' : it.offerPrice}"><span class="hint">מספר שלם, עד 1,000,000. בלי מחיר, יופיע ״מחיר בפנייה״.</span></div>
+    <div class="field"><label for="of-price">מחיר בשקלים <span class="m">(לא חובה)</span></label><input class="input" id="of-price" name="price" inputmode="numeric" dir="ltr" maxlength="9" autocomplete="off" value="${it.offerPrice === null ? '' : it.offerPrice}"><span class="hint">מספר שלם. בלי מחיר, יופיע ״מחיר בפנייה״.</span></div>
     <p class="form-err" id="of-err" role="alert" hidden></p>
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="submit" class="btn block">שליחת ההצעה</button></div></form>`;
 async function submitOffer(f, id) {
   const it = AU.inbox.list.find(x => x.route === id), err = f.querySelector('#of-err'); if (!it) return;
   const note = f.querySelector('#of-note').value.trim(), pr = f.querySelector('#of-price').value.replace(/[,\s]/g, '');
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
-  const bad = !note ? ['of-note', 'כתבו הערה קצרה להצעה.'] : Array.from(note).length > 500 ? ['of-note', 'ההערה ארוכה מדי (עד 500 תווים).'] : pr !== '' && (!/^\d{1,7}$/.test(pr) || +pr > 1000000) ? ['of-price', 'המחיר צריך להיות בין 0 ל־1,000,000.'] : null;
+  const bad = !note ? ['of-note', 'כתבו הערה קצרה להצעה.'] : Array.from(note).length > 500 ? ['of-note', 'ההערה ארוכה מדי (עד 500 תווים).'] : pr !== '' && (!/^\d{1,9}$/.test(pr)) ? ['of-price', 'כתבו את המחיר כמספר שלם.'] : null;
   if (bad) { const el = f.querySelector('#' + bad[0]); el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; el.focus(); return; }
   const btn = f.querySelector('button[type="submit"]'); btn.disabled = true;
   const r = await patchRoute(it, { status: 'offered', offer_note: note, offer_price_ils: pr === '' ? null : +pr });
@@ -3937,7 +3937,7 @@ function myListingsHTML() {
 /* the add / edit form. Photos use the same helpers as the join form (preparePhoto, photosHTML, addPhotos): up to 10, as they are, up to 10 MB each. */
 const LP = [];                                    // photos of the listing form: { blob, type, name, url, path } (path = already in the bucket)
 const LF = { id: '', batch: '', n: 0, active: false, saved: false, pending: null, busy: false };
-const MAX_LP = 10;
+const MAX_LP = 7;
 function clearListingForm(dropUploaded) {
   const orphans = dropUploaded && !LF.saved ? LP.filter(p => p.path && p.fresh).map(p => p.path) : [];
   LP.forEach(p => { if (!p.existing) URL.revokeObjectURL(p.url); }); LP.length = 0;
@@ -3955,9 +3955,9 @@ const lForm = ({ id }) => {
   <div class="stack tight g">
     ${ed ? '<p class="note" role="note">השינויים יופיעו באתר מיד אחרי השמירה.</p>' : '<p class="muted">יצירה שתוסיפו תופיע באתר מיד אחרי השליחה.</p>'}
     <form class="f" data-form="listing" data-v="${esc(id || '')}" novalidate>
-      <div class="field"><label for="l-title">שם היצירה</label><input class="input" id="l-title" name="title" maxlength="80" autocomplete="off" aria-required="true" value="${esc(v.title)}"><span class="hint">בין 2 ל־80 תווים.</span></div>
+      <div class="field"><label for="l-title">שם היצירה</label><input class="input" id="l-title" name="title" maxlength="80" autocomplete="off" aria-required="true" value="${esc(v.title)}"><span class="hint">שם קצר וברור.</span></div>
       <div class="field"><label for="l-desc">תיאור <span class="m">(לא חובה)</span></label><textarea class="input" id="l-desc" name="description" rows="5" maxlength="1500" aria-describedby="l-count">${esc(v.desc)}</textarea><span class="hint" id="l-count">${Array.from(v.desc).length} מתוך 1500</span></div>
-      <div class="field"><label for="l-price">מחיר בשקלים</label><input class="input" id="l-price" name="price" inputmode="numeric" dir="ltr" maxlength="9" autocomplete="off" value="${v.price === null || v.price === undefined ? '' : v.price}" ${ed && v.price === null ? 'disabled' : ''} aria-describedby="l-price-h"><span class="hint" id="l-price-h">מספר שלם, עד 1,000,000. המחיר מוצג באתר כמו שכתבתם.</span>
+      <div class="field"><label for="l-price">מחיר בשקלים</label><input class="input" id="l-price" name="price" inputmode="numeric" dir="ltr" maxlength="9" autocomplete="off" value="${v.price === null || v.price === undefined ? '' : v.price}" ${ed && v.price === null ? 'disabled' : ''} aria-describedby="l-price-h"><span class="hint" id="l-price-h">מספר שלם. המחיר מוצג באתר כמו שכתבתם.</span>
         <label class="opt"><input type="checkbox" id="l-onreq" name="onreq" ${ed && v.price === null ? 'checked' : ''}><span class="grow">מחיר בפנייה</span></label></div>
       <div class="field"><span class="lbl" id="l-ph-l">תמונות ${STAR}<span class="sr">, חובה</span></span><div class="photos" id="l-photos" role="group" aria-labelledby="l-ph-l">${lPhotosHTML()}</div>
         <input type="file" id="l-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של היצירה">
@@ -3971,8 +3971,8 @@ async function submitListing(f) {
   const title = f.querySelector('#l-title').value.trim(), desc = f.querySelector('#l-desc').value.replace(/\r\n?/g, '\n').trim(), onreq = f.querySelector('#l-onreq').checked, pr = f.querySelector('#l-price').value.replace(/[,\s]/g, '');
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
   const bad = Array.from(title).length < 2 ? ['l-title', 'הכותרת צריכה להיות בין 2 ל־80 תווים.'] : Array.from(desc).length > 1500 ? ['l-desc', 'התיאור ארוך מדי (עד 1500 תווים).']
-    : !onreq && pr === '' ? ['l-price', 'כתבו מחיר בשקלים, או סמנו ״מחיר בפנייה״.'] : !onreq && (!/^\d{1,7}$/.test(pr) || +pr > 1000000) ? ['l-price', 'המחיר צריך להיות בין 0 ל־1,000,000.']
-    : !LP.length ? ['l-pick', 'הוסיפו לפחות תמונה אחת.'] : LP.length > MAX_LP ? ['l-pick', 'אפשר עד 10 תמונות.'] : null;
+    : !onreq && pr === '' ? ['l-price', 'כתבו מחיר בשקלים, או סמנו ״מחיר בפנייה״.'] : !onreq && !/^\d{1,9}$/.test(pr) ? ['l-price', 'כתבו את המחיר כמספר שלם.']
+    : !LP.length ? ['l-pick', 'הוסיפו לפחות תמונה אחת.'] : LP.length > MAX_LP ? ['l-pick', `אפשר עד ${MAX_LP} תמונות.`] : null;
   if (bad) { const el = f.querySelector('#' + bad[0]) || f.querySelector('.add-photo'); if (el && el.classList.contains('input')) el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; if (el) el.focus(); return; }
   err.hidden = true;
   const vals = { title, desc, price: onreq ? null : +pr };
@@ -4252,7 +4252,7 @@ const SCREENS = {
   radmin: () => { let body;
     if (AD.failed) body = '<p class="form-err" role="alert">אין חיבור לשרת כרגע. נסו לרענן את הדף.</p>';
     else if (!SB) body = '<p class="muted" role="status">מתחברים...</p>';
-    else if (!AD.session) body = `<section class="panel"><h2 class="sec-title">כניסה לבעלים</h2><p>${CONFIG.CODE_LOGIN ? 'נשלח קוד כניסה חד־פעמי בן 8 ספרות' : 'נשלח קישור כניסה חד־פעמי'} אל <span dir="ltr">${esc((CONFIG.ADMIN_EMAIL || '').trim())}</span>.${CONFIG.CODE_LOGIN ? '' : ' פותחים אותו במכשיר הזה.'}</p>
+    else if (!AD.session) body = `<section class="panel"><h2 class="sec-title">כניסה לבעלים</h2><p>${CONFIG.CODE_LOGIN ? 'נשלח קוד כניסה חד־פעמי בן 8 ספרות' : 'נשלח קישור כניסה חד־פעמי'} אל המייל של הבעלים.${CONFIG.CODE_LOGIN ? '' : ' פותחים אותו במכשיר הזה.'}</p>
         ${AD.msg ? `<p class="${AD.msgErr ? 'form-err' : 'form-ok'}" role="status">${esc(AD.msg)}</p>` : ''}
         ${AD.codeSent && CONFIG.CODE_LOGIN ? `<form class="f" data-form="radcode" novalidate><div class="field"><label for="ad-code">הקוד מהמייל</label><input class="input" id="ad-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="8" dir="ltr" aria-required="true"></div><button type="submit" class="btn block" ${AD.busy ? 'disabled' : ''}>${AD.busy ? 'בודקים...' : 'כניסה'}</button></form><button class="link" type="button" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>לשלוח קוד חדש</button>` : `<button class="btn" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>${CONFIG.CODE_LOGIN ? 'שליחת קוד כניסה' : 'שליחת קישור כניסה'}</button>`}</section>`;
     else if (!isOwner()) body = '<section class="panel"><h2 class="sec-title">המסך הזה לבעלים בלבד</h2><p>נכנסתם עם מייל שאינו של הבעלים.</p><button class="btn ghost" data-act="radlogout">יציאה</button></section>';

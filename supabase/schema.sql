@@ -2073,3 +2073,22 @@ create or replace view public.public_reviews with (security_invoker = false) as
   from public.reviews r
   where r.status = 'approved'
     and exists (select 1 from public.makers m where m.id = r.maker_id and public.can_see_maker(m.id, m.is_test));
+
+-- =====================================================================
+-- 22. Fix: a maker's new listing is shown at once. The insert trigger sets the status to 'approved', and the policy
+--     is checked AFTER the trigger, so it must allow 'approved' (the trigger already rejects any other status coming from the client).
+--     Also: no upper limit on a price worth mentioning (up to 999,999,999).
+-- =====================================================================
+drop policy if exists "maker adds own pending listing" on public.listings;
+create policy "maker adds own pending listing" on public.listings
+  for insert to authenticated
+  with check (
+    maker_id = public.my_maker_id()
+    and status in ('pending', 'approved')
+    and availability = 'available'
+    and admin_note is null
+  );
+alter table public.listings drop constraint if exists listings_price_ck;
+alter table public.listings add constraint listings_price_ck check (price_ils is null or price_ils between 0 and 999999999);
+alter table public.request_routes drop constraint if exists request_routes_price_ck;
+alter table public.request_routes add constraint request_routes_price_ck check (offer_price_ils is null or offer_price_ils between 0 and 999999999);

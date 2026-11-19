@@ -3230,11 +3230,11 @@ const rImg = (p, alt = '', bucket = BUCKET) => !okPath(p) ? '<div class="art"></
 const isOwner = () => !!(AD.session && AD.session.user && (CONFIG.ADMIN_EMAIL || '').trim() && String(AD.session.user.email || '').toLowerCase() === CONFIG.ADMIN_EMAIL.trim().toLowerCase());
 /* the owner's screen is at #admin; the magic link comes back with ?admin=1 and the login tokens in the hash */
 const ownerIn = () => { if (cur().s === 'wait' && isOwner()) { S.stack = [{ s: 'home' }]; BH = 1; replaceH(); render(true); } };   /* the owner, once signed in, gets the whole site instead of the waiting page */
-const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin', 'mine', 'myreqs', 'myreq', 'editreq', 'rmaker', 'makers', 'lform', 'lthanks'];   /* the sign-up pages, the person's own account and the makers who joined; not the shop or search */
+const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin', 'mine', 'myreqs', 'myreq', 'editreq', 'rmaker', 'makers', 'match', 'lform', 'lthanks'];   /* the sign-up pages, the person's own account and the makers who joined; not the shop or search */
 const WAITING = () => !!CONFIG.WAITLIST && !isOwner();
 const adminUrl = () => /(^#admin)|[?&]admin=1/.test(location.hash + location.search) || (/access_token=/.test(location.hash) && !meUrl());
 const redrawAdmin = () => { if (cur().s === 'radmin') render(); };
-const REAL_SCREENS = new Set(['home', 'makers', 'rmaker', 'wait']);
+const REAL_SCREENS = new Set(['home', 'makers', 'rmaker', 'wait', 'match']);
 function realChanged() { const s = cur().s; if (REAL_SCREENS.has(s)) render(); else if (s === 'search') runSearch(); }
 
 /* the login link brings tokens in the address bar: when the library cannot read them, they must not stay there */
@@ -4293,7 +4293,7 @@ function postForm({ edit = false, token = '', title = '', hint, vals = null } = 
           <div class="tiles">${Object.entries(CRAFTS).map(([k, v]) => tile(k, v)).join('')}
             <label class="tile"><input type="checkbox" id="pc-other" name="otherOn" value="1" ${otherOn ? 'checked' : ''}><span class="face">${svg(UI.c_other)}<span class="tl">אחר</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label></div>
           <input class="input" id="p-other" name="other" maxlength="60" aria-label="איזה תחום אחר?" placeholder="איזה? למשל זכוכית או טקסטיל" value="${esc(other)}" ${otherOn ? '' : 'hidden'}>
-          <span class="hint">עגילים מעץ? סמנו גם ״תכשיטים״ וגם ״עץ״.</span></fieldset>
+          <span class="hint">עגילים מעץ? סמנו גם ״תכשיטים״ וגם ״עץ״.</span>${edit || !REAL.list.length ? '' : '<button type="button" class="link" data-act="matchopen">לראות את היוצרים שמתאימים</button>'}</fieldset>
         <div class="field look"><h2 class="sec-title" id="p-look">איך היצירה אמורה להיראות?</h2>
           <p class="small muted look-sub">ככל שתפרטו יותר, כך נמצא לכם את היוצר שמתאים בדיוק לבקשה שלכם.</p>
           <textarea class="input" id="p-text" name="text" rows="5" maxlength="1900" aria-labelledby="p-look" placeholder="חומר, צבע, מידות, סגנון, מה לחרוט עליה, ולמי היא מיועדת">${esc(text)}</textarea></div>
@@ -4329,6 +4329,7 @@ async function submitPost(f) {
   const err = f.querySelector('#p-err'), btn = f.querySelector('button[type="submit"]');
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
   const v = readPost(f); if (v.bad) { showBad(f, v.bad); return; }
+  MT.crafts = v.crafts.filter(hasCraft); MT.city = v.city || '';
   err.hidden = true;
   const sent = (demo, tracked, kept = true) => { S.stack = [{ s: 'home' }, { s: 'sent', demo, tr: !!tracked && kept, ns: !!tracked && !kept, em: EMAIL_RE.test(String(v.contact || '').trim()) ? String(v.contact).trim() : '' }]; replaceH(); render(true); };
   if (!CFG_ON) { sent(true); return; }
@@ -4430,10 +4431,71 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
       ${CFG_ON ? '' : '<p class="note" role="note">האתר כרגע לא מחובר לשרת. אפשר למלא ולראות איך זה נראה, אבל שום דבר לא נשלח ולא נשמר.</p>'}
       ${postForm({ title, hint })}
     </div>`;
+/* ---------- the makers who fit a request: sort and filter by fit, distance and reviews ---------- */
+const MT = { crafts: [], city: '', sort: 'fit', dist: 0, stars: 0, only: true };
+const RATE = { loaded: false, map: {} };
+async function loadRatings() {
+  if (!SB || RATE.loaded) return;
+  const r = await dbq(s => s.from('public_reviews').select('maker_id,stars').limit(3000));
+  if (r.error || !Array.isArray(r.data)) return;
+  const m = {}; r.data.forEach(x => { const k = String(x.maker_id), v = Math.min(5, Math.max(1, (+x.stars) | 0)); (m[k] || (m[k] = { sum: 0, n: 0 })); m[k].sum += v; m[k].n++; });
+  Object.values(m).forEach(x => { x.avg = x.sum / x.n; }); RATE.map = m; RATE.loaded = true; drawMatch();
+}
+const fmtAvg = v => v.toFixed(1).replace('.0', '');
+function matchList() {
+  const bp = MT.city ? cityPoint(MT.city) : null, want = MT.crafts;
+  let rows = REAL.list.map(m => {
+    const cr = mcrafts(m), fit = want.length ? want.filter(c => cr.includes(c)).length / want.length : 1, mp = cityPoint(m.city), km = bp && mp ? kmBetween(bp, mp) : null, rt = RATE.map[m.id] || null;
+    return { m, fit, km, rt };
+  });
+  if (MT.only && want.length) rows = rows.filter(x => x.fit > 0);
+  if (MT.dist && bp) rows = rows.filter(x => x.km === null || x.km <= MT.dist);
+  if (MT.stars) rows = rows.filter(x => x.rt && x.rt.avg >= MT.stars);
+  const nl = (a, b) => (a === null ? 1e9 : a) - (b === null ? 1e9 : b), byRt = (a, b) => (b.rt ? b.rt.avg : -1) - (a.rt ? a.rt.avg : -1) || (b.rt ? b.rt.n : 0) - (a.rt ? a.rt.n : 0), byName = (a, b) => a.m.name.localeCompare(b.m.name, 'he');
+  rows.sort(MT.sort === 'near' ? (a, b) => nl(a.km, b.km) || byRt(a, b) || byName(a, b) : MT.sort === 'rating' ? (a, b) => byRt(a, b) || nl(a.km, b.km) || byName(a, b) : MT.sort === 'name' ? byName : (a, b) => b.fit - a.fit || nl(a.km, b.km) || byRt(a, b) || byName(a, b));
+  return rows;
+}
+function matchResults() {
+  const st = realState();
+  if (st === 'loading') return '<p class="muted" role="status">טוענים את היוצרים</p>';
+  if (st === 'failed') return '<p class="note">הרשימה לא נטענה. נסו לרענן את הדף.</p>';
+  if (!REAL.list.length) return emptyMakers();
+  const rows = matchList(), bp = MT.city ? cityPoint(MT.city) : null;
+  const hint = MT.city && !bp ? '<p class="small muted">לא זיהינו את העיר, ולכן אי אפשר לחשב מרחק. בחרו עיר מהרשימה.</p>' : !MT.city && (MT.sort === 'near' || MT.dist) ? '<p class="small muted">כתבו באיזו עיר אתם, כדי שנוכל לחשב מרחק.</p>' : '';
+  if (!rows.length) return `${hint}<p class="empty">אין יוצרים שמתאימים לסינון. נסו להרחיב אותו.</p>`;
+  const list = rows.map(({ m, fit, km, rt }) => {
+    const parts = [MT.crafts.length ? (fit === 1 ? 'מתאים לבקשה' : fit > 0 ? 'מתאים לחלק מהתחומים' : '') : '', km !== null ? `כ־${km} ק״מ ממך` : '', rt ? `${fmtAvg(rt.avg)} מתוך 5 (${rt.n})` : ''].filter(Boolean);
+    return realRow(m, esc, parts.length ? `<span class="small">${esc(parts.join(' · '))}</span>` : '');
+  }).join('');
+  return `${hint}<div class="mlist">${list}</div>`;
+}
+function drawMatch() {
+  const el = document.getElementById('mt-results'); if (!el) return;
+  el.innerHTML = matchResults();
+  const c = document.getElementById('mt-count'); if (c) { const n = REAL.loaded ? matchList().length : 0; c.textContent = REAL.loaded ? plural(n, 'נמצא יוצר אחד', 'נמצאו יוצרים', 'לא נמצאו יוצרים').replace(/^(\d+) נמצאו יוצרים$/, 'נמצאו $1 יוצרים') : ''; }
+}
+SCREENS.match = () => `${head('יוצרים שמתאימים לכם')}
+  <div class="stack tight g">
+    <p class="muted">אפשר לסנן ולמיין לפי התאמה לבקשה, מרחק וביקורות.</p>
+    <fieldset class="field"><legend class="lbl">תחום</legend><div class="filters" role="group" aria-label="תחום הבקשה">${Object.entries(CRAFTS).map(([k, v]) => `<button type="button" data-act="mtcraft" data-v="${k}" aria-pressed="${MT.crafts.includes(k)}">${v}</button>`).join('')}</div>
+      <label class="opt"><input type="checkbox" data-mt="only" ${MT.only ? 'checked' : ''}><span class="grow">רק יוצרים בתחומים שבחרתי</span></label></fieldset>
+    <div class="field"><label for="mt-city">העיר שלכם</label><input class="input" id="mt-city" data-mt="city" list="mt-cities" maxlength="60" autocomplete="off" placeholder="בחרו מהרשימה או הקלידו" value="${esc(MT.city)}"><datalist id="mt-cities">${CITIES.map(c => `<option value="${esc(c[0])}"></option>`).join('')}</datalist></div>
+    <div class="field"><label for="mt-sort">סדר</label><select class="input" id="mt-sort" data-mt="sort">${[['fit', 'התאמה לבקשה'], ['near', 'הכי קרוב אליי'], ['rating', 'דירוג גבוה'], ['name', 'לפי שם']].map(([k, l]) => `<option value="${k}" ${MT.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="field"><label for="mt-dist">מרחק</label><select class="input" id="mt-dist" data-mt="dist">${[[0, 'לא משנה'], [25, 'עד 25 ק״מ'], [50, 'עד 50 ק״מ'], [100, 'עד 100 ק״מ']].map(([k, l]) => `<option value="${k}" ${MT.dist === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="field"><label for="mt-stars">דירוג</label><select class="input" id="mt-stars" data-mt="stars">${[[0, 'לא משנה'], [4, '4 ומעלה'], [4.5, '4.5 ומעלה']].map(([k, l]) => `<option value="${k}" ${MT.stars === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <p class="small muted" id="mt-count" role="status" aria-live="polite">${REAL.loaded ? esc(plural(matchList().length, 'נמצא יוצר אחד', 'נמצאו יוצרים', 'לא נמצאו יוצרים').replace(/^(\d+) נמצאו יוצרים$/, 'נמצאו $1 יוצרים')) : ''}</p>
+    <div id="mt-results">${matchResults()}</div>
+    <p class="note">רוצים שנעביר את הבקשה ליוצרים שמתאימים? כתבו בקשה, ואנחנו נעשה את זה.</p><button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>
+  </div>`;
+document.addEventListener('change', e => {
+  const t = e.target, k = t && t.dataset && t.dataset.mt; if (!k) return;
+  if (k === 'only') MT.only = t.checked; else if (k === 'city') MT.city = String(t.value || '').trim().slice(0, 60); else if (k === 'sort') MT.sort = ['fit', 'near', 'rating', 'name'].includes(t.value) ? t.value : 'fit'; else if (k === 'dist') MT.dist = +t.value || 0; else if (k === 'stars') MT.stars = +t.value || 0;
+  drawMatch();
+});
 SCREENS.sent = ({ demo, tr, ns, em }) => `${head('<span class="sr">הבקשה</span>')}
     <div class="stack g"><div class="thanks zig"><span class="stamp">${demo ? 'הדגמה' : 'התקבל'}</span><h2 class="display">${demo ? 'זו הייתה הדגמה.' : WAITING() ? 'נרשמתם. תודה.' : 'תודה, קיבלנו את הבקשה.'}</h2>
       <p>${demo ? 'שום דבר לא נשלח ולא נשמר.' : (WAITING() ? 'שמרנו את מה שכתבתם. כשנמצא יוצר שמתאים לבקשה, נחזור אליכם בפרטים שהשארתם. האתר עוד לא נפתח לקהל, ולכן אין בו עדיין מה לדפדף.' : 'נקרא אותה בעצמנו, נעביר ליוצרים שמתאימים ונחזור אליכם בפרטים שהשארתם, ברגע שנמצא יוצר שמתאים.')}</p>
-      ${demo || WAITING() ? '' : ns ? '<p class="small muted">לא הצלחנו לשמור את הבקשה במכשיר הזה, אז היא לא תופיע ברשימת הבקשות שלכם. אפשר לרשום לעצמכם את מה שכתבתם.</p>' : tr ? '<p class="small muted">שמרנו את הבקשה במכשיר הזה, ושם תראו מה קרה איתה. ניקוי נתוני הדפדפן יסתיר אותה.</p><button class="btn" data-act="toreqs">הבקשות שלי</button>' : '<button class="btn" data-act="tab" data-v="mine">הבקשות שלי</button>'}<button class="btn ${WAITING() ? '' : 'ghost'}" data-act="tab" data-v="home">חזרה לדף הבית</button></div>
+      ${demo || WAITING() ? '' : ns ? '<p class="small muted">לא הצלחנו לשמור את הבקשה במכשיר הזה, אז היא לא תופיע ברשימת הבקשות שלכם. אפשר לרשום לעצמכם את מה שכתבתם.</p>' : tr ? '<p class="small muted">שמרנו את הבקשה במכשיר הזה, ושם תראו מה קרה איתה. ניקוי נתוני הדפדפן יסתיר אותה.</p><button class="btn" data-act="toreqs">הבקשות שלי</button>' : '<button class="btn" data-act="tab" data-v="mine">הבקשות שלי</button>'}${REAL.list.length ? '<button class="btn ghost" data-act="matchsent">לראות יוצרים שמתאימים לבקשה</button>' : ''}<button class="btn ${WAITING() ? '' : 'ghost'}" data-act="tab" data-v="home">חזרה לדף הבית</button></div>
       ${!demo && em && CFG_ON && !AD.session ? `<section class="panel"><h2 class="sec-title">רוצים לשמור את הבקשות בחשבון?</h2><p class="small muted" style="margin:6px 0 10px">לא חובה. נשלח קישור כניסה אל <span dir="ltr">${esc(em)}</span>, ומכל מכשיר תראו שם את הבקשות שלכם.</p><button type="button" class="btn ghost" data-act="buyeracct" data-v="${esc(em)}">שליחת קישור כניסה</button></section>` : ''}</div>`;
 
 const meNote = t => `<p class="note" role="note">${t}</p>`;
@@ -4852,6 +4914,9 @@ async function rvSet(id, status) {
 const adFind = id => AD.lpend.find(x => x.id === id) || AD.lappr.find(x => x.id === id);
 const adDrop = id => { AD.lpend = AD.lpend.filter(x => x.id !== id); AD.lappr = AD.lappr.filter(x => x.id !== id); };
 Object.assign(ACT, {
+  mtcraft: v => { const i = MT.crafts.indexOf(v); if (i < 0) MT.crafts.push(v); else MT.crafts.splice(i, 1); const b = document.querySelector(`[data-act="mtcraft"][data-v="${v}"]`); if (b) b.setAttribute('aria-pressed', String(i < 0)); drawMatch(); },
+  matchopen: () => { const f = document.querySelector('form[data-form="post"]'); if (f) { MT.crafts = [...new Set(new FormData(f).getAll('crafts').filter(hasCraft))]; MT.city = String(new FormData(f).get('city') || '').trim().slice(0, 60); } MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
+  matchsent: () => { MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
   rvkit: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) openSheet(reviewKitSheet(m), 'ביקורות מלקוחות'); },
   rvcopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('rv-url'); if (i) i.select(); toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('rv-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
   rvcard: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); cardDownload(makerLink(v), m ? m.name : ''); },

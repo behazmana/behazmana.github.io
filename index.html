@@ -2938,7 +2938,7 @@ function reviewsHTML(m) {
     <button type="button" class="btn ghost block" data-act="rvwrite" data-v="${esc(m.id)}">לכתוב ביקורת</button></section>`;
 }
 const reviewSheet = m => `<form class="sheet-body" data-form="review" data-v="${esc(m.id)}" novalidate>
-    <div><h2 class="sec-title">ביקורת על ${esc(m.name)}</h2><p class="small muted" style="margin-top:4px">הביקורת תופיע בדף של היוצר אחרי שנקרא ונאשר אותה.</p></div>
+    <div><h2 class="sec-title">ביקורת על ${esc(m.name)}</h2><p class="small muted" style="margin-top:4px">הביקורת תופיע בדף של היוצר מיד.</p></div>
     <div class="field"><label for="rv-name">השם שיופיע</label><input class="input" id="rv-name" name="name" maxlength="60" autocomplete="given-name" aria-required="true"></div>
     <fieldset class="field"><legend class="lbl">דירוג (5 הוא הכי טוב)</legend><div class="row wrap">${[1, 2, 3, 4, 5].map(i => `<label class="opt"><input type="radio" name="stars" value="${i}"><span>${i}</span></label>`).join('')}</div></fieldset>
     <div class="field"><label for="rv-body">מה תרצו לספר</label><textarea class="input" id="rv-body" name="body" rows="4" maxlength="800" aria-required="true"></textarea><span class="hint">למשל: מה הזמנתם ואיך היה לעבוד איתם. עד 800 תווים.</span></div>
@@ -2951,10 +2951,10 @@ async function submitReview(f, id) {
   const btn = f.querySelector('button[type="submit"]'); btn.disabled = true;
   const r = await dbq(s => s.from('reviews').insert({ maker_id: id, name: name.slice(0, 60), stars, body: body.slice(0, 800) }));
   if (r.error) { err.textContent = friendly(r.error) || 'השליחה לא הצליחה. נסו שוב.'; err.hidden = false; btn.disabled = false; return; }
-  closeSheet(true); toast('תודה. הביקורת תופיע אחרי שנאשר אותה');
+  delete RV[id]; closeSheet(true); toast('תודה. הביקורת עלתה'); loadReviews(id);
 }
 async function loadAdminReviews() {
-  const r = await dbq(s => s.from('reviews').select('id,maker_id,name,stars,body,created_at,makers(name)').eq('status', 'pending').order('created_at', { ascending: false }).limit(50));
+  const r = await dbq(s => s.from('reviews').select('id,maker_id,name,stars,body,created_at,makers(name)').eq('status', 'approved').order('created_at', { ascending: false }).limit(30));
   AD.rv = r.error || !Array.isArray(r.data) ? [] : r.data;
 }
 /* sharing one maker: a link to the profile, and a QR code made in the browser */
@@ -4361,8 +4361,8 @@ function adminBody() {
       ${AD.lst === 'gone' ? '' : `<section aria-labelledby="a-lp"><div class="sec-head"><h2 class="sec-title" id="a-lp">יצירות שמחכות לאישור</h2></div>
         ${AD.lst === 'failed' ? '<p class="form-err" role="alert">היצירות לא נטענו. לחצו על ״רענון״.</p>' : `<div style="${gapList}">${AD.lpend.map(l => adListing(l, 'pending')).join('') || '<p class="empty">אין יצירות שמחכות.</p>'}${AD.moreLP ? `<button class="btn ghost block" data-act="radmore" data-v="lp" ${AD.loading ? 'disabled' : ''}>עוד יצירות</button>` : ''}</div>`}</section>
       ${AD.lst === 'ok' ? `<section aria-labelledby="a-la"><div class="sec-head"><h2 class="sec-title" id="a-la">יצירות שמוצגות</h2></div><div style="${gapList}">${AD.lappr.map(l => adListing(l, 'approved')).join('') || '<p class="empty">אין יצירות מוצגות.</p>'}${AD.moreLA ? `<button class="btn ghost block" data-act="radmore" data-v="la" ${AD.loading ? 'disabled' : ''}>עוד יצירות</button>` : ''}</div></section>` : ''}`}
-      <section aria-labelledby="a-rv"><div class="sec-head"><h2 class="sec-title" id="a-rv">ביקורות שמחכות לאישור</h2></div>
-        <div style="${gapList}">${AD.rv.map(x => `<article class="panel"><b>${esc(cleanText((x.makers && x.makers.name) || '', 80))}</b> <span class="small muted">${(+x.stars) | 0} מתוך 5 · ${esc(cleanText(x.name, 60))} · ${esc(dateHe(x.created_at))}</span><p class="rstory" style="margin-top:6px">${esc(cleanBlock(x.body, 800))}</p><div class="row"><button class="btn small" data-act="radrvok" data-v="${esc(x.id)}">אישור</button><button class="btn small danger" data-act="radrvno" data-v="${esc(x.id)}">דחייה</button></div></article>`).join('') || '<p class="empty">אין ביקורות שמחכות.</p>'}</div></section>
+      <section aria-labelledby="a-rv"><div class="sec-head"><h2 class="sec-title" id="a-rv">ביקורות אחרונות</h2></div>
+        <div style="${gapList}">${AD.rv.map(x => `<article class="panel"><b>${esc(cleanText((x.makers && x.makers.name) || '', 80))}</b> <span class="small muted">${(+x.stars) | 0} מתוך 5 · ${esc(cleanText(x.name, 60))} · ${esc(dateHe(x.created_at))}</span><p class="rstory" style="margin-top:6px">${esc(cleanBlock(x.body, 800))}</p><div class="row"><button class="btn small danger" data-act="radrvno" data-v="${esc(x.id)}">הסרה מהאתר</button></div></article>`).join('') || '<p class="empty">עוד אין ביקורות.</p>'}</div></section>
       <section aria-labelledby="a-rq"><div class="sec-head"><h2 class="sec-title" id="a-rq">${AD.ro ? 'בקשות פתוחות' : 'בקשות חדשות'}</h2></div>
         <div style="${gapList}">${AD.requests.map(reqRow).join('') || '<p class="empty">אין בקשות פתוחות.</p>'}
           ${AD.moreR ? `<button class="btn ghost block" data-act="radmore" data-v="r" ${AD.loading ? 'disabled' : ''}>עוד בקשות</button>` : ''}</div></section>`;
@@ -4672,7 +4672,7 @@ async function rvSet(id, status) {
   const x = AD.rv.find(y => y.id === id); if (!x) return;
   const r = await dbq(s => s.from('reviews').update({ status }).eq('id', id).select('id'));
   if (r.error || !r.data || !r.data.length) { toast('השמירה לא הצליחה, נסו שוב'); return; }
-  AD.rv = AD.rv.filter(y => y.id !== id); delete RV[x.maker_id]; redrawAdmin(); toast(status === 'approved' ? 'הביקורת אושרה' : 'הביקורת נדחתה');
+  AD.rv = AD.rv.filter(y => y.id !== id); delete RV[x.maker_id]; redrawAdmin(); toast('הביקורת הוסרה');
 }
 const adFind = id => AD.lpend.find(x => x.id === id) || AD.lappr.find(x => x.id === id);
 const adDrop = id => { AD.lpend = AD.lpend.filter(x => x.id !== id); AD.lappr = AD.lappr.filter(x => x.id !== id); };

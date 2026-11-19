@@ -3045,7 +3045,7 @@ const rImg = (p, alt = '', bucket = BUCKET) => !okPath(p) ? '<div class="art"></
 const isOwner = () => !!(AD.session && AD.session.user && (CONFIG.ADMIN_EMAIL || '').trim() && String(AD.session.user.email || '').toLowerCase() === CONFIG.ADMIN_EMAIL.trim().toLowerCase());
 /* the owner's screen is at #admin; the magic link comes back with ?admin=1 and the login tokens in the hash */
 const ownerIn = () => { if (cur().s === 'wait' && isOwner()) { S.stack = [{ s: 'home' }]; BH = 1; replaceH(); render(true); } };   /* the owner, once signed in, gets the whole site instead of the waiting page */
-const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin', 'mine', 'myreqs', 'myreq', 'editreq', 'rmaker', 'lform', 'lthanks'];   /* the sign-up pages and the person's own account; not the shop, the makers list or search */
+const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin', 'mine', 'myreqs', 'myreq', 'editreq', 'rmaker', 'makers', 'lform', 'lthanks'];   /* the sign-up pages, the person's own account and the makers who joined; not the shop or search */
 const WAITING = () => !!CONFIG.WAITLIST && !isOwner();
 const adminUrl = () => /(^#admin)|[?&]admin=1/.test(location.hash + location.search) || (/access_token=/.test(location.hash) && !meUrl());
 const redrawAdmin = () => { if (cur().s === 'radmin') render(); };
@@ -3961,7 +3961,7 @@ const SCREENS = {
     <section class="hero"><div class="photo"><img${driftAttr()} src="img/h/${HERO.k}-880.jpg" srcset="img/h/${HERO.k}-480.jpg 480w, img/h/${HERO.k}-880.jpg 880w" sizes="(max-width: 440px) 100vw, 440px" width="880" height="640" alt="${esc(HERO.alt)}" loading="eager" fetchpriority="high" decoding="async" draggable="false"></div>
       <div class="slip-wrap g"><div class="slip zig"><img class="logo-big" src="logo/logo-primary-ink.svg" width="168" height="109" alt="">
         <h1>${reg ? 'שמרנו את החשבון שלכם' : 'שומרים לכם מקום'}</h1><p>${reg ? 'שמרנו את הפרטים שלכם. אם נרשמתם כיוצרים, נשלח לכם בקשה ברגע שיגיע קונה שמתאים לעבודות שלכם, או מי שרוצה להזמין מכם יצירה. אם כתבתם בקשה, נמצא לה יוצר מתאים ונחזור אליכם.' : 'האתר עוד לא נפתח לקהל. אפשר להירשם כבר עכשיו: יוצרים מספרים לנו על העבודות שלהם, ומי שמחפש יצירה כותב לנו מה הוא רוצה שיכינו לו. כשנמצא התאמה ליוצר, ניצור איתכם קשר.'}</p>
-        <div class="acts"><button class="btn" data-act="ask">מחפשים יצירה? כתבו לנו מה</button>${JOINED ? '' : '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>'}${signinOK() ? '<button class="link" data-act="signin">יש לכם כבר חשבון? כניסה</button>' : ''}</div></div></div><div class="below-slip"></div></section>
+        <div class="acts"><button class="btn" data-act="ask">מחפשים יצירה? כתבו לנו מה</button>${JOINED ? '' : '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>'}${signinOK() ? '<button class="link" data-act="signin">יש לכם כבר חשבון? כניסה</button>' : ''}<button class="link" data-act="go" data-v="makers">מי כבר איתנו</button></div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
       <section aria-labelledby="h-wait"><div class="sec-head"><h2 class="sec-title" id="h-wait">מה קורה אחרי ההרשמה</h2></div>
         <div class="tale zig"><div class="tale-row"><div class="what"><b>קוראים בעצמנו</b><span>כל הרשמה וכל בקשה עוברות דרכנו.</span></div><span class="stamp" aria-hidden="true">1</span></div>

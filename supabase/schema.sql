@@ -1935,3 +1935,141 @@ create policy reviews_insert on public.reviews for insert to anon, authenticated
 alter table public.reviews drop constraint if exists reviews_body_check;
 alter table public.reviews drop constraint if exists reviews_body_len;
 alter table public.reviews add constraint reviews_body_len check (char_length(btrim(body)) <= 800);
+
+-- =====================================================================
+-- 19. A signed-in, approved maker edits their own profile (details, photos, contact choices).
+--     They may change only their own row; status, notes, email, id and date are locked by the trigger.
+-- =====================================================================
+drop policy if exists "maker reads own row" on public.makers;
+create policy "maker reads own row" on public.makers for select to authenticated using (id = public.my_maker_id());
+drop policy if exists "maker edits own profile" on public.makers;
+create policy "maker edits own profile" on public.makers for update to authenticated
+  using (id = public.my_maker_id()) with check (id = public.my_maker_id());
+
+create or replace function public.makers_guard_update() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if current_user not in ('postgres', 'supabase_admin', 'service_role') and not public.is_owner() then
+    new.id := old.id; new.created_at := old.created_at; new.status := old.status; new.admin_note := old.admin_note; new.email := old.email;
+    if new.portrait is not null and new.portrait !~ '^[A-Za-z0-9_-]+/[A-Za-z0-9._-]+$' then raise exception 'bad portrait' using errcode = '22023'; end if;
+    if exists (select 1 from unnest(new.photos) p where p !~ '^[A-Za-z0-9_-]+(/[A-Za-z0-9._-]+)?$') then raise exception 'bad photo' using errcode = '22023'; end if;
+    if new.crafts is distinct from old.crafts then
+      if coalesce(array_length(new.crafts, 1), 0) < 1 then raise exception 'need a craft' using errcode = '22023'; end if;
+      new.craft := new.crafts[1];
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists makers_guard_update_tr on public.makers;
+create trigger makers_guard_update_tr before update on public.makers for each row execute function public.makers_guard_update();
+
+create or replace view public.my_maker
+  with (security_invoker = false)
+as
+  select id, name, city, craft, craft_other, story, photos, portrait, phone_public, email_public, status, created_at, crafts, phone, reviews_url
+  from public.makers
+  where email is not null
+    and lower(btrim(email)) = lower(btrim(coalesce(auth.jwt() ->> 'email', '')));
+revoke all on public.my_maker from public, anon, authenticated;
+grant select on public.my_maker to authenticated;
+
+-- =====================================================================
+-- 20. A test maker: a profile that behaves like any other, but only the owner (and the maker themselves) can see it on the site.
+-- =====================================================================
+alter table public.makers add column if not exists is_test boolean not null default false;
+update public.makers set is_test = true where lower(btrim(email)) = 'yoav2242@gmail.com';
+
+create or replace function public.makers_guard_update() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if current_user not in ('postgres', 'supabase_admin', 'service_role') and not public.is_owner() then
+    new.id := old.id; new.created_at := old.created_at; new.status := old.status; new.admin_note := old.admin_note; new.email := old.email; new.is_test := old.is_test;
+    if new.portrait is not null and new.portrait !~ '^[A-Za-z0-9_-]+/[A-Za-z0-9._-]+$' then raise exception 'bad portrait' using errcode = '22023'; end if;
+    if exists (select 1 from unnest(new.photos) p where p !~ '^[A-Za-z0-9_-]+(/[A-Za-z0-9._-]+)?$') then raise exception 'bad photo' using errcode = '22023'; end if;
+    if new.crafts is distinct from old.crafts then
+      if coalesce(array_length(new.crafts, 1), 0) < 1 then raise exception 'need a craft' using errcode = '22023'; end if;
+      new.craft := new.crafts[1];
+    end if;
+  end if;
+  return new;
+end $$;
+
+create or replace view public.public_makers
+  with (security_invoker = false)
+as
+  select id, name, city, craft, story, photos, portrait,
+         case when phone_public then phone end as contact_phone,
+         craft_other,
+         case when email_public then email end as contact_email,
+         crafts,
+         reviews_url
+  from public.makers
+  where status = 'approved'
+    and (is_test = false or public.is_owner() or id = public.my_maker_id());
+
+create or replace view public.public_listings
+  with (security_invoker = false)
+as
+  select l.id, l.title, l.description, l.price_ils, l.photos, l.availability, l.created_at,
+         l.maker_id,
+         m.name        as maker_name,
+         m.city        as maker_city,
+         m.craft       as maker_craft,
+         m.craft_other as maker_craft_other,
+         m.portrait    as maker_portrait,
+         case when m.phone_public then m.phone end as contact_phone,
+         case when m.email_public then m.email end as contact_email
+  from public.listings l
+  join public.makers   m on m.id = l.maker_id
+  where l.status = 'approved'
+    and m.status = 'approved'
+    and (m.is_test = false or public.is_owner() or m.id = public.my_maker_id());
+
+create or replace view public.public_reviews with (security_invoker = false) as
+  select r.id, r.maker_id, r.name, r.stars, r.body, r.created_at
+  from public.reviews r
+  where r.status = 'approved'
+    and exists (select 1 from public.makers m where m.id = r.maker_id
+                and (m.is_test = false or public.is_owner() or m.id = public.my_maker_id()));
+
+-- 21. The test-maker check as one small secure function that visitors may call (the views use it).
+create or replace function public.can_see_maker(p_id uuid, p_test boolean) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select coalesce(not p_test, true) or public.is_owner() or p_id = public.my_maker_id()
+$$;
+revoke all on function public.can_see_maker(uuid, boolean) from public;
+grant execute on function public.can_see_maker(uuid, boolean) to anon, authenticated;
+
+create or replace view public.public_makers
+  with (security_invoker = false)
+as
+  select id, name, city, craft, story, photos, portrait,
+         case when phone_public then phone end as contact_phone,
+         craft_other,
+         case when email_public then email end as contact_email,
+         crafts,
+         reviews_url
+  from public.makers
+  where status = 'approved' and public.can_see_maker(id, is_test);
+
+create or replace view public.public_listings
+  with (security_invoker = false)
+as
+  select l.id, l.title, l.description, l.price_ils, l.photos, l.availability, l.created_at,
+         l.maker_id,
+         m.name        as maker_name,
+         m.city        as maker_city,
+         m.craft       as maker_craft,
+         m.craft_other as maker_craft_other,
+         m.portrait    as maker_portrait,
+         case when m.phone_public then m.phone end as contact_phone,
+         case when m.email_public then m.email end as contact_email
+  from public.listings l
+  join public.makers   m on m.id = l.maker_id
+  where l.status = 'approved' and m.status = 'approved' and public.can_see_maker(m.id, m.is_test);
+
+create or replace view public.public_reviews with (security_invoker = false) as
+  select r.id, r.maker_id, r.name, r.stars, r.body, r.created_at
+  from public.reviews r
+  where r.status = 'approved'
+    and exists (select 1 from public.makers m where m.id = r.maker_id and public.can_see_maker(m.id, m.is_test));

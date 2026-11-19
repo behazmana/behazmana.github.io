@@ -2839,7 +2839,7 @@ const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPAB
 
 const CRAFTS = { wood: 'עץ', leather: 'עור', ceramic: 'קרמיקה', jewelry: 'תכשיטים', metal: 'מתכת', glass: 'זכוכית', textile: 'בדים', paper: 'נייר', art: 'ציור' };
 const UI = {
-  back: '<path d="M9 6l6 6-6 6"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  back: '<path d="M9 6l6 6-6 6"/>', gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>',
   home: '<path d="M4 11l8-7 8 7v9H4z"/>', plus: '<path d="M12 5v14M5 12h14"/>',
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
@@ -3059,7 +3059,8 @@ async function cardDownload(url, name) {
   saveCanvas(cv, 'behazmana-card.png');
 }
 const reviewKitSheet = m => { const url = makerLink(m.id), msg = `היי, אשמח אם תכתבו כמה מילים על העבודה איתי. זה הדף שלי באתר, ובו הכפתור ״לכתוב ביקורת״: ${url}`;
-  return `<div class="sheet-body"><div><h2 class="sec-title">לקבל ביקורות ולהציג את העבודות</h2><p style="margin-top:6px">הקישור והקוד מובילים לדף שלכם באתר. מי שהזמין מכם יכול שם ללחוץ על ״לכתוב ביקורת״.</p></div>
+  return `<div class="sheet-body"><div><h2 class="sec-title">הקוד שלכם והדף להדפסה</h2><p style="margin-top:6px">מי שסורק את הקוד מגיע לדף שלכם באתר: התמונות, הסיפור וכפתור לכתיבת בקשה. מי שהזמין מכם יכול שם גם לכתוב ביקורת.</p></div>
+    <div style="max-width:240px;width:100%;margin:0 auto;border:1px solid var(--tone)">${qrSvg(url)}</div>
     <input class="input" id="rv-url" readonly dir="ltr" value="${esc(url)}" aria-label="הקישור לכתיבת ביקורת">
     <div class="row wrap"><a class="btn small" href="https://wa.me/?text=${encodeURIComponent(msg)}" ${OUT}>שליחה בוואטסאפ</a><button type="button" class="btn small ghost" data-act="rvcopy" data-v="${esc(m.id)}">העתקת הקישור</button><button type="button" class="btn small ghost" data-act="rvcard" data-v="${esc(m.id)}">הורדת כרטיס קטן עם QR</button></div>
     <div class="panel"><b>דף להדפסה לשולחן באירוע או בפסטיבל</b><p class="small muted" style="margin:4px 0 8px">דף יפה עם השם שלכם, התמונה שלכם, תמונות מהעבודות וקוד QR. אפשר להדפיס או לשמור כ־PDF.</p><button type="button" class="btn small" data-act="rvflyer" data-v="${esc(m.id)}">יצירת הדף</button></div></div>`; };
@@ -3230,7 +3231,7 @@ const rImg = (p, alt = '', bucket = BUCKET) => !okPath(p) ? '<div class="art"></
 const isOwner = () => !!(AD.session && AD.session.user && (CONFIG.ADMIN_EMAIL || '').trim() && String(AD.session.user.email || '').toLowerCase() === CONFIG.ADMIN_EMAIL.trim().toLowerCase());
 /* the owner's screen is at #admin; the magic link comes back with ?admin=1 and the login tokens in the hash */
 const ownerIn = () => { if (cur().s === 'wait' && isOwner()) { S.stack = [{ s: 'home' }]; BH = 1; replaceH(); render(true); } };   /* the owner, once signed in, gets the whole site instead of the waiting page */
-const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin', 'mine', 'myreqs', 'myreq', 'editreq', 'rmaker', 'makers', 'match', 'lform', 'lthanks'];   /* the sign-up pages, the person's own account and the makers who joined; not the shop or search */
+const WAIT_OK = ['wait', 'join', 'joined', 'post', 'sent', 'radmin', 'mine', 'myreqs', 'myreq', 'editreq', 'rmaker', 'makers', 'match', 'settings', 'editprofile', 'lform', 'lthanks'];   /* the sign-up pages, the person's own account and the makers who joined; not the shop or search */
 const WAITING = () => !!CONFIG.WAITLIST && !isOwner();
 const adminUrl = () => /(^#admin)|[?&]admin=1/.test(location.hash + location.search) || (/access_token=/.test(location.hash) && !meUrl());
 const redrawAdmin = () => { if (cur().s === 'radmin') render(); };
@@ -3807,12 +3808,13 @@ async function loadMe(force) {
   if (!force && AU.uid === uid && (AU.st === 'loading' || AU.st === 'ready')) return;
   if (AU.uid !== uid) AU = freshAU();
   AU.uid = uid; AU.st = 'loading'; meRedraw(); loadAccountRequests();
-  const r = await dbq(s => s.from('my_maker').select(MCOLS).order('created_at', { ascending: false }));
+  let r = await dbq(s => s.from('my_maker').select(MCOLS + ',phone,reviews_url').order('created_at', { ascending: false }));
+  if (r.error && !r.off) r = await dbq(s => s.from('my_maker').select(MCOLS).order('created_at', { ascending: false }));
   if (!AD.session || String(AD.session.user.id) !== uid) return;
   if (r.gone) { AU.st = 'gone'; AU.probe = 'gone'; }
   else if (r.error || !Array.isArray(r.data)) AU.st = 'failed';
   else {
-    AU.rows = r.data.filter(x => x && x.id).map(x => ({ id: String(x.id), name: cleanText(x.name, 80), city: cleanText(x.city, 60), craft: String(x.craft || ''), crafts: Array.isArray(x.crafts) ? x.crafts.map(String).slice(0, 6) : [], other: cleanOther(x.craft_other), story: cleanBlock(x.story, 1000), photos: Array.isArray(x.photos) ? x.photos.map(String).filter(okPath) : [], portrait: okPath(x.portrait) ? String(x.portrait) : '', phonePublic: !!x.phone_public, emailPublic: !!x.email_public, status: String(x.status || '') }));
+    AU.rows = r.data.filter(x => x && x.id).map(x => ({ id: String(x.id), name: cleanText(x.name, 80), city: cleanText(x.city, 60), craft: String(x.craft || ''), crafts: Array.isArray(x.crafts) ? x.crafts.map(String).slice(0, 6) : [], other: cleanOther(x.craft_other), story: cleanBlock(x.story, 1000), photos: Array.isArray(x.photos) ? x.photos.map(String).filter(okPath) : [], portrait: okPath(x.portrait) ? String(x.portrait) : '', phonePublic: !!x.phone_public, emailPublic: !!x.email_public, phone: String(x.phone || ''), reviewsUrl: okUrl(x.reviews_url), status: String(x.status || '') }));
     AU.maker = AU.rows.find(x => x.status === 'approved') || null; AU.st = 'ready';
     if (AU.maker) { if (cur().s === 'mine') { S.stack = S.stack.map(x => ({ ...x })); } loadInbox(); }
   }
@@ -4426,9 +4428,9 @@ Object.assign(SCREENS, {
   shop: () => { const crafts = SHOP_CR;
     return `${head('יצירות')}
     <div class="stack tight g">
-      <p class="muted">מה שהיוצרים הכינו, ואושר אצלנו. הכול בעבודת יד.</p>
+      ${discoverHTML()}${shopHas() ? '<div class="sec-head"><h2 class="sec-title">יצירות למכירה</h2></div>' : ''}
       ${crafts.size > 1 && shopState('all') === 'ready' ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button type="button" data-act="scraft" data-v="${k}" aria-pressed="${S.scraft === k}">${v}</button>`).join('')}</div>` : ''}
-      ${shopBody()}
+      ${shopHas() ? shopBody() : ''}
     </div>`; },
   listing: p => listingScreen(p),
   myreqs: () => `${head('הבקשות שלי')}<div class="stack tight g">${myReqsList()}${MYREQ.length ? '<button class="btn block" data-act="tab" data-v="post">לכתוב בקשה חדשה</button>' : ''}</div>`,
@@ -4442,6 +4444,123 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
       ${CFG_ON ? '' : '<p class="note" role="note">האתר כרגע לא מחובר לשרת. אפשר למלא ולראות איך זה נראה, אבל שום דבר לא נשלח ולא נשמר.</p>'}
       ${postForm({ title, hint })}
     </div>`;
+/* ---------- editing my own profile ---------- */
+const EP = { m: null, works: [], portrait: '', portraitUrl: '', busy: false };
+const epImg = (x, alt) => `<img src="${esc(x.url || photoURL(x.path))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
+const epWorksHTML = () => EP.works.map((x, i) => `<div class="art">${epImg(x, 'עבודה ' + (i + 1))}<button type="button" class="rm" data-act="epwrm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button></div>`).join('') + (EP.works.length < MAX_PHOTOS ? '<button type="button" class="add-photo" data-act="epwpick" aria-label="הוספת תמונה">+</button>' : '');
+const epPortraitHTML = () => EP.portrait ? `<div class="art">${epImg({ url: EP.portraitUrl, path: EP.portrait }, 'התמונה שלכם')}<button type="button" class="rm" data-act="epprm" aria-label="הסרת התמונה שלכם">${svg(UI.close)}</button></div><button type="button" class="chip" data-act="eppick">החלפת תמונה</button>` : '<button type="button" class="add-photo" data-act="eppick" aria-label="הוספת תמונה שלכם">+</button>';
+function drawEP() { const a = document.getElementById('ep-works'), b = document.getElementById('ep-portrait'), c = document.getElementById('ep-count'); if (a) a.innerHTML = epWorksHTML(); if (b) b.innerHTML = epPortraitHTML(); if (c) c.textContent = `${EP.works.length} מתוך ${MAX_PHOTOS} תמונות`; }
+async function epUpload(files, asPortrait) {
+  const msg = document.getElementById('ep-msg'), notes = [];
+  for (const f of files) {
+    if (!asPortrait && EP.works.length >= MAX_PHOTOS) { notes.push(`אפשר עד ${MAX_PHOTOS} תמונות.`); break; }
+    const r = await preparePhoto(f); if (r.note) notes.push(r.note); if (!r.photo) continue;
+    if (msg) msg.textContent = 'מעלים תמונה...';
+    const path = `${AU.maker.id}/e-${Math.random().toString(36).slice(2, 9)}.jpg`;
+    const { error } = await SB.storage.from(BUCKET).upload(path, r.photo.blob, { contentType: r.photo.type, cacheControl: '31536000', upsert: false });
+    if (error) { notes.push(`${r.photo.name} לא עלתה. נסו שוב.`); continue; }
+    const url = URL.createObjectURL(r.photo.blob);
+    if (asPortrait) { EP.portrait = path; EP.portraitUrl = url; } else EP.works.push({ path, url });
+  }
+  drawEP(); if (msg) msg.textContent = [...new Set(notes)].join(' ');
+}
+document.addEventListener('change', e => {
+  const t = e.target; if (!t || (t.id !== 'ep-file' && t.id !== 'ep-pfile')) return;
+  const files = [...t.files]; t.value = ''; if (files.length && AU.maker && SB) epUpload(t.id === 'ep-pfile' ? files.slice(0, 1) : files, t.id === 'ep-pfile');
+});
+SCREENS.editprofile = () => {
+  const m = EP.m || AU.maker; if (!m) return `${head('עריכת הפרופיל')}<div class="stack g"><p class="empty">אין פרופיל לערוך.</p></div>`;
+  const set = new Set(m.crafts && m.crafts.length ? m.crafts : [m.craft]), tile = (k, v) => `<label class="tile"><input type="checkbox" name="crafts" value="${k}" id="ep-c-${k}" ${set.has(k) ? 'checked' : ''}><span class="face">${svg(UI['c_' + k])}<span class="tl">${v}</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label>`;
+  return `${head('עריכת הפרופיל')}<div class="stack tight g">
+    <form class="f" data-form="editprofile" novalidate>
+      <div class="field"><label for="ep-name">שם</label><input class="input" id="ep-name" name="name" maxlength="80" value="${esc(m.name)}" aria-required="true"></div>
+      <div class="field"><label for="ep-city">עיר</label><input class="input" id="ep-city" name="city" maxlength="60" value="${esc(m.city)}" aria-required="true"></div>
+      <fieldset class="field"><legend class="lbl">תחום <span class="m">(אפשר לבחור כמה)</span></legend><div class="tiles">${Object.entries(CRAFTS).map(([k, v]) => tile(k, v)).join('')}${tile('other', 'אחר')}</div>
+        <input class="input" id="ep-other" name="craft_other" maxlength="40" placeholder="איזה תחום?" value="${esc(m.other || '')}"></fieldset>
+      <div class="field"><label for="ep-story">הסיפור שלכם</label><textarea class="input" id="ep-story" name="story" rows="5" maxlength="1000">${esc(m.story || '')}</textarea></div>
+      <div class="field"><label for="ep-phone">טלפון</label><input class="input" id="ep-phone" name="phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" value="${esc(m.phone || '')}"></div>
+      <label class="opt"><input type="checkbox" name="phone_public" ${m.phonePublic ? 'checked' : ''}><span class="grow">להציג את הטלפון באתר (וואטסאפ והתקשרות)</span></label>
+      <label class="opt"><input type="checkbox" name="email_public" ${m.emailPublic ? 'checked' : ''}><span class="grow">להציג את המייל באתר</span></label>
+      <div class="field"><label for="ep-rurl">קישור לביקורות במקום אחר <span class="m">(לא חובה)</span></label><input class="input" id="ep-rurl" name="reviews_url" type="url" dir="ltr" maxlength="280" placeholder="https://" value="${esc(m.reviewsUrl || '')}"></div>
+      <div class="field"><span class="lbl">התמונה שלכם</span><div class="pt-row"><div class="photos" id="ep-portrait">${epPortraitHTML()}</div></div><input type="file" id="ep-pfile" accept="image/jpeg,image/png,image/webp" hidden aria-label="בחירת תמונה שלכם"></div>
+      <div class="field"><span class="lbl">תמונות מהעבודות</span><div class="photos" id="ep-works">${epWorksHTML()}</div><input type="file" id="ep-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות"><span class="hint" id="ep-count">${EP.works.length} מתוך ${MAX_PHOTOS} תמונות</span><span class="hint" id="ep-msg" role="status" aria-live="polite"></span></div>
+      <p class="form-err" id="ep-err" role="alert" hidden></p>
+      <button class="btn block" type="submit">שמירת השינויים</button>
+    </form></div>`;
+};
+async function saveProfile(f) {
+  const fd = new FormData(f), err = f.querySelector('#ep-err'), btn = f.querySelector('button[type="submit"]'), v = k => String(fd.get(k) || '').trim();
+  const name = v('name'), city = v('city'), story = String(fd.get('story') || '').replace(/\r\n?/g, '\n').trim(), phone = v('phone'), rurl = v('reviews_url');
+  const picked = [...new Set(fd.getAll('crafts').map(String))].filter(c => hasCraft(c) || c === 'other'), other = picked.includes('other') ? cleanOther(fd.get('craft_other')) : '';
+  const bad = !name ? ['ep-name', 'כתבו את השם שלכם.'] : !city ? ['ep-city', 'כתבו באיזו עיר אתם.'] : !picked.length ? ['ep-c-wood', 'בחרו תחום אחד או יותר.']
+    : picked.includes('other') && Array.from(other).length < 2 ? ['ep-other', 'כתבו איזה תחום זה, אפילו מילה אחת.']
+    : Array.from(story).length > 1000 ? ['ep-story', 'הסיפור ארוך מדי (עד 1000 תווים).']
+    : phone && !(phoneOK(phone) && contactPhone(phone)) ? ['ep-phone', 'הטלפון לא נראה נכון. כתבו מספר ישראלי רגיל, למשל 050-1234567.']
+    : rurl && !okUrl(rurl) ? ['ep-rurl', 'הקישור צריך להתחיל ב־https://']
+    : !EP.portrait ? ['ep-portrait', 'הוסיפו תמונה שלכם.'] : !EP.works.length ? ['ep-works', 'השאירו לפחות תמונה אחת של העבודות.'] : null;
+  f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
+  if (bad) { const el = f.querySelector('#' + bad[0]) || f.querySelector('#' + bad[0].replace('ep-portrait', 'ep-pfile')); if (el && el.classList.contains('input')) el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; if (el && el.focus) el.focus(); return; }
+  err.hidden = true; btn.disabled = true; btn.textContent = 'שומרים...';
+  const payload = { name, city, crafts: picked, craft_other: picked.includes('other') ? other : null, story, phone: phone || null, phone_public: !!phone && !!fd.get('phone_public'), email_public: !!fd.get('email_public'), reviews_url: rurl || null, portrait: EP.portrait, photos: EP.works.map(x => x.path) };
+  const r = await dbq(s => s.from('makers').update(payload).eq('id', AU.maker.id));
+  if (r.error) { err.textContent = errCode(r.error) === '23505' ? 'הטלפון הזה כבר רשום אצל יוצר אחר.' : (friendly(r.error) || 'השמירה לא הצליחה. נסו שוב.'); err.hidden = false; btn.disabled = false; btn.textContent = 'שמירת השינויים'; return; }
+  REAL.loaded = false; REAL.failed = false; loadReal(); loadMe(true); toast('נשמר'); back();
+}
+/* ---------- settings ---------- */
+SCREENS.settings = () => {
+  const em = AD.session && AD.session.user && AD.session.user.email, mk = meMode() === 'maker';
+  return `${head('הגדרות')}<div class="stack g">
+    <section class="panel"><h2 class="sec-title">החשבון</h2>
+      ${em ? `<p style="margin-top:6px">מחוברים כ־<span dir="ltr">${esc(em)}</span></p><p class="small muted">${mk ? 'חשבון של יוצר מאושר.' : 'חשבון של קונה.'}</p><button type="button" class="btn ghost" data-act="signout">התנתקות</button>` : `<p class="muted" style="margin-top:6px">עוד לא נכנסתם.</p>${signinOK() ? '<button type="button" class="btn" data-act="signin">כניסה</button>' : ''}`}</section>
+    ${mk ? `<section class="panel"><h2 class="sec-title">הפרופיל שלי</h2><div class="row wrap" style="margin-top:8px"><button type="button" class="btn small" data-act="editprofile">עריכת הפרופיל</button><button type="button" class="btn small ghost" data-act="rvkit" data-v="${esc(AU.maker.id)}">הקוד והדף להדפסה</button><button type="button" class="btn small ghost" data-act="rmaker" data-v="${esc(AU.maker.id)}">איך הפרופיל נראה באתר</button></div></section>` : ''}
+    <section class="panel"><h2 class="sec-title">במכשיר הזה</h2><p class="small muted" style="margin:6px 0 8px">${MYREQ.length ? plural(MYREQ.length, 'בקשה אחת שמורה', 'בקשות שמורות') : 'אין בקשות שמורות'} במכשיר.</p>${MYREQ.length ? '<button type="button" class="btn small ghost" data-act="clearreqs">ניקוי הרשימה במכשיר</button>' : ''}</section>
+    <section class="panel"><h2 class="sec-title">פרטיות</h2>${legalLinks()}<p class="small muted" style="margin:8px 0">לבקשת מחיקה של הפרטים או של הפרופיל כתבו לנו.</p><div class="links-col">${mailLink('בקשה למחיקת פרטים מבהזמנה')}</div></section>
+    <section class="panel"><h2 class="sec-title">עוד</h2><div class="links-col"><button type="button" class="link" data-act="vision">מי אנחנו</button>${mailLink('שלום מבהזמנה')}</div></section>
+  </div>`;
+};
+
+/* ---------- the creations tab: a page to wander in (real photos and stories of the makers who joined) ---------- */
+const DISC_CSS = `.disc{column-count:2;column-gap:12px}
+@media (min-width:700px){.disc{column-count:3}}
+.disc>*{break-inside:avoid;margin:0 0 12px;display:block;width:100%}
+.dtile{border:0;padding:0;background:var(--paper);text-align:start;cursor:pointer;color:var(--ink)}
+.dtile img{display:block;width:100%;height:auto;min-height:110px;object-fit:cover;background:var(--tone)}
+.dtile .dcap{display:block;padding:9px 11px 11px;font-size:var(--fs-1);color:var(--muted);line-height:1.3}
+.dtile .dcap b{display:block;font-family:var(--display);font-size:var(--fs-3);line-height:1;color:var(--ink);font-weight:700;margin-bottom:2px}
+.dquote{border:0;text-align:start;cursor:pointer;padding:20px 18px 18px;background:var(--olive);color:var(--on-olive)}
+.dquote p{font-family:var(--display);font-size:var(--fs-4);line-height:1.08;margin:0 0 12px}
+.dquote .by{font-size:var(--fs-1);color:var(--olive-soft);display:block}
+.dquote.b1{background:var(--stamp);color:var(--paper)}.dquote.b1 .by{color:#dfe3ef}
+.dquote.b2{background:var(--tone);color:var(--ink)}.dquote.b2 .by{color:var(--muted)}
+.dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+@media (prefers-reduced-motion:no-preference){.disc>*{animation:dfade .65s var(--ease) both;animation-delay:calc(var(--i,0) * 40ms)}@keyframes dfade{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}}`;
+let DISC = null;
+const shuffled = a => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
+function discItems() {
+  const key = REAL.list.map(m => m.id + m.photos.length).join(',');
+  if (DISC && DISC.key === key) return DISC.items;
+  const photos = [], stories = [];
+  REAL.list.forEach(m => { (m.portrait ? m.photos : m.photos.slice(1)).forEach(p => photos.push({ p, m })); if (String(m.story || '').trim().length > 30) stories.push(m); });
+  const ph = shuffled(photos), st = shuffled(stories), out = []; let si = 0;
+  ph.forEach((x, i) => { out.push({ k: 'p', ...x }); if ((i + 1) % 5 === 0 && st.length) { out.push({ k: 's', m: st[si % st.length], v: si % 3 }); si++; } });
+  if (!ph.length) st.forEach((m, i) => out.push({ k: 's', m, v: i % 3 }));
+  DISC = { key, items: out }; return out;
+}
+const excerpt = t => { t = String(t || '').replace(/\s+/g, ' ').trim(); if (t.length <= 150) return t; const c = t.slice(0, 150), i = c.lastIndexOf(' '); return (i > 80 ? c.slice(0, i) : c) + '…'; };
+const shopHas = () => { if (!CFG_ON) return false; const st = shopState('all'); return st === 'failed' || (st === 'ready' && shopOf('all').list.length > 0); };
+function discoverHTML() {
+  if (!document.getElementById('disc-css')) { const st = document.createElement('style'); st.id = 'disc-css'; st.textContent = DISC_CSS; document.head.appendChild(st); }
+  const st = realState();
+  if (st === 'loading') return '<p class="muted" role="status">טוענים</p>';
+  if (st === 'failed') return '<p class="note">התמונות לא נטענו. נסו לרענן את הדף.</p>';
+  if (!REAL.list.length) return emptyMakers();
+  const items = discItems(), n = items.filter(x => x.k === 'p').length;
+  return `<div class="dhead"><p class="muted">תמונות וסיפורים מהסדנאות של היוצרים שלנו. לחיצה פותחת את הפרופיל.</p><button type="button" class="chip" data-act="discshuffle">ערבוב</button></div>
+    <p class="small muted" aria-live="polite">${plural(REAL.list.length, 'יוצר אחד', 'יוצרים')} · ${plural(n, 'תמונה אחת', 'תמונות')}</p>
+    <div class="disc">${items.map((x, i) => x.k === 'p'
+      ? `<button type="button" class="dtile" style="--i:${i % 12}" data-act="rmaker" data-v="${esc(x.m.id)}"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"><span class="dcap"><b>${esc(x.m.name)}</b>${esc(craftsLine(x.m))}${x.m.city ? ` · ${esc(x.m.city)}` : ''}</span></button>`
+      : `<button type="button" class="dquote b${x.v}" style="--i:${i % 12}" data-act="rmaker" data-v="${esc(x.m.id)}"><p>${esc(excerpt(x.m.story))}</p><span class="by">${esc(x.m.name)} · ${esc(craftsLine(x.m))}</span></button>`).join('')}</div>`;
+}
 /* ---------- the makers who fit a request: sort and filter by fit, distance and reviews ---------- */
 const MT = { crafts: [], city: '', sort: 'fit', dist: 0, stars: 0, only: true };
 const RATE = { loaded: false, map: {} };
@@ -4511,6 +4630,7 @@ SCREENS.sent = ({ demo, tr, ns, em }) => `${head('<span class="sr">הבקשה</s
 
 const meNote = t => `<p class="note" role="note">${t}</p>`;
 const joinCard = () => canJoin() ? '<button class="entry" data-act="join"><span class="t">יוצרים? אפשר להצטרף</span><span class="small muted">לספר לנו על העבודות שלכם</span></button>' : '';
+const gearBtn = () => `<button type="button" class="round" data-act="settings" aria-label="הגדרות">${svg(UI.gear)}</button>`;
 const signoutBtn = () => AD.session ? `<button type="button" class="link sm" data-act="signout">התנתקות</button>` : '';
 function reviewsPanel(m) {
   if (!RV[m.id]) setTimeout(() => loadReviews(m.id), 0);
@@ -4523,20 +4643,21 @@ const profileHTML = () => { const m = AU.maker, face = m.portrait || m.photos[0]
     ${m.story ? `<p class="small rstory">${esc(m.story)}</p>` : ''}
     <button type="button" class="link" data-act="rmaker" data-v="${esc(m.id)}">הפרופיל כמו שרואים אותו באתר</button>${m.status === 'approved' ? shareBtn(m) : ''}
     ${m.status === 'approved' ? reviewsPanel(m) : ''}
-    <p class="small muted">לשינוי פרטים כתבו לנו.</p><div class="links-col">${mailLink('שינוי פרטים בפרופיל בבהזמנה')}</div></div>`; };
+    <div class="row wrap"><button type="button" class="btn small" data-act="editprofile">עריכת הפרופיל</button></div><p class="small muted">לעזרה כתבו לנו.</p><div class="links-col">${mailLink('שינוי פרטים בפרופיל בבהזמנה')}</div></div>`; };
 SCREENS.mine = () => {
   const mode = meMode(), reqSec = `<section aria-labelledby="h-mine"><div class="sec-head"><h2 class="sec-title" id="h-mine">הבקשות שלי</h2>${MYREQ.length ? `<span class="small muted">${MYREQ.length}</span>` : ''}</div>${myReqsList()}${MYREQ.length ? '<button class="btn block" style="margin-top:12px" data-act="tab" data-v="post">לכתוב בקשה חדשה</button>' : ''}</section>`;
   const tail = `<button class="entry" data-act="vision"><span class="t">מי אנחנו</span><span class="small muted">מה עומד מאחורי האתר</span></button>
       <section class="panel" aria-labelledby="h-about"><h2 class="sec-title" id="h-about">כתבו לנו</h2><div class="links-col">${mailLink('שלום מבהזמנה')}</div>${legalLinks()}</section>`;
-  const joined = JOINED && !AU.maker ? `<section class="panel" aria-labelledby="h-joined"><h2 class="sr" id="h-joined">ההרשמה שלכם</h2><p>נרשמתם כיוצרים. כשנאשר את הפרופיל, הוא יופיע באתר.</p>${AD.session ? '' : signinOK() ? '<p class="small muted">כבר אישרנו אתכם? היכנסו עם המייל שבו נרשמתם, כדי לראות את הפרופיל, הבקשות והיצירות שלכם.</p><button type="button" class="btn" data-act="signin">כניסה</button>' : ''}<button type="button" class="link sm" data-act="join">להרשמה נוספת</button></section>` : joinCard();
+  const joined = JOINED && !AU.maker ? `<section class="panel" aria-labelledby="h-joined"><h2 class="sr" id="h-joined">ההרשמה שלכם</h2><p>נרשמתם כיוצרים. כשנאשר את הפרופיל, הוא יופיע באתר.</p>${AD.session ? '' : signinOK() ? '<p class="small muted">כבר אישרנו אתכם? היכנסו עם המייל שבו נרשמתם, כדי לראות את הפרופיל, הבקשות והיצירות שלכם.</p><button type="button" class="btn" data-act="signin">כניסה</button>' : ''}</section>` : joinCard();
   const adminHint = isOwner() ? '<button type="button" class="link sm" data-act="toadmin">למסך הניהול</button>' : '';
-  if (mode === 'loading') return `${head('אני')}<div class="stack g"><p class="muted" role="status">טוענים</p>${AD.session ? signoutBtn() : ''}</div>`;
+  if (mode === 'loading') return `${head('אני', gearBtn())}<div class="stack g"><p class="muted" role="status">טוענים</p>${AD.session ? signoutBtn() : ''}</div>`;
   if (mode === 'maker') {
     const nNew = AU.inbox.list.filter(x => x.rs === 'sent' && x.rstatus !== 'closed').length;
     const tabs = [['inbox', 'בקשות אליי', nNew], ['listings', 'היצירות שלי', 0], ['profile', 'הפרופיל', 0]];
     const body = ME.tab === 'listings' ? myListingsHTML() : ME.tab === 'profile' ? profileHTML() : inboxHTML();
-    return `${head('אני')}<div class="stack tight g">
-      <div class="row wrap" style="justify-content:space-between"><p><b>${esc(AU.maker.name)}</b> <span class="small muted">נכנסתם כיוצרים</span></p>${signoutBtn()}</div>
+    return `${head('אני', gearBtn())}<div class="stack tight g">
+      <div class="row wrap" style="justify-content:space-between"><p><b>היי ${esc(firstOf(AU.maker.name))}</b> <span class="small muted">מחוברים כיוצרים</span></p>${signoutBtn()}</div>
+      <div class="row wrap"><button type="button" class="btn small" data-act="rvkit" data-v="${esc(AU.maker.id)}">הקוד והדף להדפסה</button><button type="button" class="btn small ghost" data-act="editprofile">עריכת הפרופיל</button></div>
       <div class="mtabs" role="tablist" aria-label="האזור שלכם כיוצרים">${tabs.map(([k, l, n]) => `<button type="button" role="tab" id="mt-${k}" aria-selected="${ME.tab === k}" aria-controls="mp" tabindex="${ME.tab === k ? 0 : -1}" data-act="mtab" data-v="${k}">${l}${n ? ` <span class="cnt" aria-label="${n} חדשות">${n}</span>` : ''}</button>`).join('')}</div>
       <div id="mp" role="tabpanel" aria-labelledby="mt-${ME.tab}" class="mp">${body}</div>
       <div class="row wrap"><button class="btn ghost" data-act="tab" data-v="post">לכתוב בקשה</button><button class="btn ghost" data-act="go" data-v="myreqs">הבקשות שלי${MYREQ.length ? ` (${MYREQ.length})` : ''}</button></div>
@@ -4547,13 +4668,13 @@ SCREENS.mine = () => {
     : mode === 'nonmaker' && !isOwner() ? meNote(`המייל הזה עוד לא מקושר ליוצר מאושר. כדי להיכנס כיוצרים, השתמשו באותו מייל שבו נרשמתם${AD.session && AD.session.user && AD.session.user.email ? ` (נכנסתם עם <span dir="ltr">${esc(AD.session.user.email)}</span>)` : ''}.`)
     : mode === 'failed' ? '<div class="note" role="note">לא הצלחנו לבדוק את הכניסה. <button type="button" class="link sm" data-act="meretry">לנסות שוב</button></div>' : '';
   const showJoin = mode !== 'pending';
-  return `${head('אני')}
+  return `${head('אני', gearBtn())}
     <div class="stack g">
-      ${AD.session ? `<div class="row wrap" style="justify-content:space-between"><span class="small muted">מחוברים</span>${signoutBtn()}</div>` : ''}
+      ${AD.session ? `<div class="row wrap" style="justify-content:space-between"><span class="small muted">מחוברים${AD.session.user && AD.session.user.email ? ` כ־<span dir="ltr">${esc(AD.session.user.email)}</span>` : ''}</span>${signoutBtn()}</div>` : ''}
       ${note}
       ${reqSec}
       ${showJoin ? joined : ''}
-      ${!AD.session && signinOK() ? '<button class="entry" data-act="signin"><span class="t">כניסה ליוצרים</span><span class="small muted">עם קישור שנשלח למייל</span></button>' : ''}
+      ${!AD.session && signinOK() ? '<button class="entry" data-act="signin"><span class="t">כניסה ליוצרים</span><span class="small muted">עם קוד שנשלח למייל</span></button>' : ''}
       ${adminHint}
       ${tail}
     </div>`;
@@ -4928,6 +5049,15 @@ Object.assign(ACT, {
   mtcraft: v => { const i = MT.crafts.indexOf(v); if (i < 0) MT.crafts.push(v); else MT.crafts.splice(i, 1); const b = document.querySelector(`[data-act="mtcraft"][data-v="${v}"]`); if (b) b.setAttribute('aria-pressed', String(i < 0)); drawMatch(); },
   matchopen: () => { const f = document.querySelector('form[data-form="post"]'); if (f) { MT.crafts = [...new Set(new FormData(f).getAll('crafts').filter(hasCraft))]; MT.city = String(new FormData(f).get('city') || '').trim().slice(0, 60); } MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
   matchsent: () => { MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
+  settings: () => go('settings'),
+  clearreqs: () => openSheet(confirmSheet('לנקות את הרשימה?', 'הבקשות עצמן נשארות אצלנו, אבל לא תראו אותן ברשימה במכשיר הזה.', 'clearreqsyes', '1', 'כן, לנקות'), 'ניקוי הרשימה'),
+  clearreqsyes: () => { MYREQ = []; saveMyReq(); closeSheet(true); render(); toast('הרשימה נוקתה'); },
+  discshuffle: () => { DISC = null; render(); },
+  editprofile: () => { const m = AU.maker; if (!m) return; EP.m = m; EP.works = m.photos.map(p => ({ path: p })); EP.portrait = m.portrait || ''; EP.portraitUrl = ''; go('editprofile'); },
+  eppick: () => { const i = document.getElementById('ep-pfile'); if (i) i.click(); },
+  epwpick: () => { const i = document.getElementById('ep-file'); if (i) i.click(); },
+  epprm: () => { EP.portrait = ''; EP.portraitUrl = ''; drawEP(); },
+  epwrm: v => { EP.works.splice(+v, 1); drawEP(); },
   rvkit: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) openSheet(reviewKitSheet(m), 'ביקורות מלקוחות'); },
   rvcopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('rv-url'); if (i) i.select(); toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('rv-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
   rvcard: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); cardDownload(makerLink(v), m ? m.name : ''); },
@@ -5063,6 +5193,7 @@ document.addEventListener('submit', e => {
       if (r.error || !r.data || !r.data.length) { toast('השמירה לא הצליחה, נסו שוב'); return; }
       const a = AD.approved.find(x => x.id === id); if (a) a.reviews_url = u || null; const m = REAL.list.find(x => x.id === id); if (m) m.reviewsUrl = u; toast('נשמר'); });
     return; }
+  if (kind === 'editprofile') { saveProfile(f); return; }
   if (kind === 'review') { submitReview(f, f.dataset.v); return; }
   if (kind === 'offer') { submitOffer(f, f.dataset.v); return; }
   if (kind === 'listing') { submitListing(f); return; }

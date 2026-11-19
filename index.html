@@ -2835,7 +2835,7 @@ var qrcode = function() {
    Fill in the three values (see SETUP-HE.md) and makers can join, requests are saved, and #admin opens the owner's screen.
    Only the public "anon" key belongs here. Never paste a secret / service_role key into this file.
    Everything the site shows is real: makers appear only after the owner approved them by hand. There is no invented content. */
-const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: true, CODE_LOGIN: true };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
+const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: false, CODE_LOGIN: true };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
 
 const CRAFTS = { wood: 'עץ', leather: 'עור', ceramic: 'קרמיקה', jewelry: 'תכשיטים', metal: 'מתכת', glass: 'זכוכית', textile: 'בדים', paper: 'נייר', art: 'ציור' };
 const UI = {
@@ -5068,7 +5068,8 @@ Object.assign(ACT, {
   flprint: () => { document.documentElement.classList.add('fl-printing'); setTimeout(() => window.print(), 100); },
   rvwrite: v => { const m = REAL.list.find(x => x.id === v); if (m) openSheet(reviewSheet(m), 'ביקורת'); },
   radrvok: v => rvSet(v, 'approved'),
-  radrvno: v => rvSet(v, 'rejected'),
+  radrvno: v => openSheet(confirmSheet('להסיר את הביקורת מהאתר?', 'היא תיעלם מהדף של היוצר.', 'radrvnoyes', v, 'כן, להסיר'), 'הסרת ביקורת'),
+  radrvnoyes: v => { closeSheet(true); rvSet(v, 'rejected'); },
   go: v => go(v),
   listing: v => go('listing', { id: v }),
   lretry: v => { delete LFETCH[v]; fetchListing(v); render(); },

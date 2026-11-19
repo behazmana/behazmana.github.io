@@ -2939,23 +2939,51 @@ function reviewsHTML(m) {
     ${m.reviewsUrl ? `<p><a class="link" href="${esc(m.reviewsUrl)}" ${OUT}>ביקורות נוספות על ${esc(m.name)} באתר אחר</a></p>` : ''}
     <button type="button" class="btn ghost block" data-act="rvwrite" data-v="${esc(m.id)}">לכתוב ביקורת</button></section>`;
 }
+const FLYER_CSS = `#flyer{display:none}
+#flyer.show{display:block;position:fixed;inset:0;z-index:9999;background:#e8e3d9;overflow:auto}
+#flyer .fl-bar{position:sticky;top:0;display:flex;gap:8px;padding:10px;background:#222;z-index:2}
+#flyer .fl-page{width:min(100%,794px);margin:12px auto;background:#fff;color:#222;padding:36px 32px;box-sizing:border-box;border:1px solid #bbb;text-align:center}
+#flyer .fl-page h2{font-size:34px;margin:14px 0 4px;line-height:1.15}
+#flyer .fl-where{font-size:17px;color:#555}
+#flyer .fl-face{width:190px;height:190px;object-fit:cover;display:block;margin:0 auto}
+#flyer .fl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}
+#flyer .fl-grid img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+#flyer .fl-qr{width:230px;margin:6px auto 0;border:1px solid #222}
+#flyer .fl-cta{font-size:22px;font-weight:700;margin-top:18px}
+#flyer .fl-sub{font-size:16px;color:#444;margin-top:6px}
+#flyer .fl-foot{margin-top:22px;font-size:14px;color:#666;border-top:1px solid #ccc;padding-top:10px}
+@media print{html.fl-printing body>*:not(#flyer){display:none!important}#flyer.show{position:static;background:#fff;overflow:visible}#flyer .fl-bar{display:none}#flyer .fl-page{border:0;margin:0;width:100%;padding:0}@page{size:A4;margin:14mm}}`;
+window.addEventListener('afterprint', () => document.documentElement.classList.remove('fl-printing'));
+function showFlyer(m) {
+  if (!document.getElementById('flyer-css')) { const st = document.createElement('style'); st.id = 'flyer-css'; st.textContent = FLYER_CSS; document.head.appendChild(st); }
+  let box = document.getElementById('flyer'); if (!box) { box = document.createElement('div'); box.id = 'flyer'; document.body.appendChild(box); }
+  const url = makerLink(m.id), face = m.portrait || (m.photos || [])[0], works = (m.portrait ? m.photos : (m.photos || []).slice(1)).slice(0, 3);
+  box.innerHTML = `<div class="fl-bar"><button type="button" class="btn small" data-act="flprint">הדפסה או שמירה כ־PDF</button><button type="button" class="btn small ghost" data-act="flclose">סגירה</button></div>
+    <div class="fl-page">${face ? `<img class="fl-face" src="${esc(photoURL(face))}" alt="">` : ''}
+      <h2>${esc(m.name)}</h2><div class="fl-where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</div>
+      ${works.length ? `<div class="fl-grid">${works.map(p => `<img src="${esc(photoURL(p))}" alt="">`).join('')}</div>` : '<div style="height:20px"></div>'}
+      <div class="fl-cta">רוצים משהו שנוצר במיוחד בשבילכם?</div><div class="fl-sub">סרקו את הקוד, ראו עוד מהעבודות וכתבו לנו מה תרצו.</div>
+      <div class="fl-qr">${qrSvg(url)}</div>
+      <div class="fl-foot">בהזמנה · ${esc(location.host + location.pathname.replace(/\/$/, ''))}</div></div>`;
+  closeSheet(true); box.classList.add('show'); box.scrollTop = 0;
+}
 function cardDownload(url, name) {
   const q = qrOf(url), n = q.getModuleCount(), pad = 2, W = 900, H = 1200, size = 640, k = Math.floor(size / (n + pad * 2)), qs = k * (n + pad * 2);
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
   g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.strokeStyle = '#222'; g.lineWidth = 6; g.strokeRect(30, 30, W - 60, H - 60);
   g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#222'; const font = 'Assistant, Heebo, Arial, sans-serif';
-  g.font = `700 84px ${font}`; g.fillText('אהבתם? ספרו לנו', W / 2, 200);
-  g.font = `400 44px ${font}`; g.fillText('סרקו וכתבו ביקורת קצרה על', W / 2, 290); g.font = `700 54px ${font}`; g.fillText(name, W / 2, 365);
+  g.font = `700 84px ${font}`; g.fillText('אהבתם? ספרו עלינו', W / 2, 200);
+  g.font = `400 44px ${font}`; g.fillText('סרקו כדי לראות את העבודות של', W / 2, 290); g.font = `700 54px ${font}`; g.fillText(name, W / 2, 365);
   const x0 = (W - qs) / 2, y0 = 430; g.fillStyle = '#000';
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect(x0 + (c + pad) * k, y0 + (r + pad) * k, k, k);
   g.fillStyle = '#222'; g.font = `400 40px ${font}`; g.fillText('בהזמנה', W / 2, H - 100);
   cv.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'behazmana-review-card.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
 }
-const reviewKitSheet = m => { const url = reviewLink(m.id), msg = `היי, אשמח אם תכתבו כמה מילים על העבודה איתי. זה לוקח דקה: ${url}`;
-  return `<div class="sheet-body"><div><h2 class="sec-title">לקבל ביקורות מלקוחות</h2><p style="margin-top:6px">מי שיפתח את הקישור יגיע ישר לכתיבת ביקורת עליכם, גם אם הוא לא הגיע מהאתר.</p></div>
+const reviewKitSheet = m => { const url = makerLink(m.id), msg = `היי, אשמח אם תכתבו כמה מילים על העבודה איתי. זה הדף שלי באתר, ובו הכפתור ״לכתוב ביקורת״: ${url}`;
+  return `<div class="sheet-body"><div><h2 class="sec-title">לקבל ביקורות ולהציג את העבודות</h2><p style="margin-top:6px">הקישור והקוד מובילים לדף שלכם באתר. מי שהזמין מכם יכול שם ללחוץ על ״לכתוב ביקורת״.</p></div>
     <input class="input" id="rv-url" readonly dir="ltr" value="${esc(url)}" aria-label="הקישור לכתיבת ביקורת">
-    <div class="row wrap"><a class="btn small" href="https://wa.me/?text=${encodeURIComponent(msg)}" ${OUT}>שליחה בוואטסאפ</a><button type="button" class="btn small ghost" data-act="rvcopy" data-v="${esc(m.id)}">העתקת הקישור</button><button type="button" class="btn small ghost" data-act="rvcard" data-v="${esc(m.id)}">הורדת כרטיס להדפסה</button></div>
-    <p class="small muted">הכרטיס כולל קוד QR. אפשר להדפיס אותו ולהניח בתוך החבילה.</p></div>`; };
+    <div class="row wrap"><a class="btn small" href="https://wa.me/?text=${encodeURIComponent(msg)}" ${OUT}>שליחה בוואטסאפ</a><button type="button" class="btn small ghost" data-act="rvcopy" data-v="${esc(m.id)}">העתקת הקישור</button><button type="button" class="btn small ghost" data-act="rvcard" data-v="${esc(m.id)}">הורדת כרטיס קטן עם QR</button></div>
+    <div class="panel"><b>דף להדפסה לשולחן באירוע או בפסטיבל</b><p class="small muted" style="margin:4px 0 8px">דף יפה עם השם שלכם, התמונה שלכם, תמונות מהעבודות וקוד QR. אפשר להדפיס או לשמור כ־PDF.</p><button type="button" class="btn small" data-act="rvflyer" data-v="${esc(m.id)}">יצירת הדף</button></div></div>`; };
 const reviewSheet = m => `<form class="sheet-body" data-form="review" data-v="${esc(m.id)}" novalidate>
     <div><h2 class="sec-title">ביקורת על ${esc(m.name)}</h2><p style="margin-top:6px">אם נהניתם, פרגנו. כמה מילים טובות חשובות מאוד ליוצר, שמשקיע בכל יצירה, והן עוזרות גם לקונים הבאים לבחור. ספרו בכנות איך היה.</p><p class="small muted" style="margin-top:4px">הביקורת תופיע בדף של היוצר מיד.</p></div>
     <div class="field"><label for="rv-name">השם שיופיע</label><input class="input" id="rv-name" name="name" maxlength="60" autocomplete="given-name" aria-required="true"></div>
@@ -4725,8 +4753,11 @@ const adFind = id => AD.lpend.find(x => x.id === id) || AD.lappr.find(x => x.id 
 const adDrop = id => { AD.lpend = AD.lpend.filter(x => x.id !== id); AD.lappr = AD.lappr.filter(x => x.id !== id); };
 Object.assign(ACT, {
   rvkit: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) openSheet(reviewKitSheet(m), 'ביקורות מלקוחות'); },
-  rvcopy: v => { const u = reviewLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('rv-url'); if (i) i.select(); toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('rv-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
-  rvcard: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); cardDownload(reviewLink(v), m ? m.name : ''); },
+  rvcopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('rv-url'); if (i) i.select(); toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('rv-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
+  rvcard: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); cardDownload(makerLink(v), m ? m.name : ''); },
+  rvflyer: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) showFlyer(m); },
+  flclose: () => { const b = document.getElementById('flyer'); if (b) { b.classList.remove('show'); b.innerHTML = ''; } document.documentElement.classList.remove('fl-printing'); },
+  flprint: () => { document.documentElement.classList.add('fl-printing'); setTimeout(() => window.print(), 100); },
   rvwrite: v => { const m = REAL.list.find(x => x.id === v); if (m) openSheet(reviewSheet(m), 'ביקורת'); },
   radrvok: v => rvSet(v, 'approved'),
   radrvno: v => rvSet(v, 'rejected'),

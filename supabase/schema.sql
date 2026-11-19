@@ -1917,3 +1917,14 @@ as
   where status = 'approved';
 revoke all on public.public_makers from anon, authenticated;
 grant select on public.public_makers to anon, authenticated;
+
+-- 15b. A review may be added for an approved maker. The check runs as a secure function, because visitors cannot read the makers table.
+create or replace function public.is_approved_maker(p_id uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.makers m where m.id = p_id and m.status = 'approved')
+$$;
+revoke all on function public.is_approved_maker(uuid) from public;
+grant execute on function public.is_approved_maker(uuid) to anon, authenticated;
+drop policy if exists reviews_insert on public.reviews;
+create policy reviews_insert on public.reviews for insert to anon, authenticated
+  with check (status = 'approved' and public.is_approved_maker(maker_id));

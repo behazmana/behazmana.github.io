@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ierrrodoriperjrmfbun.supabase.co; connect-src 'self' https://ierrrodoriperjrmfbun.supabase.co wss://ierrrodoriperjrmfbun.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>בהזמנה · מה תרצו שיכינו לכם בידיים?</title>
+<title>בהזמנה · מה תרצו שיכינו לכם?</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="כתבו מה תרצו שיכינו לכם בידיים. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים בעץ, בעור, בקרמיקה, בתכשיטים ובמתכת. האתר חדש והשימוש בו חינם.">
+<meta name="description" content="כתבו מה תרצו שיכינו לכם. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים בעץ, בעור, בקרמיקה, בתכשיטים ובמתכת. האתר חדש והשימוש בו חינם.">
 <meta name="theme-color" content="#c9d1b6">
 <meta name="color-scheme" content="only light">
 <meta name="supported-color-schemes" content="light">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="he_IL">
 <meta property="og:url" content="https://behazmana.github.io/">
-<meta property="og:title" content="בהזמנה · מה תרצו שיכינו לכם בידיים?">
-<meta property="og:description" content="כתבו מה תרצו שיכינו לכם בידיים. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים בעץ, בעור, בקרמיקה, בתכשיטים ובמתכת. האתר חדש והשימוש בו חינם.">
+<meta property="og:title" content="בהזמנה · מה תרצו שיכינו לכם?">
+<meta property="og:description" content="כתבו מה תרצו שיכינו לכם. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים בעץ, בעור, בקרמיקה, בתכשיטים ובמתכת. האתר חדש והשימוש בו חינם.">
 <meta property="og:image" content="https://behazmana.github.io/img/hero.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -3120,7 +3120,7 @@ const cardActs = m => m.contact || m.email ? `<span class="macts">${m.contact ? 
 const realAv = m => `<span class="av">${m.portrait || m.photos[0] ? rImg(m.portrait || m.photos[0]) : `<span class="ini">${esc(initials(m.name))}</span>`}</span>`;
 const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftsLine(m))}${m.city ? ` · ${h(m.city)}` : ''}</span>${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
 const emptyMakers = () => `<div class="s-empty"><p class="say">עוד אין כאן יוצרים, האתר חדש.</p>${AU.maker ? '' : JOINED ? '<p class="small muted">כשנאשר את ההרשמה שלכם, הפרופיל יופיע כאן.</p>'
-  : `<p class="small muted">אם אתם יוצרים בידיים, בעץ, בעור, בחימר, בתכשיטים או במתכת, ספרו לנו על העבודה שלכם. כשנאשר את ההרשמה, הפרופיל שלכם יופיע כאן.</p>
+  : `<p class="small muted">אם אתם יוצרים בעץ, בעור, בחימר, בתכשיטים או במתכת, ספרו לנו על העבודה שלכם. כשנאשר את ההרשמה, הפרופיל שלכם יופיע כאן.</p>
   <button type="button" class="btn" data-act="join">להצטרף כיוצרים</button>`}</div>`;
 function makersBlock(list, limit) {
   const st = realState();
@@ -3399,9 +3399,9 @@ const termsSheet = () => `<div class="sheet-body">
 
 const visionSheet = () => `<div class="sheet-body vision">
   <h2 class="sec-title">מי אנחנו</h2>
-  <p class="pull">חפץ שנעשה בשבילכם, בידיים של יוצר שאתם מכירים בשמו.</p>
+  <p class="pull">חפץ שנוצר במיוחד בשבילכם, אצל יוצר שאתם מכירים בשמו.</p>
   <p>יש חפצים שאי אפשר לקנות מוכנים. ארנק עם האותיות של אבא, שולחן שמתאים בדיוק לפינה שלכם. אצלנו כותבים במילים שלכם מה תרצו, מאיזה חומר ועד מתי, בלי מחיר.</p>
-  <p>את כל הבקשות אנחנו קוראים בעצמנו, ומעבירים כל אחת ליוצרים שמתאימים לה. כל יוצר באתר אושר אצלנו ביד, והשם, העיר והעבודות שלו גלויים לכולם.</p>
+  <p>את כל הבקשות אנחנו קוראים בעצמנו, ומעבירים כל אחת ליוצרים שמתאימים לה. כל יוצר באתר אושר אצלנו אישית, והשם, העיר והעבודות שלו גלויים לכולם.</p>
   <p>ליוצרים יש באתר מקום משלהם: שם הם רואים את הבקשות שהעברנו אליהם, עונים להן ומציגים באתר את מה שהכינו. מי שביקש רואה לאילו יוצרים הבקשה הגיעה ומה כל אחד ענה.</p>
   <p>דרך האתר לא עובר כסף ואנחנו לא לוקחים עמלה. את המחיר, הזמן והמסירה מסכמים אתם והיוצר, ישירות. האתר עוד בתחילת הדרך, והשימוש בו חינם.</p>
   <p class="last">כל יצירה כאן מתחילה בשיחה.</p>
@@ -3928,7 +3928,7 @@ const findBtn = () => `<button class="round" data-act="search" aria-label="חי�
 const legalLinks = (first = '') => `<div class="links-row">${first}<button type="button" class="link" data-act="privacy">מדיניות הפרטיות</button><button type="button" class="link" data-act="terms">תנאי השימוש</button></div>`;
 const HOW = [
   ['מגישים בקשה', 'מה, מאיזה חומר ועד מתי. בלי מחיר.', 'בקשה'],
-  ['אנחנו קוראים כל בקשה בעצמנו ומוצאים בדיוק מי הכי מתאים לכם.', 'כל יוצר באתר אושר אצלנו ביד.', 'יוצרים'],
+  ['אנחנו קוראים כל בקשה בעצמנו ומוצאים בדיוק מי הכי מתאים לכם.', 'כל יוצר באתר אושר אצלנו אישית.', 'יוצרים'],
   ['מדברים ישירות', 'מחיר, מועד ופרטי המסירה מסכמים ביניכם.', 'ביחד']];
 /* the hero photo settles once (scale 1.04 to 1, 1.2 s). A re-render inside that window carries on from where it was instead of starting over. */
 let DRIFT_T0 = 0;
@@ -3940,20 +3940,20 @@ const SCREENS = {
       <button class="round" data-act="search" aria-label="חיפוש יוצרים">${svg(UI.search)}</button></header>
     <section class="hero"><div class="photo"><img${driftAttr()} src="img/h/${HERO.k}-880.jpg" srcset="img/h/${HERO.k}-480.jpg 480w, img/h/${HERO.k}-880.jpg 880w" sizes="(max-width: 440px) 100vw, 440px" width="880" height="640" alt="${esc(HERO.alt)}" loading="eager" fetchpriority="high" decoding="async" draggable="false"></div>
       <div class="slip-wrap g"><div class="slip zig"><img class="logo-big" src="logo/logo-primary-ink.svg" width="168" height="109" alt="">
-        <h1>כתבו מה תרצו שיכינו לכם בידיים</h1><p>למשל ארנק עם האותיות של אבא. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים שמתאימים.</p>
+        <h1>כתבו מה תרצו שיכינו לכם</h1><p>למשל ארנק עם האותיות של אבא. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים שמתאימים.</p>
         <div class="acts"><button class="btn" data-act="tab" data-v="post">לכתוב בקשה</button>${canJoin() ? '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>' : ''}</div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
       <section aria-labelledby="h-how"><div class="sec-head"><h2 class="sec-title" id="h-how">איך זה עובד</h2></div>
         <div class="tale zig">${HOW.map(([t, d, st]) => `<div class="tale-row"><div class="what"><b>${t}</b><span>${d}</span></div><span class="stamp" aria-hidden="true">${st}</span></div>`).join('')}</div></section>
       ${homeStrip()}
       <section aria-labelledby="h-real"><div class="sec-head"><h2 class="sec-title" id="h-real">יוצרים שהצטרפו</h2>${REAL.list.length ? `<span class="small muted">${REAL.list.length}</span>` : ''}</div>
-        ${REAL.list.length ? '<p class="muted" style="margin-bottom:14px">כולם נרשמו בעצמם ואושרו אצלנו ביד.</p>' : ''}${makersBlock(REAL.list, 6)}</section>
+        ${REAL.list.length ? '<p class="muted" style="margin-bottom:14px">כולם נרשמו בעצמם ואושרו אצלנו אישית.</p>' : ''}${makersBlock(REAL.list, 6)}</section>
       <div class="bleed"><section class="clayfield g" aria-labelledby="h-reply"><p class="say">יש לכם רעיון?</p>
           <div class="reply"><h2 id="h-reply">ספרו לנו מה תרצו</h2><p>כמה מילים מספיקות: מה, מאיזה חומר ועד מתי. את המחיר היוצרים יציעו.</p><button class="btn" data-act="tab" data-v="post">לכתוב בקשה</button>${canJoin() ? '<button class="btn ghost" data-act="join">יוצרים? אפשר להצטרף</button>' : ''}</div></section>
         <footer class="backside g"><img class="logo-line" src="logo/logo-wordmark-ink.svg" width="204" height="96" alt=""><p class="sign">כתבו לנו</p>
           <div class="links-col">${mailLink('שלום מבהזמנה')}</div>
           <p>האתר עוד חדש. אנחנו קוראים כל בקשה וכל הרשמה בעצמנו, וחוזרים אליכם ברגע שיש התאמה.</p>
-          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer></div>
+          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · יצירה לפי הזמנה</p></footer></div>
     </div>`,
 
   wait: () => { const reg = JOINED || MYREQ.length || AD.session;
@@ -3963,20 +3963,20 @@ const SCREENS = {
         <h1>${reg ? 'שמרנו את החשבון שלכם' : 'שומרים לכם מקום'}</h1><p>${reg ? 'שמרנו את הפרטים שלכם. אם נרשמתם כיוצרים, נשלח לכם בקשה ברגע שיגיע קונה שמתאים לעבודות שלכם, או מי שרוצה להזמין מכם יצירה. אם כתבתם בקשה, נמצא לה יוצר מתאים ונחזור אליכם.' : 'האתר עוד לא נפתח לקהל. אפשר להירשם כבר עכשיו: יוצרים מספרים לנו על העבודות שלהם, ומי שמחפש יצירה כותב לנו מה הוא רוצה שיכינו לו. כשנמצא התאמה ליוצר, ניצור איתכם קשר.'}</p>
         <div class="acts"><button class="btn" data-act="ask">מחפשים יצירה? כתבו לנו מה</button>${JOINED ? '' : '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>'}${signinOK() ? '<button class="link" data-act="signin">יש לכם כבר חשבון? כניסה</button>' : ''}</div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
-      ${REAL.list.length || realState() === 'loading' ? `<section aria-labelledby="h-who"><div class="sec-head"><h2 class="sec-title" id="h-who">מי כבר איתנו</h2></div>${makersBlock(REAL.list)}</section>` : ''}
       <section aria-labelledby="h-wait"><div class="sec-head"><h2 class="sec-title" id="h-wait">מה קורה אחרי ההרשמה</h2></div>
         <div class="tale zig"><div class="tale-row"><div class="what"><b>קוראים בעצמנו</b><span>כל הרשמה וכל בקשה עוברות דרכנו.</span></div><span class="stamp" aria-hidden="true">1</span></div>
           <div class="tale-row"><div class="what"><b>מחפשים התאמה</b><span>לכל בקשה אנחנו בוחרים את היוצרים שמתאימים לה, לפי התחום, המקום והעבודות שלהם.</span></div><span class="stamp" aria-hidden="true">2</span></div>
           <div class="tale-row"><div class="what"><b>חוזרים אליכם</b><span>במייל או בטלפון שהשארתם, ברגע שיש התאמה אמיתית.</span></div><span class="stamp" aria-hidden="true">3</span></div></div></section>
+      ${REAL.list.length || realState() === 'loading' ? `<section aria-labelledby="h-who"><div class="sec-head"><h2 class="sec-title" id="h-who">מי כבר איתנו</h2></div>${makersBlock(REAL.list)}</section>` : ''}
       <footer class="backside g"><img class="logo-line" src="logo/logo-wordmark-ink.svg" width="204" height="96" alt=""><p class="sign">כתבו לנו</p>
           <div class="links-col">${mailLink('שלום מבהזמנה')}</div>
-          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer>
+          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · יצירה לפי הזמנה</p></footer>
     </div>`; },
 
   makers: () => { const list = REAL.list.filter(fitCraft), crafts = new Set(REAL.list.flatMap(mcrafts));
     return `${head('היוצרים', REAL.list.length ? findBtn() : '')}
     <div class="stack tight g">
-      <p class="muted">כולם נרשמו בעצמם ואושרו אצלנו ביד.</p>
+      <p class="muted">כולם נרשמו בעצמם ואושרו אצלנו אישית.</p>
       ${REAL.list.length > 1 && crafts.size > 1 ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button data-act="mcraft" data-v="${k}" aria-pressed="${S.mcraft === k}">${v}</button>`).join('')}</div>` : ''}
       ${REAL.list.length && !list.length ? `<p class="empty">עוד אין יוצרים ב${CRAFTS[S.mcraft] || 'תחום הזה'}.</p>` : makersBlock(list)}
       ${REAL.list.length ? '<p class="note">רוצים יצירה שנעשית במיוחד בשבילכם? כתבו בקשה, ואנחנו נעביר אותה ליוצרים שמתאימים.</p><button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>' : ''}
@@ -4005,7 +4005,8 @@ const SCREENS = {
   /* joining as a maker. Whoever came here to sign up sees only this form: no tab bar and no way into the site until it is sent. */
   join: () => `${head('להצטרף כיוצרים')}
     <div class="stack tight g">
-      <p class="muted">אם אתם יוצרים בידיים ומוכנים לקבל בקשות מקונים, ספרו לנו על עצמכם. אנחנו קוראים כל הרשמה בעצמנו ונחזור אליכם כשנמצא קונה מתאים לכם.</p>
+      <h2 class="display">רוצים להתחיל למכור את היצירות שלכם?</h2>
+      <p class="muted">ספרו לנו על עצמכם ועל העבודות שלכם. אנחנו קוראים כל הרשמה בעצמנו, ונחזור אליכם כשנמצא קונה מתאים לכם.</p>
       ${CFG_ON ? '' : '<p class="note" role="note">האתר כרגע לא מחובר לשרת. אפשר למלא ולראות איך זה נראה, אבל שום דבר לא נשלח ולא נשמר.</p>'}
       <form class="f" data-form="join" novalidate>
         <p class="hint">שדות עם כוכבית (<span aria-hidden="true">*</span><span class="sr">כוכבית</span>) הם חובה. הסיפור לא.</p>
@@ -4020,7 +4021,7 @@ const SCREENS = {
         <div class="field"><label for="j-phone">טלפון ${STAR}</label><input class="input" id="j-phone" name="phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" inputmode="tel" aria-required="true" aria-describedby="j-contact-h"><span class="hint" id="j-contact-h">אנחנו נציג באתר את המייל ואת הטלפון שלכם, אחרי שנאשר אתכם, כדי שקונים יוכלו לפנות אליכם. אפשר לבקש מאיתנו בכל זמן להסיר אותם.</span></div>
         <div class="field"><span class="lbl" id="j-pr-l">תמונה שלכם ${STAR}<span class="sr">, חובה</span></span><div class="pt-row"><div class="photos" id="portrait" role="group" aria-labelledby="j-pr-l">${portraitHTML()}</div></div>
           <input type="file" id="j-pfile" accept="image/jpeg,image/png,image/webp" hidden aria-label="בחירת תמונה שלכם">
-          <span class="hint">מי שמזמין יצירה רוצה להכיר את הידיים שמאחוריה. מספיקה תמונה שלכם, בסדנה או ליד עבודה.</span><span class="hint" id="j-prmsg" role="status" aria-live="polite"></span></div>
+          <span class="hint">מי שמזמין יצירה רוצה להכיר את היוצר שמאחוריה. מספיקה תמונה שלכם, בסדנה או ליד עבודה.</span><span class="hint" id="j-prmsg" role="status" aria-live="polite"></span></div>
         <div class="field"><span class="lbl" id="j-ph-l">תמונות של העבודות שלכם ${STAR}<span class="sr">, חובה</span></span><div class="photos" id="photos" role="group" aria-labelledby="j-ph-l">${photosHTML()}</div>
           <input type="file" id="j-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של העבודות">
           <span class="hint">עבודות שהכנתם בעצמכם. לפחות תמונה אחת ועד ${MAX_PHOTOS}. צלמו ליד חלון, על רקע פשוט. התמונות עולות בגודל המקורי, בלי פרטי המיקום והמצלמה שבקובץ. עד 10MB לתמונה (JPG, PNG או WebP).</span><span class="hint" id="j-pmsg" role="status" aria-live="polite">${JP.length ? photoCount() : ''}</span></div>
@@ -4209,7 +4210,7 @@ Object.assign(SCREENS, {
   shop: () => { const crafts = SHOP_CR;
     return `${head('יצירות')}
     <div class="stack tight g">
-      <p class="muted">מה שהיוצרים הכינו, ואושר אצלנו. הכול בעבודת יד.</p>
+      <p class="muted">מה שהיוצרים הכינו, ואושר אצלנו.</p>
       ${crafts.size > 1 && shopState('all') === 'ready' ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button type="button" data-act="scraft" data-v="${k}" aria-pressed="${S.scraft === k}">${v}</button>`).join('')}</div>` : ''}
       ${shopBody()}
     </div>`; },
@@ -4465,7 +4466,7 @@ function searchHTML() {
     return `<div class="s-empty"><p class="say">עוד אין כאן יוצרים, האתר חדש.</p>
       <p class="small muted">כתבו מה אתם מחפשים, ואנחנו נעביר את הבקשה ליוצרים שמתאימים.</p>
       <button type="button" class="btn" data-act="askfor">לבקש: ${esc(q)}</button>
-      ${canJoin() ? '<p class="small muted">יוצרים בידיים? <button type="button" class="link" data-act="join">אפשר להצטרף</button></p>' : ''}</div>`;
+      ${canJoin() ? '<p class="small muted">יוצרים? <button type="button" class="link" data-act="join">אפשר להצטרף</button></p>' : ''}</div>`;
   }
   const rows = ms => ms.map(m => { const direct = [m.name, m.city, craftsLine(m)].some(t => scoreDoc(terms, [[t, 1]]));
       return realRow(m, h, !direct && m.story && termScores(terms, [[m.story, 1]]).some(Boolean) ? `<span class="small clamp">${h(m.story)}</span>` : ''); }).join('');

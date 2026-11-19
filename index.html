@@ -3017,7 +3017,7 @@ const FL_VARS = [['1', 'שובר'], ['2', 'תמונה גדולה'], ['3', 'כח�
 const FL = { m: null, v: '1' };
 const flSize = (name, base) => { const n = Array.from(String(name || '')).length; return Math.round(base * (n <= 8 ? 1 : n <= 12 ? .8 : n <= 18 ? .62 : .5)); };
 function flyerPage(m, v) {
-  const url = makerLink(m.id), face = m.portrait || (m.photos || [])[0], works = (m.portrait ? m.photos : (m.photos || []).slice(1)) || [], all = [face, ...f-works].filter(Boolean);
+  const url = makerLink(m.id), face = m.portrait || (m.photos || [])[0], works = (m.portrait ? m.photos : (m.photos || []).slice(1)) || [], all = [face, ...works].filter(Boolean);
   const u = p => esc(photoURL(p)), name = esc(m.name), where = `${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}`, qr = `<div class="f-qr">${qrSvg(url)}</div>`;
   const cta = '<div class="f-cta">רוצים משהו שנוצר במיוחד בשבילכם?</div><div class="f-sub">סרקו את הקוד, ראו עוד מהעבודות וכתבו לנו מה תרצו.</div>';
   const host = esc(location.host + location.pathname.replace(/\/$/, ''));

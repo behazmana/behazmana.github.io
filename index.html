@@ -397,11 +397,9 @@ body.sheet-open { overflow: hidden; }
 /* reaching a maker directly: WhatsApp and call. Only for makers who chose to show their phone at signup. */
 .cbtn { width: 44px; height: 44px; border: 0; background: var(--tone); color: var(--ink); display: grid; place-items: center; flex: none; padding: 0; text-decoration: none; }
 .cbtn svg, .cbtn2 svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.cbtn.wa svg, .cbtn2.wa svg { color: #0b7a3b; }   /* WhatsApp green, darkened so the glyph passes 3:1 on the tone */
 .contact { display: flex; flex-wrap: wrap; gap: 8px; }
 .contact .cbtn2 { flex: 1 1 120px; }
 .cbtn2 { min-height: 52px; padding: 10px 12px; background: var(--tone); color: var(--ink); font-weight: 700; font-size: var(--fs-2); display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; text-align: center; border-radius: 0; clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
-.cbtn2.wa { border-bottom: 3px solid #25D366; }   /* WhatsApp's own green as a thin accent only */
 .cbtn2:focus-visible { clip-path: none; }
 .contact-alt { color: var(--muted); font-size: var(--fs-2); display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
 .contact-alt .link { font-size: var(--fs-2); }

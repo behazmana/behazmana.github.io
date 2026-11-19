@@ -2835,7 +2835,7 @@ var qrcode = function() {
    Fill in the three values (see SETUP-HE.md) and makers can join, requests are saved, and #admin opens the owner's screen.
    Only the public "anon" key belongs here. Never paste a secret / service_role key into this file.
    Everything the site shows is real: makers appear only after the owner approved them by hand. There is no invented content. */
-const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: true };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
+const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: true, CODE_LOGIN: false };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
 
 const CRAFTS = { wood: 'עץ', leather: 'עור', ceramic: 'קרמיקה', jewelry: 'תכשיטים', metal: 'מתכת', glass: 'זכוכית', textile: 'בדים', paper: 'נייר', art: 'ציור' };
 const UI = {
@@ -4041,9 +4041,9 @@ const SCREENS = {
   radmin: () => { let body;
     if (AD.failed) body = '<p class="form-err" role="alert">אין חיבור לשרת כרגע. נסו לרענן את הדף.</p>';
     else if (!SB) body = '<p class="muted" role="status">מתחברים...</p>';
-    else if (!AD.session) body = `<section class="panel"><h2 class="sec-title">כניסה לבעלים</h2><p>נשלח קוד כניסה חד־פעמי בן 6 ספרות אל <span dir="ltr">${esc((CONFIG.ADMIN_EMAIL || '').trim())}</span>.</p>
+    else if (!AD.session) body = `<section class="panel"><h2 class="sec-title">כניסה לבעלים</h2><p>${CONFIG.CODE_LOGIN ? 'נשלח קוד כניסה חד־פעמי בן 6 ספרות' : 'נשלח קישור כניסה חד־פעמי'} אל <span dir="ltr">${esc((CONFIG.ADMIN_EMAIL || '').trim())}</span>.${CONFIG.CODE_LOGIN ? '' : ' פותחים אותו במכשיר הזה.'}</p>
         ${AD.msg ? `<p class="${AD.msgErr ? 'form-err' : 'form-ok'}" role="status">${esc(AD.msg)}</p>` : ''}
-        ${AD.codeSent ? `<form class="f" data-form="radcode" novalidate><div class="field"><label for="ad-code">הקוד מהמייל</label><input class="input" id="ad-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="8" dir="ltr" aria-required="true"></div><button type="submit" class="btn block" ${AD.busy ? 'disabled' : ''}>${AD.busy ? 'בודקים...' : 'כניסה'}</button></form><button class="link" type="button" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>לשלוח קוד חדש</button>` : `<button class="btn" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>שליחת קוד כניסה</button>`}</section>`;
+        ${AD.codeSent && CONFIG.CODE_LOGIN ? `<form class="f" data-form="radcode" novalidate><div class="field"><label for="ad-code">הקוד מהמייל</label><input class="input" id="ad-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="8" dir="ltr" aria-required="true"></div><button type="submit" class="btn block" ${AD.busy ? 'disabled' : ''}>${AD.busy ? 'בודקים...' : 'כניסה'}</button></form><button class="link" type="button" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>לשלוח קוד חדש</button>` : `<button class="btn" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>${CONFIG.CODE_LOGIN ? 'שליחת קוד כניסה' : 'שליחת קישור כניסה'}</button>`}</section>`;
     else if (!isOwner()) body = '<section class="panel"><h2 class="sec-title">המסך הזה לבעלים בלבד</h2><p>נכנסתם עם מייל שאינו של הבעלים.</p><button class="btn ghost" data-act="radlogout">יציאה</button></section>';
     else if (!AD.loaded && !AD.err) body = '<p class="muted" role="status">טוענים...</p>';
     else body = adminBody();
@@ -4160,7 +4160,11 @@ function otpErr(e) {
   if (/invalid|email_address_invalid|validation_failed/i.test(m)) return 'המייל לא נראה נכון. בדקו שוב.';
   return 'הקישור לא נשלח. נסו שוב בעוד רגע.';
 }
-const signinBody = () => SI.sent ? `<form class="sheet-body" data-form="sicode" novalidate><div><h2 class="sec-title">שלחנו קוד למייל</h2><p style="margin-top:6px">קוד בן 6 ספרות נשלח אל <span dir="ltr">${esc(SI.email)}</span>. כתבו אותו כאן. אם הוא לא מגיע, בדקו גם בספאם.</p></div>
+const signinBody = () => SI.sent && !CONFIG.CODE_LOGIN ? `<div><h2 class="sec-title">שלחנו קישור למייל</h2><p style="margin-top:6px">פתחו את המייל <span dir="ltr">${esc(SI.email)}</span> במכשיר הזה ולחצו על הקישור. אם הוא לא מגיע, בדקו גם בספאם.</p></div>
+    <p class="form-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
+    <div class="field"><button type="button" class="btn ghost block" id="si-resend" data-act="siresend" ${Date.now() - SI.sent >= RESEND_MS && !SI.busy ? '' : 'disabled'}>לא הגיע?</button><span class="small muted" id="si-wait"></span></div>
+    <button type="button" class="btn block" data-act="closesheet">סגירה</button>`
+  : SI.sent ? `<form class="sheet-body" data-form="sicode" novalidate><div><h2 class="sec-title">שלחנו קוד למייל</h2><p style="margin-top:6px">קוד בן 6 ספרות נשלח אל <span dir="ltr">${esc(SI.email)}</span>. כתבו אותו כאן. אם הוא לא מגיע, בדקו גם בספאם.</p></div>
     <div class="field"><label for="si-code">הקוד</label><input class="input" id="si-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="8" dir="ltr" aria-required="true" ${SI.err ? 'aria-invalid="true"' : ''}></div>
     <p class="form-err" id="si-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
     <button type="submit" class="btn block" ${SI.busy ? 'disabled' : ''}>${SI.busy ? 'בודקים...' : 'כניסה'}</button>
@@ -4597,7 +4601,7 @@ const ACT = {
   jrm: v => { const p = JP.splice(+v, 1)[0]; if (p) URL.revokeObjectURL(p.url); drawPhotos(); const m = document.getElementById('j-pmsg'); if (m) m.textContent = JP.length ? photoCount() : ''; const b = document.querySelector('#photos .add-photo'); if (b) b.focus(); },
   radlogin: async () => { if (!SB || AD.busy) return; AD.busy = true; AD.msg = ''; redrawAdmin();
     const { error } = await SB.auth.signInWithOtp({ email: CONFIG.ADMIN_EMAIL.trim(), options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname + '?admin=1' } });
-    AD.busy = false; AD.msgErr = !!error; AD.codeSent = !error; AD.msg = error ? 'הקוד לא נשלח. נסו שוב בעוד דקה.' : 'שלחנו קוד בן 6 ספרות למייל.'; redrawAdmin(); if (!error) setTimeout(() => { const c = document.getElementById('ad-code'); if (c) c.focus(); }, 50); },
+    AD.busy = false; AD.msgErr = !!error; AD.codeSent = !error; AD.msg = error ? (CONFIG.CODE_LOGIN ? 'הקוד לא נשלח. נסו שוב בעוד דקה.' : 'הקישור לא נשלח. נסו שוב בעוד דקה.') : (CONFIG.CODE_LOGIN ? 'שלחנו קוד בן 6 ספרות למייל.' : 'שלחנו קישור כניסה למייל. פותחים אותו במכשיר הזה.'); redrawAdmin(); if (!error) setTimeout(() => { const c = document.getElementById('ad-code'); if (c) c.focus(); }, 50); },
   radlogout: async () => { if (SB) await SB.auth.signOut(); AD.session = null; AD.loaded = false; AD.makers = []; AD.requests = []; AD.approved = []; AD.msg = ''; redrawAdmin(); },
   radrefresh: () => { AD.loaded = false; adminLoad(); },
   radmore: v => adminLoad(v === 'm' ? 'm' : 'r'),

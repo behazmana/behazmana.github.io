@@ -3250,7 +3250,7 @@ async function cleanPhoto(file) {
   const img = await decodeImg(file), W = img.naturalWidth, H = img.naturalHeight;
   if (!W || !H || W * H > 150e6) throw new Error('size');
   let blob = null, shrunk = false;
-  for (const [side, q] of [[2400, .86], [2400, .78], [2000, .75]]) {   /* 2400px on the long side is sharper than any phone screen, and keeps a photo near half a megabyte */
+  for (const [side, q] of [[1600, .82], [1600, .74], [1300, .70]]) {   /* 1600px on the long side is sharper than any phone screen, and keeps a photo near a quarter of a megabyte */
     const k = side ? Math.min(1, side / Math.max(W, H)) : 1, w = Math.max(1, Math.round(W * k)), h = Math.max(1, Math.round(H * k));
     const c = document.createElement('canvas'); c.width = w; c.height = h;
     let b = null;
@@ -3796,7 +3796,7 @@ const lForm = ({ id }) => {
         <label class="opt"><input type="checkbox" id="l-onreq" name="onreq" ${ed && v.price === null ? 'checked' : ''}><span class="grow">מחיר בפנייה</span></label></div>
       <div class="field"><span class="lbl" id="l-ph-l">תמונות ${STAR}<span class="sr">, חובה</span></span><div class="photos" id="l-photos" role="group" aria-labelledby="l-ph-l">${lPhotosHTML()}</div>
         <input type="file" id="l-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של היצירה">
-        <span class="hint">מתמונה אחת עד ${MAX_LP}. התמונות עולות בגודל המקורי, בלי פרטי המיקום והמצלמה שבקובץ. עד 10MB לתמונה (JPG, PNG או WebP).</span><span class="hint" id="l-pmsg" role="status" aria-live="polite">${LP.length ? photoCount(LP, MAX_LP) : ''}</span></div>
+        <span class="hint">מתמונה אחת עד ${MAX_LP}. אנחנו מקטינים את התמונות קצת כדי שהאתר ייטען מהר, ומסירים מהן את פרטי המיקום והמצלמה. אפשר להעלות קובץ עד 60MB (JPG, PNG או WebP).</span><span class="hint" id="l-pmsg" role="status" aria-live="polite">${LP.length ? photoCount(LP, MAX_LP) : ''}</span></div>
       <p class="form-err" id="l-err" role="alert" hidden></p>
       <button class="btn block" type="submit">${ed ? 'שמירת השינויים' : 'פרסום היצירה'}</button>
     </form></div>`;
@@ -4065,7 +4065,7 @@ const SCREENS = {
           <span class="hint">מי שמזמין יצירה רוצה להכיר את היוצר שמאחוריה. מספיקה תמונה שלכם, בסדנה או ליד עבודה.</span><span class="hint" id="j-prmsg" role="status" aria-live="polite"></span></div>
         <div class="field"><span class="lbl" id="j-ph-l">תמונות של העבודות שלכם ${STAR}<span class="sr">, חובה</span></span><div class="photos" id="photos" role="group" aria-labelledby="j-ph-l">${photosHTML()}</div>
           <input type="file" id="j-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של העבודות">
-          <span class="hint">עבודות שהכנתם בעצמכם. לפחות תמונה אחת ועד ${MAX_PHOTOS}. צלמו ליד חלון, על רקע פשוט. התמונות עולות בגודל המקורי, בלי פרטי המיקום והמצלמה שבקובץ. עד 10MB לתמונה (JPG, PNG או WebP).</span><span class="hint" id="j-pmsg" role="status" aria-live="polite">${JP.length ? photoCount() : ''}</span></div>
+          <span class="hint">עבודות שהכנתם בעצמכם. לפחות תמונה אחת ועד ${MAX_PHOTOS}. צלמו ליד חלון, על רקע פשוט. אנחנו מקטינים את התמונות קצת כדי שהאתר ייטען מהר, ומסירים מהן את פרטי המיקום והמצלמה. אפשר להעלות קובץ עד 60MB (JPG, PNG או WebP).</span><span class="hint" id="j-pmsg" role="status" aria-live="polite">${JP.length ? photoCount() : ''}</span></div>
         <div class="field"><label for="j-rurl">קישור לביקורות עליכם במקום אחר <span class="m">(לא חובה)</span></label><input class="input" id="j-rurl" name="reviews_url" type="url" dir="ltr" maxlength="280" autocomplete="off" inputmode="url" placeholder="https://" aria-describedby="j-rurl-h"><span class="hint" id="j-rurl-h">למשל העמוד שלכם בגוגל או בפייסבוק. נציג אותו כקישור בפרופיל, כדי שקונים יוכלו לקרוא שם ביקורות.</span></div>
         <div class="field"><label for="j-story">הסיפור שלכם <span class="m">(לא חובה)</span></label><textarea class="input" id="j-story" name="story" rows="3" maxlength="1000" aria-describedby="j-story-h"></textarea><span class="hint" id="j-story-h">כמה משפטים מספיקים: מה אתם מכינים ואיך התחלתם.</span></div>
         <div class="field"><label class="opt"><input type="checkbox" id="j-consent" name="consent" aria-required="true"><span class="grow">מסכימים לתנאי השימוש ולמדיניות הפרטיות ${STAR}</span></label>

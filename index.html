@@ -2835,7 +2835,7 @@ var qrcode = function() {
    Fill in the three values (see SETUP-HE.md) and makers can join, requests are saved, and #admin opens the owner's screen.
    Only the public "anon" key belongs here. Never paste a secret / service_role key into this file.
    Everything the site shows is real: makers appear only after the owner approved them by hand. There is no invented content. */
-const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: true, CODE_LOGIN: false };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
+const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: true, CODE_LOGIN: true };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
 
 const CRAFTS = { wood: 'עץ', leather: 'עור', ceramic: 'קרמיקה', jewelry: 'תכשיטים', metal: 'מתכת', glass: 'זכוכית', textile: 'בדים', paper: 'נייר', art: 'ציור' };
 const UI = {
@@ -3247,6 +3247,7 @@ function loadBackend() {
   s.onerror = fail;
   s.onload = () => {
     try { SB = window.supabase.createClient(CONFIG.SUPABASE_URL.trim(), CONFIG.SUPABASE_ANON_KEY.trim()); } catch (e) { return fail(); }
+    if (PENDING_LOGIN) setTimeout(runLogin, 0);
     SB.auth.onAuthStateChange((ev, session) => setTimeout(() => {
       const was = AD.session; AD.session = session; ownerIn(); if (!session) { AD.loaded = false; resetMe(); } else if (!was || !was.user || was.user.id !== session.user.id) loadMe();
       if (ev === 'SIGNED_IN' && session && wantsMe() && cur().s !== 'radmin') { clearWantsMe(); showMe(); }
@@ -3313,6 +3314,8 @@ const mailHref = m => `mailto:${m.email}?subject=${encodeURIComponent('הפרו�
 const firstName = m => String(m.name).trim().split(/\s+/)[0].slice(0, 40);
 const waHref = m => `${m.contact.wa}?text=${encodeURIComponent(`היי ${firstName(m)}, ראיתי את הפרופיל שלך בבהזמנה. אשמח לדבר על יצירה.`)}`;
 const OUT = 'target="_blank" rel="noopener noreferrer"';
+let PENDING_LOGIN = null;
+(function () { const m = /^#login=([^&]{3,120})&code=(\d{4,10})$/.exec(location.hash); if (m) { try { PENDING_LOGIN = { email: decodeURIComponent(m[1]).trim().toLowerCase(), code: m[2] }; } catch (e) { PENDING_LOGIN = null; } try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) { /* the address stays as it is */ } } })();
 const okUrl = u => { u = String(u || '').trim(); if (!/^https:\/\/[^\s]{4,280}$/.test(u)) return ''; try { return new URL(u).protocol === 'https:' ? u : ''; } catch (e) { return ''; } };
 const cardActs = m => m.contact || m.email ? `<span class="macts">${m.contact ? `<a class="cbtn wa" href="${esc(waHref(m))}" ${OUT} aria-label="${esc(`שליחת וואטסאפ ל${firstName(m)}`)}">${svg(UI.wa)}</a><a class="cbtn" href="${esc(m.contact.tel)}" aria-label="${esc(`התקשרות אל ${firstName(m)}`)}">${svg(UI.phone)}</a>` : ''}${m.email ? `<a class="cbtn" href="${esc(mailHref(m))}" aria-label="${esc(`שליחת מייל ל${firstName(m)}`)}">${svg(UI.mail)}</a>` : ''}</span>` : '';
 const realAv = m => `<span class="av">${m.portrait || m.photos[0] ? rImg(m.portrait || m.photos[0]) : `<span class="ini">${esc(initials(m.name))}</span>`}</span>`;
@@ -4247,7 +4250,7 @@ const SCREENS = {
   radmin: () => { let body;
     if (AD.failed) body = '<p class="form-err" role="alert">אין חיבור לשרת כרגע. נסו לרענן את הדף.</p>';
     else if (!SB) body = '<p class="muted" role="status">מתחברים...</p>';
-    else if (!AD.session) body = `<section class="panel"><h2 class="sec-title">כניסה לבעלים</h2><p>${CONFIG.CODE_LOGIN ? 'נשלח קוד כניסה חד־פעמי בן 6 ספרות' : 'נשלח קישור כניסה חד־פעמי'} אל <span dir="ltr">${esc((CONFIG.ADMIN_EMAIL || '').trim())}</span>.${CONFIG.CODE_LOGIN ? '' : ' פותחים אותו במכשיר הזה.'}</p>
+    else if (!AD.session) body = `<section class="panel"><h2 class="sec-title">כניסה לבעלים</h2><p>${CONFIG.CODE_LOGIN ? 'נשלח קוד כניסה חד־פעמי בן 8 ספרות' : 'נשלח קישור כניסה חד־פעמי'} אל <span dir="ltr">${esc((CONFIG.ADMIN_EMAIL || '').trim())}</span>.${CONFIG.CODE_LOGIN ? '' : ' פותחים אותו במכשיר הזה.'}</p>
         ${AD.msg ? `<p class="${AD.msgErr ? 'form-err' : 'form-ok'}" role="status">${esc(AD.msg)}</p>` : ''}
         ${AD.codeSent && CONFIG.CODE_LOGIN ? `<form class="f" data-form="radcode" novalidate><div class="field"><label for="ad-code">הקוד מהמייל</label><input class="input" id="ad-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="8" dir="ltr" aria-required="true"></div><button type="submit" class="btn block" ${AD.busy ? 'disabled' : ''}>${AD.busy ? 'בודקים...' : 'כניסה'}</button></form><button class="link" type="button" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>לשלוח קוד חדש</button>` : `<button class="btn" data-act="radlogin" ${AD.busy ? 'disabled' : ''}>${CONFIG.CODE_LOGIN ? 'שליחת קוד כניסה' : 'שליחת קישור כניסה'}</button>`}</section>`;
     else if (!isOwner()) body = '<section class="panel"><h2 class="sec-title">המסך הזה לבעלים בלבד</h2><p>נכנסתם עם מייל שאינו של הבעלים.</p><button class="btn ghost" data-act="radlogout">יציאה</button></section>';
@@ -4371,7 +4374,7 @@ const signinBody = () => SI.sent && !CONFIG.CODE_LOGIN ? `<div><h2 class="sec-ti
     <p class="form-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
     <div class="field"><button type="button" class="btn ghost block" id="si-resend" data-act="siresend" ${Date.now() - SI.sent >= RESEND_MS && !SI.busy ? '' : 'disabled'}>לא הגיע?</button><span class="small muted" id="si-wait"></span></div>
     <button type="button" class="btn block" data-act="closesheet">סגירה</button>`
-  : SI.sent ? `<form class="sheet-body" data-form="sicode" novalidate><div><h2 class="sec-title">שלחנו קוד למייל</h2><p style="margin-top:6px">קוד בן 6 ספרות נשלח אל <span dir="ltr">${esc(SI.email)}</span>. כתבו אותו כאן. אם הוא לא מגיע, בדקו גם בספאם.</p></div>
+  : SI.sent ? `<form class="sheet-body" data-form="sicode" novalidate><div><h2 class="sec-title">שלחנו קוד למייל</h2><p style="margin-top:6px">קוד בן 8 ספרות נשלח אל <span dir="ltr">${esc(SI.email)}</span>. כתבו אותו כאן. אם הוא לא מגיע, בדקו גם בספאם.</p></div>
     <div class="field"><label for="si-code">הקוד</label><input class="input" id="si-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="8" dir="ltr" aria-required="true" ${SI.err ? 'aria-invalid="true"' : ''}></div>
     <p class="form-err" id="si-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
     <button type="submit" class="btn block" ${SI.busy ? 'disabled' : ''}>${SI.busy ? 'בודקים...' : 'כניסה'}</button>
@@ -4403,6 +4406,14 @@ function codeErr(e) {
   if (isOff(e)) return 'אין חיבור כרגע. נסו שוב.';
   if (st === '429' || /rate.?limit|too many/i.test(m)) return 'נסו שוב בעוד כמה דקות.';
   return 'הקוד לא נכון או שפג תוקפו. אפשר לבקש קוד חדש.';
+}
+async function runLogin() {
+  const pl = PENDING_LOGIN; PENDING_LOGIN = null; if (!pl || !SB) return;
+  toast('נכנסים...');
+  const { error } = await verifyCode(pl.email, pl.code);
+  if (error) { toast(codeErr(error)); return; }
+  if (pl.email === String(CONFIG.ADMIN_EMAIL || '').trim().toLowerCase()) { location.hash = '#admin'; } else { showMe(); }
+  toast('נכנסתם');
 }
 async function verifyCode(email, token) {
   if (!SB) return { error: { message: 'offline' } };
@@ -4880,7 +4891,7 @@ const ACT = {
   jrm: v => { const p = JP.splice(+v, 1)[0]; if (p) URL.revokeObjectURL(p.url); drawPhotos(); const m = document.getElementById('j-pmsg'); if (m) m.textContent = JP.length ? photoCount() : ''; const b = document.querySelector('#photos .add-photo'); if (b) b.focus(); },
   radlogin: async () => { if (!SB || AD.busy) return; AD.busy = true; AD.msg = ''; redrawAdmin();
     const { error } = await SB.auth.signInWithOtp({ email: CONFIG.ADMIN_EMAIL.trim(), options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname + '?admin=1' } });
-    AD.busy = false; AD.msgErr = !!error; AD.codeSent = !error; AD.msg = error ? (String(error.status || error.code || '') === '429' || /rate.?limit|too many/i.test(String(error.message || '')) ? 'נשלחו כבר כמה מיילים בשעה האחרונה. אפשר לנסות שוב בעוד כשעה, ובקשה אחת בלבד.' : (CONFIG.CODE_LOGIN ? 'הקוד לא נשלח. נסו שוב בעוד דקה.' : 'הקישור לא נשלח. נסו שוב בעוד דקה.')) : (CONFIG.CODE_LOGIN ? 'שלחנו קוד בן 6 ספרות למייל.' : 'שלחנו קישור כניסה למייל. פותחים אותו במכשיר הזה.'); redrawAdmin(); if (!error) setTimeout(() => { const c = document.getElementById('ad-code'); if (c) c.focus(); }, 50); },
+    AD.busy = false; AD.msgErr = !!error; AD.codeSent = !error; AD.msg = error ? (String(error.status || error.code || '') === '429' || /rate.?limit|too many/i.test(String(error.message || '')) ? 'נשלחו כבר כמה מיילים בשעה האחרונה. אפשר לנסות שוב בעוד כשעה, ובקשה אחת בלבד.' : (CONFIG.CODE_LOGIN ? 'הקוד לא נשלח. נסו שוב בעוד דקה.' : 'הקישור לא נשלח. נסו שוב בעוד דקה.')) : (CONFIG.CODE_LOGIN ? 'שלחנו קוד בן 8 ספרות למייל.' : 'שלחנו קישור כניסה למייל. פותחים אותו במכשיר הזה.'); redrawAdmin(); if (!error) setTimeout(() => { const c = document.getElementById('ad-code'); if (c) c.focus(); }, 50); },
   radlogout: async () => { if (SB) await SB.auth.signOut(); AD.session = null; AD.loaded = false; AD.makers = []; AD.requests = []; AD.approved = []; AD.msg = ''; redrawAdmin(); },
   radrefresh: () => { AD.loaded = false; adminLoad(); },
   radmore: v => adminLoad(v === 'm' ? 'm' : 'r'),
@@ -5035,14 +5046,14 @@ document.addEventListener('submit', e => {
     if (!em || !EMAIL_RE.test(em)) { SI.email = em; er.textContent = em ? 'המייל לא נראה נכון. בדקו שוב.' : 'כתבו את המייל שלכם.'; er.hidden = false; i.setAttribute('aria-invalid', 'true'); i.focus(); return; }
     sendLink(em); return; }
   if (kind === 'sicode') { const code = String(new FormData(f).get('code') || '').replace(/\D/g, ''), er = f.querySelector('#si-err'), i = f.querySelector('#si-code');
-    if (code.length < 6) { er.textContent = 'כתבו את הקוד בן 6 הספרות מהמייל.'; er.hidden = false; i.setAttribute('aria-invalid', 'true'); i.focus(); return; }
+    if (code.length < 6) { er.textContent = 'כתבו את הקוד בן 8 הספרות מהמייל.'; er.hidden = false; i.setAttribute('aria-invalid', 'true'); i.focus(); return; }
     SI.busy = true; SI.err = ''; drawSignin();
     verifyCode(SI.email, code).then(({ error }) => { SI.busy = false;
       if (error) { SI.err = codeErr(error); drawSignin(); const c = document.getElementById('si-code'); if (c) c.focus(); return; }
       SI.err = ''; closeSheet(true); toast('נכנסתם'); });
     return; }
   if (kind === 'radcode') { const code = String(new FormData(f).get('code') || '').replace(/\D/g, '');
-    if (code.length < 6) { AD.msg = 'כתבו את הקוד בן 6 הספרות מהמייל.'; AD.msgErr = true; redrawAdmin(); return; }
+    if (code.length < 6) { AD.msg = 'כתבו את הקוד בן 8 הספרות מהמייל.'; AD.msgErr = true; redrawAdmin(); return; }
     AD.busy = true; AD.msg = ''; redrawAdmin();
     verifyCode(CONFIG.ADMIN_EMAIL.trim(), code).then(({ error }) => { AD.busy = false; if (error) { AD.msgErr = true; AD.msg = codeErr(error); } else { AD.msg = ''; AD.codeSent = false; } redrawAdmin(); });
     return; }

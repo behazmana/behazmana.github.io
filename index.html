@@ -3953,7 +3953,7 @@ const SCREENS = {
         <footer class="backside g"><img class="logo-line" src="logo/logo-wordmark-ink.svg" width="204" height="96" alt=""><p class="sign">כתבו לנו</p>
           <div class="links-col">${mailLink('שלום מבהזמנה')}</div>
           <p>האתר עוד חדש. אנחנו קוראים כל בקשה וכל הרשמה בעצמנו, וחוזרים אליכם ברגע שיש התאמה.</p>
-          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · יצירה לפי הזמנה</p></footer></div>
+          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer></div>
     </div>`,
 
   wait: () => { const reg = JOINED || MYREQ.length || AD.session;
@@ -3970,7 +3970,7 @@ const SCREENS = {
       ${REAL.list.length || realState() === 'loading' ? `<section aria-labelledby="h-who"><div class="sec-head"><h2 class="sec-title" id="h-who">מי כבר איתנו</h2></div>${makersBlock(REAL.list)}</section>` : ''}
       <footer class="backside g"><img class="logo-line" src="logo/logo-wordmark-ink.svg" width="204" height="96" alt=""><p class="sign">כתבו לנו</p>
           <div class="links-col">${mailLink('שלום מבהזמנה')}</div>
-          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · יצירה לפי הזמנה</p></footer>
+          ${legalLinks('<button type="button" class="link" data-act="vision">מי אנחנו</button>')}<p class="imprint">בהזמנה · עבודת יד, לפי הזמנה</p></footer>
     </div>`; },
 
   makers: () => { const list = REAL.list.filter(fitCraft), crafts = new Set(REAL.list.flatMap(mcrafts));
@@ -4210,7 +4210,7 @@ Object.assign(SCREENS, {
   shop: () => { const crafts = SHOP_CR;
     return `${head('יצירות')}
     <div class="stack tight g">
-      <p class="muted">מה שהיוצרים הכינו, ואושר אצלנו.</p>
+      <p class="muted">מה שהיוצרים הכינו, ואושר אצלנו. הכול בעבודת יד.</p>
       ${crafts.size > 1 && shopState('all') === 'ready' ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button type="button" data-act="scraft" data-v="${k}" aria-pressed="${S.scraft === k}">${v}</button>`).join('')}</div>` : ''}
       ${shopBody()}
     </div>`; },

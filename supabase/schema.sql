@@ -20,7 +20,7 @@ language sql
 stable
 set search_path = ''
 as $$
-  select coalesce(auth.uid() = 'eb1b1f1b-a6ad-42ba-81ae-582565094aa5'::uuid, false)
+  select coalesce(auth.uid() = '0f048760-7882-45d3-8c2b-2fa090e4d0a2'::uuid, false)
      and lower(coalesce(auth.jwt() ->> 'email','')) = 'behazmana1@gmail.com'
 $$;
 

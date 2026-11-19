@@ -1863,3 +1863,34 @@ as
 
 revoke all on public.my_requests from public, anon, authenticated;
 grant select on public.my_requests to authenticated;
+
+-- =====================================================================
+-- 15. Reviews for makers. Anyone can write one; it shows on the maker's page only after the owner approves it.
+-- =====================================================================
+create table if not exists public.reviews (
+  id uuid primary key default gen_random_uuid(),
+  maker_id uuid not null references public.makers(id) on delete cascade,
+  name text not null check (char_length(btrim(name)) between 1 and 60),
+  stars smallint not null check (stars between 1 and 5),
+  body text not null check (char_length(btrim(body)) between 1 and 800),
+  status text not null default 'pending' check (status in ('pending','approved','rejected')),
+  created_at timestamptz not null default now()
+);
+create index if not exists reviews_maker_idx on public.reviews (maker_id, status, created_at desc);
+alter table public.reviews enable row level security;
+
+drop policy if exists reviews_insert on public.reviews;
+create policy reviews_insert on public.reviews for insert to anon, authenticated
+  with check (status = 'pending' and exists (select 1 from public.makers m where m.id = maker_id and m.status = 'approved'));
+drop policy if exists reviews_owner_all on public.reviews;
+create policy reviews_owner_all on public.reviews for all to authenticated
+  using (public.is_owner()) with check (public.is_owner());
+
+revoke all on public.reviews from public, anon, authenticated;
+grant insert (maker_id, name, stars, body) on public.reviews to anon, authenticated;
+grant select, update, delete on public.reviews to authenticated;
+
+create or replace view public.public_reviews with (security_invoker = false) as
+  select id, maker_id, name, stars, body, created_at from public.reviews where status = 'approved';
+revoke all on public.public_reviews from public, anon, authenticated;
+grant select on public.public_reviews to anon, authenticated;

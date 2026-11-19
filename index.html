@@ -4477,7 +4477,7 @@ function drawMatch() {
 SCREENS.match = () => `${head('יוצרים שמתאימים לכם')}
   <div class="stack tight g">
     <p class="muted">אפשר לסנן ולמיין לפי התאמה לבקשה, מרחק וביקורות.</p>
-    <fieldset class="field"><legend class="lbl">תחום</legend><div class="filters" role="group" aria-label="תחום הבקשה">${Object.entries(CRAFTS).map(([k, v]) => `<button type="button" data-act="mtcraft" data-v="${k}" aria-pressed="${MT.crafts.includes(k)}">${v}</button>`).join('')}</div>
+    <fieldset class="field"><legend class="lbl">תחום</legend><div class="filters" style="flex-wrap:wrap;overflow:visible" role="group" aria-label="תחום הבקשה">${Object.entries(CRAFTS).map(([k, v]) => `<button type="button" data-act="mtcraft" data-v="${k}" aria-pressed="${MT.crafts.includes(k)}">${v}</button>`).join('')}</div>
       <label class="opt"><input type="checkbox" data-mt="only" ${MT.only ? 'checked' : ''}><span class="grow">רק יוצרים בתחומים שבחרתי</span></label></fieldset>
     <div class="field"><label for="mt-city">העיר שלכם</label><input class="input" id="mt-city" data-mt="city" list="mt-cities" maxlength="60" autocomplete="off" placeholder="בחרו מהרשימה או הקלידו" value="${esc(MT.city)}"><datalist id="mt-cities">${CITIES.map(c => `<option value="${esc(c[0])}"></option>`).join('')}</datalist></div>
     <div class="field"><label for="mt-sort">סדר</label><select class="input" id="mt-sort" data-mt="sort">${[['fit', 'התאמה לבקשה'], ['near', 'הכי קרוב אליי'], ['rating', 'דירוג גבוה'], ['name', 'לפי שם']].map(([k, l]) => `<option value="${k}" ${MT.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>

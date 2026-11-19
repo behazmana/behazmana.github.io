@@ -3048,17 +3048,15 @@ function showFlyer(m) {
   let box = document.getElementById('flyer'); if (!box) { box = document.createElement('div'); box.id = 'flyer'; document.body.appendChild(box); }
   FL.m = m; FL.v = '1'; drawFlyer(); closeSheet(true); box.classList.add('show'); box.scrollTop = 0;
 }
-function cardDownload(url, name) {
-  const q = qrOf(url), n = q.getModuleCount(), pad = 2, W = 900, H = 1200, size = 640, k = Math.floor(size / (n + pad * 2)), qs = k * (n + pad * 2);
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
-  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.strokeStyle = '#222'; g.lineWidth = 6; g.strokeRect(30, 30, W - 60, H - 60);
-  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#222'; const font = 'Assistant, Heebo, Arial, sans-serif';
-  g.font = `700 84px ${font}`; g.fillText('אהבתם? ספרו עלינו', W / 2, 200);
-  g.font = `400 44px ${font}`; g.fillText('סרקו כדי לראות את העבודות של', W / 2, 290); g.font = `700 54px ${font}`; g.fillText(name, W / 2, 365);
-  const x0 = (W - qs) / 2, y0 = 430; g.fillStyle = '#000';
-  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect(x0 + (c + pad) * k, y0 + (r + pad) * k, k, k);
-  g.fillStyle = '#222'; g.font = `400 40px ${font}`; g.fillText('בהזמנה', W / 2, H - 100);
-  cv.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'behazmana-review-card.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+async function cardDownload(url, name) {
+  const W = 900, H = 1200, size = 640, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+  g.fillStyle = '#f2f1ee'; g.fillRect(0, 0, W, H); g.strokeStyle = QR_FG; g.lineWidth = 6; g.setLineDash([22, 14]); g.strokeRect(30, 30, W - 60, H - 60); g.setLineDash([]);
+  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#1f2218'; const font = 'Karantina, Miriam Libre, Assistant, Arial, sans-serif';
+  g.font = `700 120px ${font}`; g.fillText('אהבתם? ספרו עלינו', W / 2, 200);
+  g.font = `400 44px ${font}`; g.fillText('סרקו כדי לראות את העבודות של', W / 2, 290); g.font = `700 76px ${font}`; g.fillText(name, W / 2, 380);
+  await qrCanvas(g, url, (W - size) / 2, 440, size);
+  g.fillStyle = '#1f2218'; g.font = `700 52px ${font}`; g.fillText('בהזמנה', W / 2, H - 90);
+  saveCanvas(cv, 'behazmana-card.png');
 }
 const reviewKitSheet = m => { const url = makerLink(m.id), msg = `היי, אשמח אם תכתבו כמה מילים על העבודה איתי. זה הדף שלי באתר, ובו הכפתור ״לכתוב ביקורת״: ${url}`;
   return `<div class="sheet-body"><div><h2 class="sec-title">לקבל ביקורות ולהציג את העבודות</h2><p style="margin-top:6px">הקישור והקוד מובילים לדף שלכם באתר. מי שהזמין מכם יכול שם ללחוץ על ״לכתוב ביקורת״.</p></div>
@@ -3091,17 +3089,38 @@ let RV_AUTO = '';
 const mkUrl = () => { const m = MK_RE.exec(location.hash); if (m && m[1] === 'review') RV_AUTO = m[2]; return m ? m[2] : ''; };
 const reviewLink = id => `${location.origin}${location.pathname}#review=${id}`;
 const makerLink = id => `${location.origin}${location.pathname}#maker=${id}`;
-const qrOf = text => { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q; };
-function qrSvg(text) {
-  const q = qrOf(text), n = q.getModuleCount(), pad = 4; let d = '';
-  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + pad} ${r + pad}h1v1h-1z`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + pad * 2} ${n + pad * 2}" role="img" aria-label="קוד QR לפרופיל" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+const qrOf = (text, lvl) => { const q = qrcode(0, lvl || 'H'); q.addData(text); q.make(); return q; };
+/* A QR in the site's own look: stamp-blue square dots with a hair of air between them, finder eyes with cut corners, and the stamp in the middle.
+   High error correction (30%) keeps it readable with the stamp covering the centre. The same shapes feed the on-page SVG and the downloaded picture. */
+const QR_FG = '#2443a0';
+function qrShapes(text) {
+  const q = qrOf(text, 'H'), n = q.getModuleCount(), pad = 3, vb = n + pad * 2, h = Math.max(7, 2 * Math.floor(n * 0.1) + 1), c0 = Math.floor((n - h) / 2);
+  const isF = (r, c) => (r < 8 && c < 8) || (r < 8 && c >= n - 8) || (r >= n - 8 && c < 8);
+  const inHole = (r, c) => r >= c0 - 1 && r < c0 + h + 1 && c >= c0 - 1 && c < c0 + h + 1;
+  let mods = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c) && !isF(r, c) && !inHole(r, c)) mods += `M${(c + pad + .07).toFixed(2)} ${(r + pad + .07).toFixed(2)}h.86v.86h-.86z`;
+  const cham = (x, y, w, k) => `M${x + k} ${y}h${w - 2 * k}l${k} ${k}v${w - 2 * k}l${-k} ${k}h${-(w - 2 * k)}l${-k} ${-k}v${-(w - 2 * k)}z`;
+  let ring = '', cen = '';
+  [[0, 0], [n - 7, 0], [0, n - 7]].forEach(([ox, oy]) => { const x = ox + pad, y = oy + pad; ring += cham(x, y, 7, 1.5) + cham(x + 1, y + 1, 5, .9); cen += cham(x + 2, y + 2, 3, .5); });
+  return { vb, mods, ring, cen, badge: { x: c0 + pad - .5, y: c0 + pad - .5, s: h + 1 } };
 }
-function qrDownload(text, name) {
-  const q = qrOf(text), n = q.getModuleCount(), pad = 4, k = 12, cv = document.createElement('canvas'); cv.width = cv.height = (n + pad * 2) * k;
-  const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.fillStyle = '#000';
-  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect((c + pad) * k, (r + pad) * k, k, k);
-  cv.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+function qrSvg(text) {
+  const t = qrShapes(text), b = t.badge, bh = b.s * 0.86, bw = bh * 0.8;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t.vb} ${t.vb}" role="img" aria-label="קוד QR לפרופיל" shape-rendering="geometricPrecision"><rect width="100%" height="100%" fill="#fff"/><path d="${t.mods}" fill="${QR_FG}"/><path d="${t.ring}" fill="${QR_FG}" fill-rule="evenodd"/><path d="${t.cen}" fill="${QR_FG}"/><rect x="${b.x}" y="${b.y}" width="${b.s}" height="${b.s}" fill="#fff"/><image href="logo/mark-slip.svg" x="${(b.x + (b.s - bw) / 2).toFixed(2)}" y="${(b.y + (b.s - bh) / 2).toFixed(2)}" width="${bw.toFixed(2)}" height="${bh.toFixed(2)}"/></svg>`;
+}
+const loadImg = src => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+/* draws the QR on a canvas: top-left corner (x, y), side `size` pixels */
+async function qrCanvas(g, text, x, y, size) {
+  const t = qrShapes(text), k = size / t.vb, logo = await loadImg('logo/mark-slip.svg');
+  g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = '#fff'; g.fillRect(0, 0, t.vb, t.vb); g.fillStyle = QR_FG;
+  g.fill(new Path2D(t.mods)); g.fill(new Path2D(t.ring), 'evenodd'); g.fill(new Path2D(t.cen));
+  const b = t.badge; g.fillStyle = '#fff'; g.fillRect(b.x, b.y, b.s, b.s);
+  if (logo) { const bh = b.s * 0.86, bw = bh * 0.8; g.drawImage(logo, b.x + (b.s - bw) / 2, b.y + (b.s - bh) / 2, bw, bh); }
+  g.restore();
+}
+const saveCanvas = (cv, name) => cv.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+async function qrDownload(text, name) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1200; await qrCanvas(cv.getContext('2d'), text, 0, 0, 1200); saveCanvas(cv, name);
 }
 const shareBtn = m => `<button type="button" class="link" data-act="share" data-v="${esc(m.id)}">שיתוף הפרופיל וקוד QR</button>`;
 function shareSheet(m) {

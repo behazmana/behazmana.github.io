@@ -3980,7 +3980,7 @@ async function submitListing(f) {
     const old = AU.my.list.find(x => x.id === id); if (!old) return;
     const same = old.title === title && old.desc === desc && old.price === vals.price && LP.length === old.photos.length && LP.every((p, i) => p.existing && p.path === old.photos[i]);
     if (same) { err.textContent = 'לא שיניתם כלום.'; err.hidden = false; return; }
-    LF.pending = vals; openSheet(`<div class="sheet-body"><h2 class="sec-title">לשמור את השינויים?</h2><p>שינוי בפרטי היצירה יוציא אותה מהאתר עד שנאשר אותה מחדש.</p><div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="button" class="btn block" data-act="lfconfirm">כן, לשמור</button></div></div>`, 'לשמור את השינויים?'); return;
+    LF.pending = vals; openSheet(`<div class="sheet-body"><h2 class="sec-title">לשמור את השינויים?</h2><p>השינויים יופיעו באתר מיד אחרי השמירה.</p><div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="button" class="btn block" data-act="lfconfirm">כן, לשמור</button></div></div>`, 'לשמור את השינויים?'); return;
   }
   await saveListing(f, vals);
 }
@@ -4956,7 +4956,8 @@ function render(scroll) {
   if (dir !== 'tab' && document.startViewTransition) {
     root.dataset.vt = dir;
     const t = document.startViewTransition(() => paint(scroll, top));
-    t.finished.finally(() => { delete root.dataset.vt; });
+    t.ready.catch(() => { /* a newer navigation skipped this transition: not an error */ });
+    t.finished.catch(() => { }).finally(() => { delete root.dataset.vt; });
     return;
   }
   paint(scroll, top);

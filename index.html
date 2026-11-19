@@ -2935,6 +2935,7 @@ function reviewsHTML(m) {
   const rv = RV[m.id] || { st: 'loading', list: [] }, n = rv.list.length, avg = n ? (rv.list.reduce((a, x) => a + x.stars, 0) / n).toFixed(1).replace('.0', '') : '';
   return `<section aria-labelledby="h-rv"><div class="sec-head"><h2 class="sec-title" id="h-rv">ביקורות</h2></div>
     ${rv.st === 'loading' ? '<p class="muted" role="status">טוענים...</p>' : n ? `<p class="small muted">${esc(avg)} מתוך 5, לפי ${plural(n, 'ביקורת אחת', 'ביקורות')}</p><div style="display:flex;flex-direction:column;gap:12px;margin:10px 0">${rv.list.map(x => `<article class="panel"><b>${esc(x.name)}</b> <span class="small muted">${x.stars} מתוך 5${x.at ? ' · ' + esc(dateHe(x.at)) : ''}</span><p class="rstory" style="margin-top:6px">${esc(x.body)}</p></article>`).join('')}</div>` : '<p class="empty">עוד אין ביקורות.</p>'}
+    ${m.reviewsUrl ? `<p><a class="link" href="${esc(m.reviewsUrl)}" ${OUT}>ביקורות נוספות על ${esc(m.name)} באתר אחר</a></p>` : ''}
     <button type="button" class="btn ghost block" data-act="rvwrite" data-v="${esc(m.id)}">לכתוב ביקורת</button></section>`;
 }
 const reviewSheet = m => `<form class="sheet-body" data-form="review" data-v="${esc(m.id)}" novalidate>
@@ -3115,14 +3116,14 @@ async function loadReal() {
   try {
     /* the view may be missing its newer columns (the database update not applied yet): ask for all, then without contact_email, then without craft_other, then without contact_phone */
     const BASE = 'id,name,city,craft,story,photos,portrait', q = cols => SB.from('public_makers').select(cols);
-    const ladder = [',contact_phone,craft_other,contact_email,crafts', ',contact_phone,craft_other,contact_email', ',contact_phone,craft_other', ',contact_phone', ''];
+    const ladder = [',contact_phone,craft_other,contact_email,crafts,reviews_url', ',contact_phone,craft_other,contact_email,crafts', ',contact_phone,craft_other,contact_email', ',contact_phone,craft_other', ',contact_phone', ''];
     let data = null, error = null;
     for (const extra of ladder) {
       ({ data, error } = await q(BASE + extra));
       if (!error || /failed to fetch|networkerror|network request failed|load failed/i.test(String(error.message || ''))) break;   /* a missing column is worth another try; no network is not */
     }
     if (error || !Array.isArray(data)) throw error || new Error('no data');
-    REAL.list = data.filter(m => m && m.id && m.name).map(m => ({ id: String(m.id), name: String(m.name), city: String(m.city || ''), craft: String(m.craft || ''), story: String(m.story || ''), portrait: okPath(m.portrait) ? String(m.portrait) : '', photos: Array.isArray(m.photos) ? m.photos.map(String).filter(okPath) : [], contact: contactPhone(m.contact_phone), email: contactEmail(m.contact_email), craftOther: cleanOther(m.craft_other), crafts: (Array.isArray(m.crafts) ? m.crafts.map(String).filter(c => hasCraft(c) || c === 'other') : []).slice(0, 6) }))
+    REAL.list = data.filter(m => m && m.id && m.name).map(m => ({ id: String(m.id), name: String(m.name), city: String(m.city || ''), craft: String(m.craft || ''), story: String(m.story || ''), portrait: okPath(m.portrait) ? String(m.portrait) : '', photos: Array.isArray(m.photos) ? m.photos.map(String).filter(okPath) : [], contact: contactPhone(m.contact_phone), email: contactEmail(m.contact_email), reviewsUrl: okUrl(m.reviews_url), craftOther: cleanOther(m.craft_other), crafts: (Array.isArray(m.crafts) ? m.crafts.map(String).filter(c => hasCraft(c) || c === 'other') : []).slice(0, 6) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'he'));
     REAL.loaded = true;
   } catch (e) { REAL.failed = true; }
@@ -3152,6 +3153,7 @@ const mailHref = m => `mailto:${m.email}?subject=${encodeURIComponent('הפרו�
 const firstName = m => String(m.name).trim().split(/\s+/)[0].slice(0, 40);
 const waHref = m => `${m.contact.wa}?text=${encodeURIComponent(`היי ${firstName(m)}, ראיתי את הפרופיל שלך בבהזמנה. אשמח לדבר על יצירה.`)}`;
 const OUT = 'target="_blank" rel="noopener noreferrer"';
+const okUrl = u => { u = String(u || '').trim(); if (!/^https:\/\/[^\s]{4,280}$/.test(u)) return ''; try { return new URL(u).protocol === 'https:' ? u : ''; } catch (e) { return ''; } };
 const cardActs = m => m.contact || m.email ? `<span class="macts">${m.contact ? `<a class="cbtn wa" href="${esc(waHref(m))}" ${OUT} aria-label="${esc(`שליחת וואטסאפ ל${firstName(m)}`)}">${svg(UI.wa)}</a><a class="cbtn" href="${esc(m.contact.tel)}" aria-label="${esc(`התקשרות אל ${firstName(m)}`)}">${svg(UI.phone)}</a>` : ''}${m.email ? `<a class="cbtn" href="${esc(mailHref(m))}" aria-label="${esc(`שליחת מייל ל${firstName(m)}`)}">${svg(UI.mail)}</a>` : ''}</span>` : '';
 const realAv = m => `<span class="av">${m.portrait || m.photos[0] ? rImg(m.portrait || m.photos[0]) : `<span class="ini">${esc(initials(m.name))}</span>`}</span>`;
 const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftsLine(m))}${m.city ? ` · ${h(m.city)}` : ''}</span>${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
@@ -3172,7 +3174,7 @@ const PAGE = 200;
 /* the approved makers (for routing by craft). craft_other may not exist yet: ask without it then */
 async function approvedRows() {
   const q = cols => SB.from('makers').select(cols).eq('status', 'approved').range(0, 1999);
-  let a = await q('id,name,city,craft,crafts,craft_other,story,email'); if (a.error) a = await q('id,name,city,craft,craft_other,story,email'); if (a.error) a = await q('id,name,city,craft,craft_other,email'); if (a.error) a = await q('id,name,city,craft,email'); if (a.error) a = await q('id,craft,email'); return a;
+  let a = await q('id,name,city,craft,crafts,craft_other,story,email,reviews_url'); if (a.error) a = await q('id,name,city,craft,crafts,craft_other,story,email'); if (a.error) a = await q('id,name,city,craft,craft_other,story,email'); if (a.error) a = await q('id,name,city,craft,craft_other,email'); if (a.error) a = await q('id,name,city,craft,email'); if (a.error) a = await q('id,craft,email'); return a;
 }
 async function adminLoad(which) {
   if (!SB || !isOwner() || AD.loading) return;
@@ -3321,7 +3323,7 @@ const errCode = e => e && (e.code || e.statusCode || e.status) ? String(e.code |
 const showErr = (el, lead, reason) => { el.innerHTML = esc(lead) + (reason ? `<span class="small">${esc(reason)}</span>` : ''); el.hidden = false; el.scrollIntoView({ block: 'nearest' }); };
 async function submitJoin(f) {
   const d = Object.fromEntries(new FormData(f)), live = CFG_ON && !!SB, err = f.querySelector('#j-err'), btn = f.querySelector('button[type="submit"]');
-  const v = k => String(d[k] || '').trim(), name = v('name'), city = v('city'), picked = [...new Set(new FormData(f).getAll('crafts').map(String))].filter(c => hasCraft(c) || c === 'other'), craft = picked.find(c => c !== 'other') || picked[0] || '', other = picked.includes('other') ? cleanOther(d.craft_other) : '', story = String(d.story || '').replace(/\r\n?/g, '\n').trim(), email = v('email'), phone = v('phone');
+  const v = k => String(d[k] || '').trim(), name = v('name'), city = v('city'), picked = [...new Set(new FormData(f).getAll('crafts').map(String))].filter(c => hasCraft(c) || c === 'other'), craft = picked.find(c => c !== 'other') || picked[0] || '', other = picked.includes('other') ? cleanOther(d.craft_other) : '', story = String(d.story || '').replace(/\r\n?/g, '\n').trim(), email = v('email'), phone = v('phone'), rurl = v('reviews_url');
   const done = demo => { const gate = !!cur().gate; if (!demo) { JOINED = true; lsSet(JOINED_KEY, true); } clearPhotos();
     const th = { s: 'joined', name: name.split(' ')[0], demo, gate }; S.stack = gate ? [th] : [{ s: 'home' }, th]; replaceH(); render(true); };
   if (d.hp_site) { done(false); return; } /* a bot filled the hidden field: look like success, send nothing */
@@ -3332,6 +3334,7 @@ async function submitJoin(f) {
     : !phone ? ['j-phone', 'כתבו מספר טלפון.'] : !phoneOK(phone) ? ['j-phone', 'הטלפון לא נראה נכון. בדקו שוב.']
     : !contactPhone(phone) ? ['j-phone', 'הטלפון יוצג באתר, אז כתבו מספר ישראלי רגיל, למשל 050-1234567.']
     : !JP.portrait ? ['j-portrait', 'הוסיפו תמונה שלכם.'] : !JP.length ? ['j-pick', 'הוסיפו לפחות תמונה אחת של העבודות.']
+    : rurl && !okUrl(rurl) ? ['j-rurl', 'הקישור צריך להתחיל ב־https://']
     : !d.consent ? ['j-consent', 'כדי להמשיך, סמנו שאתם מסכימים לתנאי השימוש ולמדיניות הפרטיות.'] : null;
   if (bad) { const el = f.querySelector('#' + bad[0]); if (el.classList.contains('input')) el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; el.focus(); return; }
   err.hidden = true;
@@ -3350,7 +3353,7 @@ async function submitJoin(f) {
       if (error) throw error; jobs[i].path = path;
     }
     stage = ''; btn.textContent = 'שומרים את ההרשמה...';
-    const { error } = await SB.from('makers').insert({ name, city, craft, crafts: picked, ...(picked.includes('other') ? { craft_other: other } : {}), story, email, phone, phone_public: true, email_public: true, portrait: JP.portrait.path, photos: JP.map(p => p.path), status: 'pending' });
+    const { error } = await SB.from('makers').insert({ name, city, craft, crafts: picked, ...(picked.includes('other') ? { craft_other: other } : {}), story, email, phone, ...(rurl ? { reviews_url: rurl } : {}), phone_public: true, email_public: true, portrait: JP.portrait.path, photos: JP.map(p => p.path), status: 'pending' });
     if (error) throw error;
   } catch (e) {
     console.error('join failed', errCode(e), e);
@@ -4063,6 +4066,7 @@ const SCREENS = {
         <div class="field"><span class="lbl" id="j-ph-l">תמונות של העבודות שלכם ${STAR}<span class="sr">, חובה</span></span><div class="photos" id="photos" role="group" aria-labelledby="j-ph-l">${photosHTML()}</div>
           <input type="file" id="j-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של העבודות">
           <span class="hint">עבודות שהכנתם בעצמכם. לפחות תמונה אחת ועד ${MAX_PHOTOS}. צלמו ליד חלון, על רקע פשוט. התמונות עולות בגודל המקורי, בלי פרטי המיקום והמצלמה שבקובץ. עד 10MB לתמונה (JPG, PNG או WebP).</span><span class="hint" id="j-pmsg" role="status" aria-live="polite">${JP.length ? photoCount() : ''}</span></div>
+        <div class="field"><label for="j-rurl">קישור לביקורות עליכם במקום אחר <span class="m">(לא חובה)</span></label><input class="input" id="j-rurl" name="reviews_url" type="url" dir="ltr" maxlength="280" autocomplete="off" inputmode="url" placeholder="https://" aria-describedby="j-rurl-h"><span class="hint" id="j-rurl-h">למשל העמוד שלכם בגוגל או בפייסבוק. נציג אותו כקישור בפרופיל, כדי שקונים יוכלו לקרוא שם ביקורות.</span></div>
         <div class="field"><label for="j-story">הסיפור שלכם <span class="m">(לא חובה)</span></label><textarea class="input" id="j-story" name="story" rows="3" maxlength="1000" aria-describedby="j-story-h"></textarea><span class="hint" id="j-story-h">כמה משפטים מספיקים: מה אתם מכינים ואיך התחלתם.</span></div>
         <div class="field"><label class="opt"><input type="checkbox" id="j-consent" name="consent" aria-required="true"><span class="grow">מסכימים לתנאי השימוש ולמדיניות הפרטיות ${STAR}</span></label>
           ${legalLinks()}</div>
@@ -4361,6 +4365,9 @@ function adminBody() {
       ${AD.lst === 'gone' ? '' : `<section aria-labelledby="a-lp"><div class="sec-head"><h2 class="sec-title" id="a-lp">יצירות שמחכות לאישור</h2></div>
         ${AD.lst === 'failed' ? '<p class="form-err" role="alert">היצירות לא נטענו. לחצו על ״רענון״.</p>' : `<div style="${gapList}">${AD.lpend.map(l => adListing(l, 'pending')).join('') || '<p class="empty">אין יצירות שמחכות.</p>'}${AD.moreLP ? `<button class="btn ghost block" data-act="radmore" data-v="lp" ${AD.loading ? 'disabled' : ''}>עוד יצירות</button>` : ''}</div>`}</section>
       ${AD.lst === 'ok' ? `<section aria-labelledby="a-la"><div class="sec-head"><h2 class="sec-title" id="a-la">יצירות שמוצגות</h2></div><div style="${gapList}">${AD.lappr.map(l => adListing(l, 'approved')).join('') || '<p class="empty">אין יצירות מוצגות.</p>'}${AD.moreLA ? `<button class="btn ghost block" data-act="radmore" data-v="la" ${AD.loading ? 'disabled' : ''}>עוד יצירות</button>` : ''}</div></section>` : ''}`}
+      <section aria-labelledby="a-ru"><div class="sec-head"><h2 class="sec-title" id="a-ru">קישור לביקורות במקום אחר</h2></div>
+        <p class="small muted" style="margin-bottom:12px">לכל יוצר מאושר אפשר להוסיף קישור (https) לעמוד שלו בגוגל או בפייסבוק. ריק מסיר את הקישור.</p>
+        <div style="${gapList}">${AD.approved.map(m => `<form class="panel" data-form="rurl" data-v="${esc(m.id)}" novalidate><label for="ru-${esc(m.id)}"><b>${esc(m.name)}</b></label><input class="input" id="ru-${esc(m.id)}" name="url" type="url" dir="ltr" maxlength="280" placeholder="https://" value="${esc(okUrl(m.reviews_url))}"><div class="row"><button type="submit" class="btn small">שמירה</button></div></form>`).join('') || '<p class="empty">אין יוצרים מאושרים.</p>'}</div></section>
       <section aria-labelledby="a-rv"><div class="sec-head"><h2 class="sec-title" id="a-rv">ביקורות אחרונות</h2></div>
         <div style="${gapList}">${AD.rv.map(x => `<article class="panel"><b>${esc(cleanText((x.makers && x.makers.name) || '', 80))}</b> <span class="small muted">${(+x.stars) | 0} מתוך 5 · ${esc(cleanText(x.name, 60))} · ${esc(dateHe(x.created_at))}</span><p class="rstory" style="margin-top:6px">${esc(cleanBlock(x.body, 800))}</p><div class="row"><button class="btn small danger" data-act="radrvno" data-v="${esc(x.id)}">הסרה מהאתר</button></div></article>`).join('') || '<p class="empty">עוד אין ביקורות.</p>'}</div></section>
       <section aria-labelledby="a-rq"><div class="sec-head"><h2 class="sec-title" id="a-rq">${AD.ro ? 'בקשות פתוחות' : 'בקשות חדשות'}</h2></div>
@@ -4798,6 +4805,12 @@ document.addEventListener('submit', e => {
     if (code.length < 6) { AD.msg = 'כתבו את הקוד בן 6 הספרות מהמייל.'; AD.msgErr = true; redrawAdmin(); return; }
     AD.busy = true; AD.msg = ''; redrawAdmin();
     verifyCode(CONFIG.ADMIN_EMAIL.trim(), code).then(({ error }) => { AD.busy = false; if (error) { AD.msgErr = true; AD.msg = codeErr(error); } else { AD.msg = ''; AD.codeSent = false; } redrawAdmin(); });
+    return; }
+  if (kind === 'rurl') { const id = f.dataset.v, u = String(new FormData(f).get('url') || '').trim();
+    if (u && !okUrl(u)) { toast('הקישור צריך להתחיל ב־https://'); return; }
+    dbq(s => s.from('makers').update({ reviews_url: u || null }).eq('id', id).select('id')).then(r => {
+      if (r.error || !r.data || !r.data.length) { toast('השמירה לא הצליחה, נסו שוב'); return; }
+      const a = AD.approved.find(x => x.id === id); if (a) a.reviews_url = u || null; const m = REAL.list.find(x => x.id === id); if (m) m.reviewsUrl = u; toast('נשמר'); });
     return; }
   if (kind === 'review') { submitReview(f, f.dataset.v); return; }
   if (kind === 'offer') { submitOffer(f, f.dataset.v); return; }

@@ -1894,3 +1894,26 @@ create or replace view public.public_reviews with (security_invoker = false) as
   select id, maker_id, name, stars, body, created_at from public.reviews where status = 'approved';
 revoke all on public.public_reviews from public, anon, authenticated;
 grant select on public.public_reviews to anon, authenticated;
+
+-- =====================================================================
+-- 16. A link to the maker's reviews on another site (Google, Facebook...). Shown as a link on the profile.
+-- =====================================================================
+alter table public.makers add column if not exists reviews_url text;
+alter table public.makers drop constraint if exists makers_reviews_url_ck;
+alter table public.makers add constraint makers_reviews_url_ck
+  check (reviews_url is null or (reviews_url ~ '^https://[^[:space:]]{4,280}$'));
+grant insert (reviews_url) on public.makers to anon, authenticated;
+
+create or replace view public.public_makers
+  with (security_invoker = false)
+as
+  select id, name, city, craft, story, photos, portrait,
+         case when phone_public then phone end as contact_phone,
+         craft_other,
+         case when email_public then email end as contact_email,
+         crafts,
+         reviews_url
+  from public.makers
+  where status = 'approved';
+revoke all on public.public_makers from anon, authenticated;
+grant select on public.public_makers to anon, authenticated;

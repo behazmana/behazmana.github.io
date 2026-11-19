@@ -2986,17 +2986,17 @@ const reviewKitSheet = m => { const url = makerLink(m.id), msg = `היי, אשמ
     <div class="panel"><b>דף להדפסה לשולחן באירוע או בפסטיבל</b><p class="small muted" style="margin:4px 0 8px">דף יפה עם השם שלכם, התמונה שלכם, תמונות מהעבודות וקוד QR. אפשר להדפיס או לשמור כ־PDF.</p><button type="button" class="btn small" data-act="rvflyer" data-v="${esc(m.id)}">יצירת הדף</button></div></div>`; };
 const reviewSheet = m => `<form class="sheet-body" data-form="review" data-v="${esc(m.id)}" novalidate>
     <div><h2 class="sec-title">ביקורת על ${esc(m.name)}</h2><p style="margin-top:6px">אם נהניתם, פרגנו. כמה מילים טובות חשובות מאוד ליוצר, שמשקיע בכל יצירה, והן עוזרות גם לקונים הבאים לבחור. ספרו בכנות איך היה.</p><p class="small muted" style="margin-top:4px">הביקורת תופיע בדף של היוצר מיד.</p></div>
-    <div class="field"><label for="rv-name">השם שיופיע</label><input class="input" id="rv-name" name="name" maxlength="60" autocomplete="given-name" aria-required="true"></div>
+    <div class="field"><label for="rv-name">השם שלכם <span class="m">(לא חובה)</span></label><input class="input" id="rv-name" name="name" maxlength="60" autocomplete="given-name" aria-required="true"></div>
     <fieldset class="field"><legend class="lbl">דירוג (5 הוא הכי טוב)</legend><div style="display:flex;gap:6px 16px;flex-wrap:wrap">${[1, 2, 3, 4, 5].map(i => `<label class="opt" style="flex:none;width:auto;padding:6px 4px"><input type="radio" name="stars" value="${i}"><span>${i}</span></label>`).join('')}</div></fieldset>
     <div class="field"><label for="rv-body">מה תרצו לספר <span class="m">(לא חובה)</span></label><textarea class="input" id="rv-body" name="body" rows="4" maxlength="800" aria-required="true"></textarea><span class="hint">מספיק לבחור דירוג. אם בא לכם, ספרו מה הזמנתם ואיך היה לעבוד איתם. עד 800 תווים.</span></div>
     <p class="form-err" id="rv-err" role="alert" hidden></p>
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="submit" class="btn block">שליחה</button></div></form>`;
 async function submitReview(f, id) {
   const fd = new FormData(f), name = String(fd.get('name') || '').trim(), stars = +fd.get('stars') || 0, body = String(fd.get('body') || '').trim(), err = f.querySelector('#rv-err');
-  const bad = !name ? ['rv-name', 'כתבו את השם שיופיע.'] : !stars ? ['', 'בחרו דירוג מ־1 עד 5.'] : null;
+  const bad = !stars ? ['', 'בחרו דירוג מ־1 עד 5.'] : null;
   if (bad) { err.textContent = bad[1]; err.hidden = false; const el = bad[0] && f.querySelector('#' + bad[0]); if (el) el.focus(); return; }
   const btn = f.querySelector('button[type="submit"]'); btn.disabled = true;
-  const r = await dbq(s => s.from('reviews').insert({ maker_id: id, name: name.slice(0, 60), stars, body: body.slice(0, 800) }));
+  const r = await dbq(s => s.from('reviews').insert({ maker_id: id, name: (name || 'לקוח').slice(0, 60), stars, body: body.slice(0, 800) }));
   if (r.error) { err.textContent = friendly(r.error) || 'השליחה לא הצליחה. נסו שוב.'; err.hidden = false; btn.disabled = false; return; }
   delete RV[id]; closeSheet(true); toast('תודה. הביקורת עלתה'); loadReviews(id);
 }

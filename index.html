@@ -2927,27 +2927,45 @@ async function loadReviews(id) {
   if (!SB || RV[id]) return; RV[id] = { st: 'loading', list: [] };
   const r = await dbq(s => s.from('public_reviews').select('id,name,stars,body,created_at').eq('maker_id', id).order('created_at', { ascending: false }).limit(30));
   RV[id] = r.error || !Array.isArray(r.data) ? { st: 'failed', list: [] } : { st: 'ready', list: r.data.map(x => ({ id: String(x.id), name: cleanText(x.name, 60), stars: Math.min(5, Math.max(1, (+x.stars) | 0)), body: cleanBlock(x.body, 800), at: String(x.created_at || '') })) };
-  if (cur().s === 'rmaker' && cur().id === id) render();
+  if (cur().s === 'rmaker' && cur().id === id) render(); else if (cur().s === 'mine') meRedraw();
 }
 function reviewsHTML(m) {
   if (!CFG_ON) return '';
   if (!RV[m.id]) setTimeout(() => loadReviews(m.id), 0);
+  if (RV_AUTO === m.id && RV[m.id] && RV[m.id].st !== 'loading') { RV_AUTO = ''; setTimeout(() => ACT.rvwrite(m.id), 250); }
   const rv = RV[m.id] || { st: 'loading', list: [] }, n = rv.list.length, avg = n ? (rv.list.reduce((a, x) => a + x.stars, 0) / n).toFixed(1).replace('.0', '') : '';
   return `<section aria-labelledby="h-rv"><div class="sec-head"><h2 class="sec-title" id="h-rv">ביקורות</h2></div>
-    ${rv.st === 'loading' ? '<p class="muted" role="status">טוענים...</p>' : n ? `<p class="small muted">${esc(avg)} מתוך 5, לפי ${plural(n, 'ביקורת אחת', 'ביקורות')}</p><div style="display:flex;flex-direction:column;gap:12px;margin:10px 0">${rv.list.map(x => `<article class="panel"><b>${esc(x.name)}</b> <span class="small muted">${x.stars} מתוך 5${x.at ? ' · ' + esc(dateHe(x.at)) : ''}</span><p class="rstory" style="margin-top:6px">${esc(x.body)}</p></article>`).join('')}</div>` : '<p class="empty">עוד אין ביקורות.</p>'}
+    ${rv.st === 'loading' ? '<p class="muted" role="status">טוענים...</p>' : n ? `<p class="small muted">${esc(avg)} מתוך 5, לפי ${plural(n, 'ביקורת אחת', 'ביקורות')}</p><div style="display:flex;flex-direction:column;gap:12px;margin:10px 0">${rv.list.map(x => `<article class="panel"><b>${esc(x.name)}</b> <span class="small muted">${x.stars} מתוך 5${x.at ? ' · ' + esc(dateHe(x.at)) : ''}</span>${x.body ? `<p class="rstory" style="margin-top:6px">${esc(x.body)}</p>` : ''}</article>`).join('')}</div>` : '<p class="empty">עוד אין ביקורות. אפשר להיות הראשונים לספר איך היה.</p>'}
     ${m.reviewsUrl ? `<p><a class="link" href="${esc(m.reviewsUrl)}" ${OUT}>ביקורות נוספות על ${esc(m.name)} באתר אחר</a></p>` : ''}
     <button type="button" class="btn ghost block" data-act="rvwrite" data-v="${esc(m.id)}">לכתוב ביקורת</button></section>`;
 }
+function cardDownload(url, name) {
+  const q = qrOf(url), n = q.getModuleCount(), pad = 2, W = 900, H = 1200, size = 640, k = Math.floor(size / (n + pad * 2)), qs = k * (n + pad * 2);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.strokeStyle = '#222'; g.lineWidth = 6; g.strokeRect(30, 30, W - 60, H - 60);
+  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#222'; const font = 'Assistant, Heebo, Arial, sans-serif';
+  g.font = `700 84px ${font}`; g.fillText('אהבתם? ספרו לנו', W / 2, 200);
+  g.font = `400 44px ${font}`; g.fillText('סרקו וכתבו ביקורת קצרה על', W / 2, 290); g.font = `700 54px ${font}`; g.fillText(name, W / 2, 365);
+  const x0 = (W - qs) / 2, y0 = 430; g.fillStyle = '#000';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect(x0 + (c + pad) * k, y0 + (r + pad) * k, k, k);
+  g.fillStyle = '#222'; g.font = `400 40px ${font}`; g.fillText('בהזמנה', W / 2, H - 100);
+  cv.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'behazmana-review-card.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+}
+const reviewKitSheet = m => { const url = reviewLink(m.id), msg = `היי, אשמח אם תכתבו כמה מילים על העבודה איתי. זה לוקח דקה: ${url}`;
+  return `<div class="sheet-body"><div><h2 class="sec-title">לקבל ביקורות מלקוחות</h2><p style="margin-top:6px">מי שיפתח את הקישור יגיע ישר לכתיבת ביקורת עליכם, גם אם הוא לא הגיע מהאתר.</p></div>
+    <input class="input" id="rv-url" readonly dir="ltr" value="${esc(url)}" aria-label="הקישור לכתיבת ביקורת">
+    <div class="row wrap"><a class="btn small" href="https://wa.me/?text=${encodeURIComponent(msg)}" ${OUT}>שליחה בוואטסאפ</a><button type="button" class="btn small ghost" data-act="rvcopy" data-v="${esc(m.id)}">העתקת הקישור</button><button type="button" class="btn small ghost" data-act="rvcard" data-v="${esc(m.id)}">הורדת כרטיס להדפסה</button></div>
+    <p class="small muted">הכרטיס כולל קוד QR. אפשר להדפיס אותו ולהניח בתוך החבילה.</p></div>`; };
 const reviewSheet = m => `<form class="sheet-body" data-form="review" data-v="${esc(m.id)}" novalidate>
     <div><h2 class="sec-title">ביקורת על ${esc(m.name)}</h2><p class="small muted" style="margin-top:4px">הביקורת תופיע בדף של היוצר מיד.</p></div>
     <div class="field"><label for="rv-name">השם שיופיע</label><input class="input" id="rv-name" name="name" maxlength="60" autocomplete="given-name" aria-required="true"></div>
     <fieldset class="field"><legend class="lbl">דירוג (5 הוא הכי טוב)</legend><div class="row wrap">${[1, 2, 3, 4, 5].map(i => `<label class="opt"><input type="radio" name="stars" value="${i}"><span>${i}</span></label>`).join('')}</div></fieldset>
-    <div class="field"><label for="rv-body">מה תרצו לספר</label><textarea class="input" id="rv-body" name="body" rows="4" maxlength="800" aria-required="true"></textarea><span class="hint">למשל: מה הזמנתם ואיך היה לעבוד איתם. עד 800 תווים.</span></div>
+    <div class="field"><label for="rv-body">מה תרצו לספר <span class="m">(לא חובה)</span></label><textarea class="input" id="rv-body" name="body" rows="4" maxlength="800" aria-required="true"></textarea><span class="hint">מספיק לבחור דירוג. אם בא לכם, ספרו מה הזמנתם ואיך היה לעבוד איתם. עד 800 תווים.</span></div>
     <p class="form-err" id="rv-err" role="alert" hidden></p>
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="submit" class="btn block">שליחה</button></div></form>`;
 async function submitReview(f, id) {
   const fd = new FormData(f), name = String(fd.get('name') || '').trim(), stars = +fd.get('stars') || 0, body = String(fd.get('body') || '').trim(), err = f.querySelector('#rv-err');
-  const bad = !name ? ['rv-name', 'כתבו את השם שיופיע.'] : !stars ? ['', 'בחרו דירוג מ־1 עד 5.'] : !body ? ['rv-body', 'כתבו כמה מילים.'] : null;
+  const bad = !name ? ['rv-name', 'כתבו את השם שיופיע.'] : !stars ? ['', 'בחרו דירוג מ־1 עד 5.'] : null;
   if (bad) { err.textContent = bad[1]; err.hidden = false; const el = bad[0] && f.querySelector('#' + bad[0]); if (el) el.focus(); return; }
   const btn = f.querySelector('button[type="submit"]'); btn.disabled = true;
   const r = await dbq(s => s.from('reviews').insert({ maker_id: id, name: name.slice(0, 60), stars, body: body.slice(0, 800) }));
@@ -2959,8 +2977,10 @@ async function loadAdminReviews() {
   AD.rv = r.error || !Array.isArray(r.data) ? [] : r.data;
 }
 /* sharing one maker: a link to the profile, and a QR code made in the browser */
-const MK_RE = /^#maker=([0-9a-fA-F-]{36})$/;
-const mkUrl = () => { const m = MK_RE.exec(location.hash); return m ? m[1] : ''; };
+const MK_RE = /^#(maker|review)=([0-9a-fA-F-]{36})$/;
+let RV_AUTO = '';
+const mkUrl = () => { const m = MK_RE.exec(location.hash); if (m && m[1] === 'review') RV_AUTO = m[2]; return m ? m[2] : ''; };
+const reviewLink = id => `${location.origin}${location.pathname}#review=${id}`;
 const makerLink = id => `${location.origin}${location.pathname}#maker=${id}`;
 const qrOf = text => { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q; };
 function qrSvg(text) {
@@ -3112,6 +3132,18 @@ function loadBackend() {
   };
   document.head.appendChild(s);
 }
+const LR = { list: [] };
+async function loadLatestReviews() {
+  const r = await dbq(s => s.from('public_reviews').select('id,maker_id,name,stars,body,created_at').neq('body', '').order('created_at', { ascending: false }).limit(3));
+  if (r.error || !Array.isArray(r.data)) return;
+  LR.list = r.data.map(x => ({ id: String(x.id), maker: String(x.maker_id), name: cleanText(x.name, 60), stars: Math.min(5, Math.max(1, (+x.stars) | 0)), body: cleanBlock(x.body, 300) }));
+  if (cur().s === 'home') render();
+}
+function latestReviewsHTML() {
+  const rows = LR.list.map(x => ({ x, m: REAL.list.find(y => y.id === x.maker) })).filter(o => o.m);
+  if (!rows.length) return '';
+  return `<section aria-labelledby="h-lr"><div class="sec-head"><h2 class="sec-title" id="h-lr">מה אומרים הלקוחות</h2></div><div style="display:flex;flex-direction:column;gap:12px">${rows.map(({ x, m }) => `<article class="panel"><p class="rstory">${esc(x.body)}</p><p class="small muted" style="margin-top:6px">${esc(x.name)}, ${x.stars} מתוך 5, על <button type="button" class="link" data-act="rmaker" data-v="${esc(m.id)}">${esc(m.name)}</button></p></article>`).join('')}</div></section>`;
+}
 async function loadReal() {
   try {
     /* the view may be missing its newer columns (the database update not applied yet): ask for all, then without contact_email, then without craft_other, then without contact_phone */
@@ -3127,7 +3159,7 @@ async function loadReal() {
       .sort((a, b) => a.name.localeCompare(b.name, 'he'));
     REAL.loaded = true;
   } catch (e) { REAL.failed = true; }
-  realChanged();
+  realChanged(); if (REAL.loaded) loadLatestReviews();
 }
 const realState = () => !CFG_ON ? 'ready' : REAL.loaded ? 'ready' : REAL.failed || AD.failed ? 'failed' : 'loading';
 /* A maker's phone, only when the maker chose to show it (public_makers.contact_phone). It comes from the database, so it is checked here:
@@ -3924,6 +3956,7 @@ function myReqScreen({ token }) {
     const who = `${av}<span class="info"><span class="nm">${esc(r.name)}</span><span class="small muted">${esc(craftText(r.craft, r.other))}${r.city ? ` · ${esc(r.city)}` : ''}</span></span>`;
     return `<li class="route ${r.rs}"><div class="route-top">${m ? `<button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${who}</button>` : `<span class="mmain">${who}</span>`}${stChip(RT_BUYER[r.rs], r.rs === 'offered' ? 'go' : r.rs === 'declined' ? 'dim' : r.rs === 'sent' ? '' : 'seen')}</div>
       ${r.rs === 'offered' ? `<div class="note"><b>ההצעה:</b> ${esc(r.note)}<br>${priceHTML(r.price)}</div>` : ''}
+      ${closed && r.rs === 'offered' && m ? `<div class="row"><button type="button" class="btn small ghost" data-act="rvwrite" data-v="${esc(m.id)}">איך היה? ספרו על ${esc(firstOf(r.name))}</button></div>` : ''}
       ${r.rs !== 'declined' && (r.phone || r.email) ? `<div class="contact">${r.phone ? `<a class="cbtn2 wa" href="${esc(`${r.phone.wa}?text=${encodeURIComponent(`היי ${firstOf(r.name)}, כתבתי בבהזמנה בקשה: ״${oneLine(title, 80)}״. אשמח לדבר.`)}`)}" ${OUT}>${svg(UI.wa)}וואטסאפ</a><a class="cbtn2" href="${esc(r.phone.tel)}">${svg(UI.phone)}התקשרו</a>` : ''}${r.email ? `<a class="cbtn2" href="${esc(`mailto:${r.email}?subject=${encodeURIComponent('הבקשה שלי בבהזמנה: ' + oneLine(title, 80))}`)}">${svg(UI.mail)}מייל</a>` : ''}</div>` : ''}</li>`; }).join('') : '') : '';
   return `${head('הבקשה שלי', canEdit ? pencilBtn() : '')}
   <div class="stack tight g">
@@ -3986,6 +4019,7 @@ const SCREENS = {
       <section aria-labelledby="h-how"><div class="sec-head"><h2 class="sec-title" id="h-how">איך זה עובד</h2></div>
         <div class="tale zig">${HOW.map(([t, d, st]) => `<div class="tale-row"><div class="what"><b>${t}</b><span>${d}</span></div><span class="stamp" aria-hidden="true">${st}</span></div>`).join('')}</div></section>
       ${homeStrip()}
+      ${latestReviewsHTML()}
       <section aria-labelledby="h-real"><div class="sec-head"><h2 class="sec-title" id="h-real">יוצרים שהצטרפו</h2>${REAL.list.length ? `<span class="small muted">${REAL.list.length}</span>` : ''}</div>
         ${REAL.list.length ? '<p class="muted" style="margin-bottom:14px">כולם נרשמו בעצמם ואושרו אצלנו אישית.</p>' : ''}${makersBlock(REAL.list, 6)}</section>
       <div class="bleed"><section class="clayfield g" aria-labelledby="h-reply"><p class="say">יש לכם רעיון?</p>
@@ -4277,11 +4311,17 @@ SCREENS.sent = ({ demo, tr, ns, em }) => `${head('<span class="sr">הבקשה</s
 const meNote = t => `<p class="note" role="note">${t}</p>`;
 const joinCard = () => canJoin() ? '<button class="entry" data-act="join"><span class="t">יוצרים? אפשר להצטרף</span><span class="small muted">לספר לנו על העבודות שלכם</span></button>' : '';
 const signoutBtn = () => AD.session ? `<button type="button" class="link sm" data-act="signout">התנתקות</button>` : '';
+function reviewsPanel(m) {
+  if (!RV[m.id]) setTimeout(() => loadReviews(m.id), 0);
+  const rv = RV[m.id], n = rv && rv.st === 'ready' ? rv.list.length : -1;
+  return `<section class="note" style="margin-top:12px"><b>ביקורות מלקוחות</b><p class="small" style="margin:4px 0 8px">${n === 0 ? 'עוד אין לכם ביקורות. שלחו קישור ללקוחות מהעבודות האחרונות, גם אם הם לא הגיעו אליכם דרך האתר.' : n > 0 ? `יש לכם ${plural(n, 'ביקורת אחת', 'ביקורות')}. אפשר לבקש עוד מלקוחות קודמים.` : 'לקוחות יכולים להשאיר לכם ביקורת בקישור אישי.'}</p><button type="button" class="btn small" data-act="rvkit" data-v="${esc(m.id)}">לקבל ביקורות מלקוחות</button></section>`;
+}
 const profileHTML = () => { const m = AU.maker, face = m.portrait || m.photos[0];
   return `<div class="panel"><div class="face-row">${face ? `<span class="av">${rImg(face, '')}</span>` : `<span class="av"><span class="ini">${esc(initials(m.name))}</span></span>`}<div><b>${esc(m.name)}</b><div class="small muted">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</div></div></div>
     <dl class="specs"><div><dt>הטלפון באתר</dt><dd>${m.phonePublic ? 'מוצג' : 'לא מוצג'}</dd></div><div><dt>המייל באתר</dt><dd>${m.emailPublic ? 'מוצג' : 'לא מוצג'}</dd></div></dl>
     ${m.story ? `<p class="small rstory">${esc(m.story)}</p>` : ''}
     <button type="button" class="link" data-act="rmaker" data-v="${esc(m.id)}">הפרופיל כמו שרואים אותו באתר</button>${m.status === 'approved' ? shareBtn(m) : ''}
+    ${m.status === 'approved' ? reviewsPanel(m) : ''}
     <p class="small muted">לשינוי פרטים כתבו לנו.</p><div class="links-col">${mailLink('שינוי פרטים בפרופיל בבהזמנה')}</div></div>`; };
 SCREENS.mine = () => {
   const mode = meMode(), reqSec = `<section aria-labelledby="h-mine"><div class="sec-head"><h2 class="sec-title" id="h-mine">הבקשות שלי</h2>${MYREQ.length ? `<span class="small muted">${MYREQ.length}</span>` : ''}</div>${myReqsList()}${MYREQ.length ? '<button class="btn block" style="margin-top:12px" data-act="tab" data-v="post">לכתוב בקשה חדשה</button>' : ''}</section>`;
@@ -4684,6 +4724,9 @@ async function rvSet(id, status) {
 const adFind = id => AD.lpend.find(x => x.id === id) || AD.lappr.find(x => x.id === id);
 const adDrop = id => { AD.lpend = AD.lpend.filter(x => x.id !== id); AD.lappr = AD.lappr.filter(x => x.id !== id); };
 Object.assign(ACT, {
+  rvkit: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) openSheet(reviewKitSheet(m), 'ביקורות מלקוחות'); },
+  rvcopy: v => { const u = reviewLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('rv-url'); if (i) i.select(); toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('rv-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
+  rvcard: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); cardDownload(reviewLink(v), m ? m.name : ''); },
   rvwrite: v => { const m = REAL.list.find(x => x.id === v); if (m) openSheet(reviewSheet(m), 'ביקורת'); },
   radrvok: v => rvSet(v, 'approved'),
   radrvno: v => rvSet(v, 'rejected'),

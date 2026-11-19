@@ -1928,3 +1928,10 @@ grant execute on function public.is_approved_maker(uuid) to anon, authenticated;
 drop policy if exists reviews_insert on public.reviews;
 create policy reviews_insert on public.reviews for insert to anon, authenticated
   with check (status = 'approved' and public.is_approved_maker(maker_id));
+
+-- =====================================================================
+-- 18. A review may be just a rating: the text is optional (up to 800 characters).
+-- =====================================================================
+alter table public.reviews drop constraint if exists reviews_body_check;
+alter table public.reviews drop constraint if exists reviews_body_len;
+alter table public.reviews add constraint reviews_body_len check (char_length(btrim(body)) <= 800);

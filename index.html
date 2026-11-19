@@ -4528,11 +4528,11 @@ const DISC_CSS = `.disc{column-count:2;column-gap:12px}
 .dtile .dcap{display:block;padding:9px 11px 11px;font-size:var(--fs-1);color:var(--muted);line-height:1.3}
 .dtile .dcap b{display:block;font-family:var(--display);font-size:var(--fs-3);line-height:1;color:var(--ink);font-weight:700;margin-bottom:2px}
 .dquote{border:0;text-align:start;cursor:pointer;padding:20px 18px 18px;background:var(--olive);color:var(--on-olive)}
-.dquote p{font-family:var(--display);font-size:var(--fs-4);line-height:1.08;margin:0 0 12px}
+.dquote p{font-family:var(--display);font-size:var(--fs-3);line-height:1.15;margin:0 0 10px}
 .dquote .by{font-size:var(--fs-1);color:var(--olive-soft);display:block}
 .dquote.b1{background:var(--stamp);color:var(--paper)}.dquote.b1 .by{color:#dfe3ef}
 .dquote.b2{background:var(--tone);color:var(--ink)}.dquote.b2 .by{color:var(--muted)}
-.dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}.dhead .chip{flex:none;white-space:nowrap}
 @media (prefers-reduced-motion:no-preference){.disc>*{animation:dfade .65s var(--ease) both;animation-delay:calc(var(--i,0) * 40ms)}@keyframes dfade{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}}`;
 let DISC = null;
 const shuffled = a => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
@@ -4546,7 +4546,7 @@ function discItems() {
   if (!ph.length) st.forEach((m, i) => out.push({ k: 's', m, v: i % 3 }));
   DISC = { key, items: out }; return out;
 }
-const excerpt = t => { t = String(t || '').replace(/\s+/g, ' ').trim(); if (t.length <= 150) return t; const c = t.slice(0, 150), i = c.lastIndexOf(' '); return (i > 80 ? c.slice(0, i) : c) + '…'; };
+const excerpt = t => { t = String(t || '').replace(/\s+/g, ' ').trim(); if (t.length <= 110) return t; const c = t.slice(0, 110), i = c.lastIndexOf(' '); return (i > 60 ? c.slice(0, i) : c) + '…'; };
 const shopHas = () => { if (!CFG_ON) return false; const st = shopState('all'); return st === 'failed' || (st === 'ready' && shopOf('all').list.length > 0); };
 function discoverHTML() {
   if (!document.getElementById('disc-css')) { const st = document.createElement('style'); st.id = 'disc-css'; st.textContent = DISC_CSS; document.head.appendChild(st); }

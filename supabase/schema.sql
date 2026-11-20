@@ -2092,3 +2092,31 @@ alter table public.listings drop constraint if exists listings_price_ck;
 alter table public.listings add constraint listings_price_ck check (price_ils is null or price_ils between 0 and 999999999);
 alter table public.request_routes drop constraint if exists request_routes_price_ck;
 alter table public.request_routes add constraint request_routes_price_ck check (offer_price_ils is null or offer_price_ils between 0 and 999999999);
+
+-- =====================================================================
+-- 23. A colour for the maker's page (one of five). Shown on the profile header.
+-- =====================================================================
+alter table public.makers add column if not exists theme text not null default 'stone';
+alter table public.makers drop constraint if exists makers_theme_ck;
+alter table public.makers add constraint makers_theme_ck check (theme in ('stone', 'olive', 'clay', 'blue', 'ink'));
+
+create or replace view public.public_makers
+  with (security_invoker = false)
+as
+  select id, name, city, craft, story, photos, portrait,
+         case when phone_public then phone end as contact_phone,
+         craft_other,
+         case when email_public then email end as contact_email,
+         crafts,
+         reviews_url,
+         theme
+  from public.makers
+  where status = 'approved' and public.can_see_maker(id, is_test);
+
+create or replace view public.my_maker
+  with (security_invoker = false)
+as
+  select id, name, city, craft, craft_other, story, photos, portrait, phone_public, email_public, status, created_at, crafts, phone, reviews_url, theme
+  from public.makers
+  where email is not null
+    and lower(btrim(email)) = lower(btrim(coalesce(auth.jwt() ->> 'email', '')));

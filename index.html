@@ -189,9 +189,9 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .filters button { flex: none; border: 0; background: var(--tone); padding: 8px 16px; min-height: 44px; font-size: var(--fs-2); }
 .filters button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .banner .art { aspect-ratio: 4 / 5; max-height: 66vh; }
-.banner .copy { background: var(--olive); color: var(--on-olive); padding: 22px var(--gr) 26px var(--gl); display: flex; flex-direction: column; gap: 8px; border-radius: var(--r) var(--r) 0 0; margin-top: -12px; position: relative; }
+.banner .copy { background: var(--tb, var(--olive)); color: var(--tt, var(--on-olive)); padding: 22px var(--gr) 26px var(--gl); display: flex; flex-direction: column; gap: 8px; border-radius: var(--r) var(--r) 0 0; margin-top: -12px; position: relative; }
 .banner h2 { font-family: var(--display); font-size: var(--fs-5); line-height: .98; }
-.banner .where { color: var(--olive-soft); }
+.banner .where { color: var(--ts, var(--olive-soft)); }
 .strip { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .strip .art { aspect-ratio: 4 / 5; }
 .rstory { white-space: pre-wrap; }
@@ -2869,6 +2869,9 @@ const craftName = c => Object.prototype.hasOwnProperty.call(CRAFTS, c) ? CRAFTS[
    tags, control characters and line breaks become spaces, invisible direction marks and angle brackets go, spaces collapse, 40 characters at most. */
 const cleanOther = s => Array.from(String(s == null ? '' : s).replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ').replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff<>]/g, '').replace(/\s+/g, ' ').trim()).slice(0, 40).join('').trim();
 /* every craft a maker works in (the older rows have only the one in craft) and the same as one line of text */
+const THEMES = { stone: { l: 'אבן', b: '#ddd7c9', t: '#1f2218', s: '#55554a' }, olive: { l: 'זית', b: '#c9d1b6', t: '#1f2218', s: '#3a4230' }, clay: { l: 'חימר', b: '#9c4128', t: '#f2f1ee', s: '#f3dfd6' }, blue: { l: 'כחול', b: '#2443a0', t: '#f2f1ee', s: '#dfe3ef' }, ink: { l: 'שחור זית', b: '#1f2218', t: '#f2f1ee', s: '#c9d1b6' } };
+const themeOf = m => THEMES[m && m.theme] || THEMES.stone;
+const themeVars = m => { const t = themeOf(m); return `--tb:${t.b};--tt:${t.t};--ts:${t.s}`; };
 const mcrafts = m => (Array.isArray(m.crafts) && m.crafts.length ? m.crafts : [m.craft]).filter(Boolean);
 const craftsLine = m => { const o = m.craftOther != null ? m.craftOther : m.other != null ? m.other : m.craft_other; return [...new Set(mcrafts(m).map(c => craftText(c, o)))].join(', '); };
 /* the craft as plain text (escape it where it is used): "other" shows the maker's own word, or "אחר" when it is missing */
@@ -3284,14 +3287,14 @@ async function loadReal() {
   try {
     /* the view may be missing its newer columns (the database update not applied yet): ask for all, then without contact_email, then without craft_other, then without contact_phone */
     const BASE = 'id,name,city,craft,story,photos,portrait', q = cols => SB.from('public_makers').select(cols);
-    const ladder = [',contact_phone,craft_other,contact_email,crafts,reviews_url', ',contact_phone,craft_other,contact_email,crafts', ',contact_phone,craft_other,contact_email', ',contact_phone,craft_other', ',contact_phone', ''];
+    const ladder = [',contact_phone,craft_other,contact_email,crafts,reviews_url,theme', ',contact_phone,craft_other,contact_email,crafts,reviews_url', ',contact_phone,craft_other,contact_email,crafts', ',contact_phone,craft_other,contact_email', ',contact_phone,craft_other', ',contact_phone', ''];
     let data = null, error = null;
     for (const extra of ladder) {
       ({ data, error } = await q(BASE + extra));
       if (!error || /failed to fetch|networkerror|network request failed|load failed/i.test(String(error.message || ''))) break;   /* a missing column is worth another try; no network is not */
     }
     if (error || !Array.isArray(data)) throw error || new Error('no data');
-    REAL.list = data.filter(m => m && m.id && m.name).map(m => ({ id: String(m.id), name: String(m.name), city: String(m.city || ''), craft: String(m.craft || ''), story: String(m.story || ''), portrait: okPath(m.portrait) ? String(m.portrait) : '', photos: Array.isArray(m.photos) ? m.photos.map(String).filter(okPath) : [], contact: contactPhone(m.contact_phone), email: contactEmail(m.contact_email), reviewsUrl: okUrl(m.reviews_url), craftOther: cleanOther(m.craft_other), crafts: (Array.isArray(m.crafts) ? m.crafts.map(String).filter(c => hasCraft(c) || c === 'other') : []).slice(0, 6) }))
+    REAL.list = data.filter(m => m && m.id && m.name).map(m => ({ id: String(m.id), name: String(m.name), city: String(m.city || ''), craft: String(m.craft || ''), story: String(m.story || ''), portrait: okPath(m.portrait) ? String(m.portrait) : '', photos: Array.isArray(m.photos) ? m.photos.map(String).filter(okPath) : [], contact: contactPhone(m.contact_phone), email: contactEmail(m.contact_email), reviewsUrl: okUrl(m.reviews_url), theme: THEMES[m.theme] ? m.theme : 'stone', craftOther: cleanOther(m.craft_other), crafts: (Array.isArray(m.crafts) ? m.crafts.map(String).filter(c => hasCraft(c) || c === 'other') : []).slice(0, 6) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'he'));
     REAL.loaded = true;
   } catch (e) { REAL.failed = true; }
@@ -3814,13 +3817,13 @@ async function loadMe(force) {
   if (!force && AU.uid === uid && (AU.st === 'loading' || AU.st === 'ready')) return;
   if (AU.uid !== uid) AU = freshAU();
   AU.uid = uid; AU.st = 'loading'; meRedraw(); loadAccountRequests();
-  let r = await dbq(s => s.from('my_maker').select(MCOLS + ',phone,reviews_url').order('created_at', { ascending: false }));
+  let r = await dbq(s => s.from('my_maker').select(MCOLS + ',phone,reviews_url,theme').order('created_at', { ascending: false }));
   if (r.error && !r.off) r = await dbq(s => s.from('my_maker').select(MCOLS).order('created_at', { ascending: false }));
   if (!AD.session || String(AD.session.user.id) !== uid) return;
   if (r.gone) { AU.st = 'gone'; AU.probe = 'gone'; }
   else if (r.error || !Array.isArray(r.data)) AU.st = 'failed';
   else {
-    AU.rows = r.data.filter(x => x && x.id).map(x => ({ id: String(x.id), name: cleanText(x.name, 80), city: cleanText(x.city, 60), craft: String(x.craft || ''), crafts: Array.isArray(x.crafts) ? x.crafts.map(String).slice(0, 6) : [], other: cleanOther(x.craft_other), story: cleanBlock(x.story, 1000), photos: Array.isArray(x.photos) ? x.photos.map(String).filter(okPath) : [], portrait: okPath(x.portrait) ? String(x.portrait) : '', phonePublic: !!x.phone_public, emailPublic: !!x.email_public, phone: String(x.phone || ''), reviewsUrl: okUrl(x.reviews_url), status: String(x.status || '') }));
+    AU.rows = r.data.filter(x => x && x.id).map(x => ({ id: String(x.id), name: cleanText(x.name, 80), city: cleanText(x.city, 60), craft: String(x.craft || ''), crafts: Array.isArray(x.crafts) ? x.crafts.map(String).slice(0, 6) : [], other: cleanOther(x.craft_other), story: cleanBlock(x.story, 1000), photos: Array.isArray(x.photos) ? x.photos.map(String).filter(okPath) : [], portrait: okPath(x.portrait) ? String(x.portrait) : '', phonePublic: !!x.phone_public, emailPublic: !!x.email_public, phone: String(x.phone || ''), reviewsUrl: okUrl(x.reviews_url), theme: THEMES[x.theme] ? x.theme : 'stone', status: String(x.status || '') }));
     AU.maker = AU.rows.find(x => x.status === 'approved') || null; AU.st = 'ready';
     if (AU.maker) { if (cur().s === 'mine') { S.stack = S.stack.map(x => ({ ...x })); } loadInbox(); }
   }
@@ -4152,7 +4155,7 @@ const SCREENS = {
       <button class="round" data-act="search" aria-label="חיפוש יוצרים">${svg(UI.search)}</button></header>
     <section class="hero"><div class="photo"><img${driftAttr()} src="img/h/${HERO.k}-880.jpg" srcset="img/h/${HERO.k}-480.jpg 480w, img/h/${HERO.k}-880.jpg 880w" sizes="(max-width: 440px) 100vw, 440px" width="880" height="640" alt="${esc(HERO.alt)}" loading="eager" fetchpriority="high" decoding="async" draggable="false"></div>
       <div class="slip-wrap g"><div class="slip zig"><img class="logo-big" src="logo/logo-primary-ink.svg" width="168" height="109" alt="">
-        <h1>כתבו מה תרצו שיכינו לכם</h1><p>למשל ארנק עם האותיות של אבא. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים שמתאימים.</p>
+        <h1>כתבו מה תרצו שיכינו לכם</h1><p>אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים שמתאימים.</p>
         <div class="acts"><button class="btn" data-act="tab" data-v="post">לכתוב בקשה</button>${canJoin() ? '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>' : ''}</div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
       <section aria-labelledby="h-how"><div class="sec-head"><h2 class="sec-title" id="h-how">איך זה עובד</h2></div>
@@ -4199,7 +4202,7 @@ const SCREENS = {
   rmaker: ({ id }) => { const m = REAL.list.find(x => x.id === id);
     if (!m) return `${head('יוצר')}<div class="stack g">${realState() === 'loading' ? '<p class="muted" role="status">טוענים...</p>' : '<p class="empty">לא מצאנו את היוצר הזה.</p>'}</div>`;
     const face = m.portrait || m.photos[0], works = m.portrait ? m.photos : m.photos.slice(1);   /* old rows have no portrait: their first photo stands in */
-    return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner">${face ? rImg(face, `${m.name}`) : ''}
+    return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner" style="${themeVars(m)}">${face ? rImg(face, `${m.name}`) : ''}
       <div class="copy g"><h2>${esc(m.name)}</h2><span class="where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></div></section>
     <div class="stack g">
       ${m.contact || m.email ? `<div class="contact">${m.contact ? `<a class="cbtn2 wa" href="${esc(waHref(m))}" ${OUT}>${svg(UI.wa)}וואטסאפ</a><a class="cbtn2" href="${esc(m.contact.tel)}">${svg(UI.phone)}התקשרו</a>` : ''}${m.email ? `<a class="cbtn2" href="${esc(mailHref(m))}">${svg(UI.mail)}מייל</a>` : ''}</div>`
@@ -4453,7 +4456,7 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
 /* ---------- editing my own profile ---------- */
 const EP = { m: null, works: [], portrait: '', portraitUrl: '', busy: false };
 const epImg = (x, alt) => `<img src="${esc(x.url || photoURL(x.path))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
-const epWorksHTML = () => EP.works.map((x, i) => `<div class="art">${epImg(x, 'עבודה ' + (i + 1))}<button type="button" class="rm" data-act="epwrm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button></div>`).join('') + (EP.works.length < MAX_PHOTOS ? '<button type="button" class="add-photo" data-act="epwpick" aria-label="הוספת תמונה">+</button>' : '');
+const epWorksHTML = () => EP.works.map((x, i) => `<div class="art">${epImg(x, 'עבודה ' + (i + 1))}<button type="button" class="rm" data-act="epwrm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button>${i === 0 ? '<span class="mk1 on">ראשית</span>' : `<button type="button" class="mk1" data-act="epfirst" data-v="${i}" aria-label="להפוך את תמונה ${i + 1} לראשית">להפוך לראשית</button>`}</div>`).join('') + (EP.works.length < MAX_PHOTOS ? '<button type="button" class="add-photo" data-act="epwpick" aria-label="הוספת תמונה">+</button>' : '');
 const epPortraitHTML = () => EP.portrait ? `<div class="art">${epImg({ url: EP.portraitUrl, path: EP.portrait }, 'התמונה שלכם')}<button type="button" class="rm" data-act="epprm" aria-label="הסרת התמונה שלכם">${svg(UI.close)}</button></div><button type="button" class="chip" data-act="eppick">החלפת תמונה</button>` : '<button type="button" class="add-photo" data-act="eppick" aria-label="הוספת תמונה שלכם">+</button>';
 function drawEP() { const a = document.getElementById('ep-works'), b = document.getElementById('ep-portrait'), c = document.getElementById('ep-count'); if (a) a.innerHTML = epWorksHTML(); if (b) b.innerHTML = epPortraitHTML(); if (c) c.textContent = `${EP.works.length} מתוך ${MAX_PHOTOS} תמונות`; }
 async function epUpload(files, asPortrait) {
@@ -4488,8 +4491,9 @@ SCREENS.editprofile = () => {
       <label class="opt"><input type="checkbox" name="phone_public" ${m.phonePublic ? 'checked' : ''}><span class="grow">להציג את הטלפון באתר (וואטסאפ והתקשרות)</span></label>
       <label class="opt"><input type="checkbox" name="email_public" ${m.emailPublic ? 'checked' : ''}><span class="grow">להציג את המייל באתר</span></label>
       <div class="field"><label for="ep-rurl">קישור לביקורות במקום אחר <span class="m">(לא חובה)</span></label><input class="input" id="ep-rurl" name="reviews_url" type="url" dir="ltr" maxlength="280" placeholder="https://" value="${esc(m.reviewsUrl || '')}"></div>
+      <fieldset class="field"><legend class="lbl">צבע הדף שלכם</legend><div class="swatches">${Object.entries(THEMES).map(([k, t]) => `<label class="swatch"><input type="radio" name="theme" value="${k}" ${(m.theme || 'stone') === k ? 'checked' : ''}><span class="sw" style="background:${t.b};color:${t.t}"><b>${esc(m.name || 'אב')}</b><span class="sr">${t.l}</span></span><span class="swl">${t.l}</span></label>`).join('')}</div><span class="hint">הצבע מופיע בכותרת של הפרופיל באתר.</span></fieldset>
       <div class="field"><span class="lbl">התמונה שלכם</span><div class="pt-row"><div class="photos" id="ep-portrait">${epPortraitHTML()}</div></div><input type="file" id="ep-pfile" accept="image/jpeg,image/png,image/webp" hidden aria-label="בחירת תמונה שלכם"></div>
-      <div class="field"><span class="lbl">תמונות מהעבודות</span><div class="photos" id="ep-works">${epWorksHTML()}</div><input type="file" id="ep-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות"><span class="hint" id="ep-count">${EP.works.length} מתוך ${MAX_PHOTOS} תמונות</span><span class="hint" id="ep-msg" role="status" aria-live="polite"></span></div>
+      <div class="field"><span class="lbl">תמונות מהעבודות</span><span class="hint">התמונה הראשונה היא התמונה הראשית שלכם. אפשר להפוך כל תמונה לראשית.</span><div class="photos" id="ep-works">${epWorksHTML()}</div><input type="file" id="ep-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות"><span class="hint" id="ep-count">${EP.works.length} מתוך ${MAX_PHOTOS} תמונות</span><span class="hint" id="ep-msg" role="status" aria-live="polite"></span></div>
       <p class="form-err" id="ep-err" role="alert" hidden></p>
       <button class="btn block" type="submit">שמירת השינויים</button>
     </form></div>`;
@@ -4507,15 +4511,27 @@ async function saveProfile(f) {
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
   if (bad) { const el = f.querySelector('#' + bad[0]) || f.querySelector('#' + bad[0].replace('ep-portrait', 'ep-pfile')); if (el && el.classList.contains('input')) el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; if (el && el.focus) el.focus(); return; }
   err.hidden = true; btn.disabled = true; btn.textContent = 'שומרים...';
-  const payload = { name, city, crafts: picked, craft_other: picked.includes('other') ? other : null, story, phone: phone || null, phone_public: !!phone && !!fd.get('phone_public'), email_public: !!fd.get('email_public'), reviews_url: rurl || null, portrait: EP.portrait, photos: EP.works.map(x => x.path) };
-  const r = await dbq(s => s.from('makers').update(payload).eq('id', AU.maker.id));
+  const theme = THEMES[fd.get('theme')] ? String(fd.get('theme')) : 'stone';
+  const payload = { theme, name, city, crafts: picked, craft_other: picked.includes('other') ? other : null, story, phone: phone || null, phone_public: !!phone && !!fd.get('phone_public'), email_public: !!fd.get('email_public'), reviews_url: rurl || null, portrait: EP.portrait, photos: EP.works.map(x => x.path) };
+  let r = await dbq(s => s.from('makers').update(payload).eq('id', AU.maker.id));
+  if (r.error && /theme/i.test(String(r.error.message || ''))) { delete payload.theme; r = await dbq(s => s.from('makers').update(payload).eq('id', AU.maker.id)); }   /* the colour column is not there yet: save the rest */
   if (r.error) { err.textContent = errCode(r.error) === '23505' ? 'הטלפון הזה כבר רשום אצל יוצר אחר.' : (friendly(r.error) || 'השמירה לא הצליחה. נסו שוב.'); err.hidden = false; btn.disabled = false; btn.textContent = 'שמירת השינויים'; return; }
   REAL.loaded = false; REAL.failed = false; loadReal(); loadMe(true); toast('נשמר'); back();
 }
 /* ---------- tidy button grids (the profile, the settings) ---------- */
 (function () { const st = document.createElement('style'); st.id = 'bgrid-css'; st.textContent = `.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0}
 .bgrid .btn{width:100%;min-height:54px;padding:10px 12px;line-height:1.2;text-align:center}
-.bgrid .wide{grid-column:1/-1}`; document.head.appendChild(st); })();
+.bgrid .wide{grid-column:1/-1}
+.swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px}
+.swatch{position:relative;display:flex;flex-direction:column;gap:4px;cursor:pointer}
+.swatch input{position:absolute;opacity:0;inset:0}
+.swatch .sw{display:grid;place-items:center;min-height:64px;font-family:var(--display);font-size:var(--fs-3);padding:6px;text-align:center;line-height:1}
+.swatch .swl{font-size:var(--fs-1);text-align:center}
+.swatch input:checked ~ .sw{outline:3px solid var(--stamp);outline-offset:2px}
+.swatch input:focus-visible ~ .sw{outline:3px solid var(--ink);outline-offset:2px}
+#ep-works .art{width:104px;height:104px}
+.mk1{position:absolute;bottom:0;inset-inline:0;z-index:2;border:0;padding:5px 2px;font-size:12px;line-height:1.1;background:var(--paper);color:var(--ink);text-align:center}
+.mk1.on{background:var(--stamp);color:var(--paper)}`; document.head.appendChild(st); })();
 /* ---------- settings ---------- */
 SCREENS.settings = () => {
   const em = AD.session && AD.session.user && AD.session.user.email, mk = meMode() === 'maker';
@@ -4549,11 +4565,12 @@ const shuffled = a => { const r = a.slice(); for (let i = r.length - 1; i > 0; i
 function discItems() {
   const key = REAL.list.map(m => m.id + m.photos.length).join(',');
   if (DISC && DISC.key === key) return DISC.items;
-  const photos = [], stories = [];
-  REAL.list.forEach(m => { (m.portrait ? m.photos : m.photos.slice(1)).forEach(p => photos.push({ p, m })); if (String(m.story || '').trim().length > 30) stories.push(m); });
-  const ph = shuffled(photos), st = shuffled(stories), out = []; let si = 0;
-  ph.forEach((x, i) => { out.push({ k: 'p', ...x }); if ((i + 1) % 5 === 0 && st.length) { out.push({ k: 's', m: st[si % st.length], v: si % 3 }); si++; } });
-  if (!ph.length) st.forEach((m, i) => out.push({ k: 's', m, v: i % 3 }));
+  const per = REAL.list.map(m => shuffled((m.portrait ? m.photos : m.photos.slice(1)).map(p => ({ k: 'p', p, m })))), stories = shuffled(REAL.list.filter(m => String(m.story || '').trim().length > 30));
+  const ph = []; let any = true;   /* the makers take turns, so one name never fills the page */
+  for (let r = 0; any; r++) { any = false; shuffled(per.map((_, i) => i)).forEach(i => { if (per[i][r]) { ph.push(per[i][r]); any = true; } }); }
+  const out = [], step = Math.max(4, Math.floor(ph.length / (stories.length + 1)));
+  ph.forEach((x, i) => { out.push(x); if (stories.length && (i + 1) % step === 0) out.push({ k: 's', m: stories.shift() }); });
+  stories.forEach(m => out.push({ k: 's', m }));   /* each story appears once */
   DISC = { key, items: out }; return out;
 }
 const excerpt = t => { t = String(t || '').replace(/\s+/g, ' ').trim(); if (t.length <= 110) return t; const c = t.slice(0, 110), i = c.lastIndexOf(' '); return (i > 60 ? c.slice(0, i) : c) + '…'; };
@@ -4568,8 +4585,8 @@ function discoverHTML() {
   return `<div class="dhead"><p class="muted">תמונות וסיפורים מהסדנאות של היוצרים שלנו. לחיצה פותחת את הפרופיל.</p><button type="button" class="chip" data-act="discshuffle">ערבוב</button></div>
     <p class="small muted" aria-live="polite">${plural(REAL.list.length, 'יוצר אחד', 'יוצרים')} · ${plural(n, 'תמונה אחת', 'תמונות')}</p>
     <div class="disc">${items.map((x, i) => x.k === 'p'
-      ? `<button type="button" class="dtile" style="--i:${i % 12}" data-act="rmaker" data-v="${esc(x.m.id)}"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"><span class="dcap"><b>${esc(x.m.name)}</b>${esc(craftsLine(x.m))}${x.m.city ? ` · ${esc(x.m.city)}` : ''}</span></button>`
-      : `<button type="button" class="dquote b${x.v}" style="--i:${i % 12}" data-act="rmaker" data-v="${esc(x.m.id)}"><p>${esc(excerpt(x.m.story))}</p><span class="by">${esc(x.m.name)} · ${esc(craftsLine(x.m))}</span></button>`).join('')}</div>`;
+      ? `<button type="button" class="dtile" style="--i:${i % 12}" data-act="rmaker" data-v="${esc(x.m.id)}"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"><span class="dcap"><b>${esc(x.m.name)}</b></span></button>`
+      : `<button type="button" class="dquote" style="--i:${i % 12};background:${themeOf(x.m).b};color:${themeOf(x.m).t}" data-act="rmaker" data-v="${esc(x.m.id)}"><p>${esc(excerpt(x.m.story))}</p><span class="by" style="color:${themeOf(x.m).s}">${esc(x.m.name)} · ${esc(craftsLine(x.m))}</span></button>`).join('')}</div>`;
 }
 /* ---------- the makers who fit a request: sort and filter by fit, distance and reviews ---------- */
 const MT = { crafts: [], city: '', sort: 'fit', dist: 0, stars: 0, only: true };
@@ -5068,6 +5085,7 @@ Object.assign(ACT, {
   eppick: () => { const i = document.getElementById('ep-pfile'); if (i) i.click(); },
   epwpick: () => { const i = document.getElementById('ep-file'); if (i) i.click(); },
   epprm: () => { EP.portrait = ''; EP.portraitUrl = ''; drawEP(); },
+  epfirst: v => { const i = +v; if (i > 0 && i < EP.works.length) { const [x] = EP.works.splice(i, 1); EP.works.unshift(x); drawEP(); } },
   epwrm: v => { EP.works.splice(+v, 1); drawEP(); },
   rvkit: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) openSheet(reviewKitSheet(m), 'ביקורות מלקוחות'); },
   rvcopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('rv-url'); if (i) i.select(); toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('rv-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },

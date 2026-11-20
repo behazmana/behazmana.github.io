@@ -1,0 +1,17 @@
+{
+  "name": "בהזמנה · ניהול",
+  "short_name": "ניהול",
+  "description": "מסך הניהול של בהזמנה, לבעלים בלבד.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./#admin",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1f2218",
+  "theme_color": "#1f2218",
+  "icons": [
+    { "src": "admin-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "admin-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "admin-apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

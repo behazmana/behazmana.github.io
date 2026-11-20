@@ -2120,3 +2120,27 @@ as
   from public.makers
   where email is not null
     and lower(btrim(email)) = lower(btrim(coalesce(auth.jwt() ->> 'email', '')));
+
+-- =====================================================================
+-- 24. Phone notifications (ntfy) also for a new maker waiting for approval and for a new review.
+--     Same rule as before: no personal details, only that something new arrived and a link to the admin screen.
+-- =====================================================================
+create or replace function public.notify_new_maker() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform public.notify_owner('יוצר חדש מחכה לאישור', 'נרשם יוצר חדש. פתחו את מסך הניהול כדי לבדוק ולאשר.', 'https://behazmana.github.io/#admin');
+  return new;
+end
+$$;
+revoke all on function public.notify_new_maker() from public, anon, authenticated;
+create or replace trigger makers_notify after insert on public.makers for each row execute function public.notify_new_maker();
+
+create or replace function public.notify_new_review() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform public.notify_owner('ביקורת חדשה באתר', 'נכתבה ביקורת חדשה. אפשר לראות אותה ולהסיר אותה במסך הניהול.', 'https://behazmana.github.io/#admin');
+  return new;
+end
+$$;
+revoke all on function public.notify_new_review() from public, anon, authenticated;
+create or replace trigger reviews_notify after insert on public.reviews for each row execute function public.notify_new_review();

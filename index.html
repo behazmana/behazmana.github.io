@@ -4277,7 +4277,7 @@ const FLOW_SVG = `<svg class="flow-svg" viewBox="0 0 360 170" role="img" aria-la
   <path class="f-arr f-a1" d="M280 21H206M212 16L204 21L212 26"/>
   <path class="f-arr f-a2" d="M160 21H86M92 16L84 21L92 26"/>
   <g class="f-slip"><rect class="f-paper" x="268" y="46" width="64" height="84"/><rect class="f-stamp" x="268" y="46" width="64" height="14"/>
-    <rect class="f-ink f-l" x="276" y="70" width="48" height="4"/><rect class="f-ink f-l" x="276" y="82" width="40" height="4"/><rect class="f-ink f-l" x="276" y="94" width="46" height="4"/><rect class="f-ink f-l" x="276" y="106" width="28" height="4"/></g>
+    <rect class="f-ink f-l" x="276" y="70" width="48" height="4"/><rect class="f-ink f-l" x="284" y="82" width="40" height="4"/><rect class="f-ink f-l" x="278" y="94" width="46" height="4"/><rect class="f-ink f-l" x="296" y="106" width="28" height="4"/></g>
   <g class="f-makers">
     <g class="f-m"><rect class="f-tone" x="128" y="44" width="30" height="30"/><path class="f-glyph" d="M135 54H151L148 66H138Z"/></g>
     <g class="f-m"><rect class="f-tone" x="168" y="44" width="30" height="30"/><path class="f-glyph" d="M174 66L183 52L192 66Z"/></g>
@@ -4288,9 +4288,9 @@ const FLOW_SVG = `<svg class="flow-svg" viewBox="0 0 360 170" role="img" aria-la
   <g class="f-mini"><rect class="f-paper" x="289" y="68" width="22" height="28"/><rect class="f-stamp" x="289" y="68" width="22" height="6"/></g>
   <g class="f-talk">
     <rect class="f-paper f-bub1" x="46" y="44" width="62" height="30"/><path class="f-paper f-bub1" d="M96 74H104L104 82Z"/>
-    <rect class="f-ink f-bub1" x="54" y="53" width="38" height="4"/><rect class="f-ink f-bub1" x="54" y="62" width="26" height="4"/>
+    <rect class="f-ink f-bub1" x="62" y="53" width="38" height="4"/><rect class="f-ink f-bub1" x="74" y="62" width="26" height="4"/>
     <rect class="f-stamp f-bub2" x="12" y="88" width="62" height="30"/><path class="f-stamp f-bub2" d="M24 118H16L16 126Z"/>
-    <rect class="f-onstamp f-bub2" x="20" y="97" width="38" height="4"/><rect class="f-onstamp f-bub2" x="20" y="106" width="30" height="4"/>
+    <rect class="f-onstamp f-bub2" x="28" y="97" width="38" height="4"/><rect class="f-onstamp f-bub2" x="36" y="106" width="30" height="4"/>
     <rect class="f-olive f-who" x="84" y="134" width="20" height="20"/><rect class="f-stamp f-who" x="16" y="134" width="20" height="20"/>
     <path class="f-link f-who" d="M42 144H78"/>
   </g>
@@ -4762,20 +4762,26 @@ const DISC_CSS = `.disc{column-count:2;column-gap:12px}
 .dtile .dheart[aria-pressed="true"] svg{fill:var(--clay);stroke:var(--clay)}
 .dp{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;overscroll-behavior:contain;touch-action:none}
 .dp-back{position:absolute;inset:0;background:rgba(31,34,24,.45)}
-.dp-card{position:relative;width:min(440px,100%);background:var(--paper);color:var(--ink);max-height:100%;overflow:hidden}
+.dp-card{position:relative;width:min(440px,100%);background:transparent;color:var(--ink);max-height:100%;overflow:hidden}
 .dp-photo{position:relative;background:var(--tone)}
 .dp-photo img{display:block;width:100%;height:46vh;object-fit:contain}
 .dp .dheart{position:absolute;inset-block-start:0;inset-inline-end:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:var(--ink);cursor:pointer}
 .dp .dheart svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .dp .dheart[aria-pressed="true"] svg{fill:var(--clay);stroke:var(--clay)}
 body.dp-open{overflow:hidden}
-.dp .dopen{padding:0}.dp .dbtns{display:flex;gap:2px;background:var(--paper)}.dp .dbtns .btn{flex:1 1 0;min-width:0;padding-inline:8px;clip-path:none;text-decoration:none}.dp .dinfo{margin:0;padding:10px 12px}
+.dp .dopen{padding:0;background:var(--paper)}.dp .dbtns{display:flex;gap:2px;background:var(--paper)}.dp .dbtns .btn{flex:1 1 0;min-width:0;padding-inline:8px;clip-path:none;text-decoration:none}.dp .dinfo{margin:0;padding:10px 12px}
 .dp .dclose{position:absolute;inset-block-start:0;inset-inline-start:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:var(--ink);cursor:pointer}.dp .dclose svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
 .dtile .dcap{display:block;padding:9px 11px 11px;font-size:var(--fs-1);color:var(--muted);line-height:1.3}
 .dtile .dcap b{display:block;font-family:var(--display);font-size:var(--fs-3);line-height:1;color:var(--ink);font-weight:700;margin-bottom:2px}
 .dquote{border:0;text-align:start;cursor:pointer;padding:20px 18px 18px;background:var(--olive);color:var(--on-olive)}
 .dquote p{font-family:var(--display);font-size:var(--fs-3);line-height:1.15;margin:0 0 10px}
 .dquote .by{font-size:var(--fs-1);color:var(--olive-soft);display:block}
+.dq-card{background:var(--paper);display:flex;flex-direction:column;max-height:calc(100dvh - 32px)}
+.dq-body{padding:16px 16px 8px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
+.dq-card .face-row{gap:12px;align-items:flex-start}.dq-card .face-row .av{width:56px;height:68px}.dq-who{flex:1;min-width:0}.dq-who b{display:block;font-family:var(--display);font-size:var(--fs-3);line-height:1.1}
+.dq-story{margin:14px 0 0;line-height:1.5;white-space:pre-line}
+.dq-row{display:flex;gap:6px;margin-top:14px}.dq-th{position:relative;flex:1 1 0;aspect-ratio:1;overflow:hidden;background:var(--tone)}.dq-th .art{position:absolute;inset:0;aspect-ratio:auto;height:100%}
+.dq-acts{display:flex;gap:2px;background:var(--paper);padding:8px 16px 16px;flex:none}.dq-acts .btn:first-child{flex:1 1 auto}.dq-x{flex:none;min-width:48px;padding-inline:14px}.dq-x svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
 .dquote.b1{background:var(--stamp);color:var(--paper)}.dquote.b1 .by{color:#dfe3ef}
 .dquote.b2{background:var(--tone);color:var(--ink)}.dquote.b2 .by{color:var(--muted)}
 .dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}.dhead .chip{flex:none;white-space:nowrap}
@@ -4863,18 +4869,40 @@ function dpClose(now) {
 }
 function dpHide(now) {
   const o = DPO; if (!o) return; DPO = null;
-  const { el, tile } = o, ph = el.querySelector('.dp-photo'), done = () => { el.remove(); tile.classList.remove('dp-src'); };
+  const { el, tile } = o, ph = el.querySelector('.dp-photo') || el.querySelector('.dp-card'), done = () => { el.remove(); tile.classList.remove('dp-src'); };
   document.body.classList.remove('dp-open'); if (window.scrollY !== o.y) window.scrollTo(0, o.y);
   const b = tile.querySelector('.dimg'); if (b) b.setAttribute('aria-expanded', 'false');
   if (o.ret && document.contains(o.ret)) o.ret.focus({ preventScroll: true });
-  const img0 = tile.querySelector('img');
+  const img0 = tile.querySelector('img') || (o.story ? tile : null);
   if (now || dpCalm() || !ph.animate || !img0) { done(); return; }
+  tile.classList.remove('dp-src');   /* the tile is back underneath at once: nothing blank is left behind the shrinking card */
   const r0 = img0.getBoundingClientRect(), r1 = ph.getBoundingClientRect(), opt = { duration: DP_MS, easing: DP_EASE, fill: 'forwards' };
   el.inert = true; el.querySelector('.dp-card').style.pointerEvents = 'none';
   const a = ph.animate([{ transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }, dpFrom(r0, r1)], opt);
   el.querySelector('.dp-back').animate([{ opacity: 1 }, { opacity: 0 }], opt);
-  el.querySelector('.dopen').animate([{ opacity: 1 }, { opacity: 0 }], { ...opt, duration: DP_MS * 0.5 });
+  const dop = el.querySelector('.dopen'); if (dop) dop.animate([{ opacity: 1 }, { opacity: 0 }], { ...opt, duration: DP_MS * 0.5 });
   a.onfinish = done; setTimeout(done, DP_MS + 120);
+}
+/* a blue story card opens the same way: it grows from its tile into a calm card with the maker, the whole story and a few works */
+function dqOpen(i) {
+  if (DPO) return;
+  const t = document.getElementById('dt-' + i), x = tileItems()[+i]; if (!t || !x || x.k !== 's') return;
+  const m = x.m, r0 = t.getBoundingClientRect(), works = (m.portrait ? m.photos : m.photos.slice(1)), shown = works.slice(0, 4);
+  const el = document.createElement('div'); el.className = 'dp'; el.id = 'dp';
+  el.innerHTML = `<div class="dp-back" data-act="dpclose"></div><div class="dp-card dq-card" role="dialog" aria-modal="true" aria-label="${esc('הסיפור של ' + m.name)}">
+    <div class="dq-body"><div class="face-row">${realAv(m)}<div class="dq-who"><b>${esc(m.name)}</b><div class="small muted">${esc(craftsLine(m))}${m.city ? ' · ' + esc(m.city) : ''}</div>${works.length ? `<div class="small muted">${plural(works.length, 'עבודה אחת באתר', 'עבודות באתר')}</div>` : ''}</div>${favBtn(m)}</div>
+    <p class="dq-story">${esc(m.story)}</p>${shown.length ? `<div class="dq-row">${shown.map(p => `<span class="dq-th">${rImg(p, '')}</span>`).join('')}</div>` : ''}</div>
+    <div class="dq-acts"><button type="button" class="btn" data-act="rmaker" data-v="${esc(m.id)}">לפרופיל</button><button type="button" class="btn ghost dq-x" data-act="dpclose" aria-label="סגירה">${svg(UI.close)}</button></div></div>`;
+  DPO = { el, tile: t, i, story: 1, y: window.scrollY, ret: document.activeElement };
+  document.body.appendChild(el); document.body.classList.add('dp-open');
+  pushH({ dp: 1 });
+  const card = el.querySelector('.dp-card'), r1 = card.getBoundingClientRect();
+  if (!dpCalm() && card.animate) {
+    const o = { duration: DP_MS, easing: DP_EASE, fill: 'backwards' };
+    card.animate([dpFrom(r0, r1), { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }], o);
+    el.querySelector('.dp-back').animate([{ opacity: 0 }, { opacity: 1 }], o);
+  }
+  const b = el.querySelector('[data-act="rmaker"]'); if (b) b.focus({ preventScroll: true });
 }
 document.addEventListener('keydown', e => { if (DPO && e.key === 'Escape' && document.getElementById('sheet').hidden) { e.preventDefault(); dpClose(); } });
 const shuffled = a => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
@@ -4901,7 +4929,7 @@ function discoverHTML() {
   return `<div class="dhead"><p class="muted">מהסדנאות של היוצרים. לחצו על תמונה להגדלה.</p><button type="button" class="chip" data-act="discshuffle">ערבוב</button></div>
     <div class="disc">${items.map((x, i) => x.k === 'p'
       ? photoTile(x, i)
-      : `<button type="button" class="dquote" style="--i:${i % 12};background:var(--stamp);color:var(--paper)" data-act="rmaker" data-v="${esc(x.m.id)}"><p>${esc(excerpt(x.m.story))}</p><span class="by" style="color:#dfe3ef">${esc(x.m.name)} · ${esc(craftsLine(x.m))}</span></button>`).join('')}</div>`;
+      : `<button type="button" class="dquote" id="dt-${i}" style="--i:${i % 12};background:var(--stamp);color:var(--paper)" data-act="dstory" data-v="${i}" aria-haspopup="dialog"><p>${esc(excerpt(x.m.story))}</p><span class="by" style="color:#dfe3ef">${esc(x.m.name)} · ${esc(craftsLine(x.m))}</span></button>`).join('')}</div>`;
 }
 /* ---------- the makers who fit a request: sort and filter by fit, distance and reviews ---------- */
 const MT = { crafts: [], city: '', sort: 'fit', dist: 0, stars: 0, only: true };
@@ -5481,7 +5509,7 @@ Object.assign(ACT, {
   signup: () => openSignup(),
   sitoggle: () => { SI.buyer = !SI.buyer; SI.err = ''; drawSignin(true); const i = document.getElementById('si-email'); if (i) i.focus({ preventScroll: true }); },
   fav: v => favToggle(v),
-  dphoto: v => dpOpen(v), dpclose: () => dpClose(),
+  dphoto: v => dpOpen(v), dstory: v => dqOpen(v), dpclose: () => dpClose(),
   dpinfo: (v, b) => { const p = b.closest('.dopen').querySelector('.dinfo'); p.hidden = !p.hidden; b.setAttribute('aria-expanded', String(!p.hidden)); },
   plike: v => plToggle(v),
   buyeracct: v => { SI.sent = 0; SI.err = ''; SI.busy = false; SI.email = v; clearInterval(SI.t); SI.t = 0; openSheet(signinSheet(), 'כניסה'); sendLink(v); },
@@ -5665,8 +5693,8 @@ function playFlow(root) {
     .fromTo(q('.f-mini'), { autoAlpha: 0, x: 0, y: 0, scale: 1, svgOrigin: '300 82' }, { autoAlpha: 1, duration: .15, ease: 'none' }, '>.1')
     .to(q('.f-mini'), { x: -97, y: 25, scale: .8, duration: .65, ease: 'power2.inOut' }, '<')
     .fromTo(q('.f-target, .f-glyph2'), { autoAlpha: 0 }, { autoAlpha: 1, duration: .4, ease: 'sine.inOut' }, '>-.2')
-    .fromTo(q('.f-hit'), { scale: 1, svgOrigin: '203 107' }, { scale: 1.14, duration: .28, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
-    .to(q('.f-mini'), { autoAlpha: 0, duration: .3, ease: 'power1.in' }, '<.1');
+    .to(q('.f-hit'), { scale: 1.14, svgOrigin: '203 107', duration: .28, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')   /* a .to, so the origin is only set when the tile is already at rest: a fromTo set it at build time and left the tile about 3 units off its centre */
+    .to(q('.f-mini'), { autoAlpha: 0, scale: .5, duration: .3, ease: 'power1.in' }, '<.2');   /* lands on the tile centre first (x and y are measured from the mini's own centre, 300 82 to 203 107), then fades and shrinks there */
   tl.addLabel('toTalk', '>.25');
   draw('.f-a2', 'toTalk', .7);
   tl.fromTo(q('.f-b3'), { autoAlpha: 0, y: 8, scale: .8, svgOrigin: '60 21' }, { autoAlpha: 1, y: 0, scale: 1, duration: .7, ease: 'back.out(1.8)' }, 'toTalk+=.35')

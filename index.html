@@ -7,7 +7,7 @@
 <title>בהזמנה · מה תרצו שיכינו לכם?</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="כתבו מה תרצו שיכינו לכם. אנחנו קוראים כל בקשה ומעבירים אותה ליוצרים בעץ, בעור, בקרמיקה, בתכשיטים ובמתכת. האתר חדש והשימוש בו חינם.">
-<meta name="theme-color" content="#c9d1b6">
+<meta name="theme-color" content="#d3e1bd">
 <meta name="color-scheme" content="only light">
 <meta name="supported-color-schemes" content="light">
 <meta property="og:type" content="website">
@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://behazmana.github.io/img/hero.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<script>(function () { /* the admin manifest is added only for the signed-in owner (see ensureAdminManifest); the owner's own device remembers that, so a reload of #admin has it from the start */ var a = false; try { a = location.hash === '#admin' && localStorage.getItem('behazmana.owner') === '1'; } catch (e) { } document.write(a ? '<link rel="apple-touch-icon" href="admin-apple-touch-icon.png"><link rel="manifest" href="admin.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="ניהול">' : '<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="בהזמנה">'); window.BZ_ADMIN_MF = a; if (a) { var t = document.querySelector('meta[name=theme-color]'); if (t) t.content = '#1f2218'; } })();</script>
+<script>(function () { /* the admin manifest is added only for the signed-in owner (see ensureAdminManifest); the owner's own device remembers that, so a reload of #admin has it from the start */ var a = false; try { a = location.hash === '#admin' && localStorage.getItem('behazmana.owner') === '1'; } catch (e) { } document.write(a ? '<link rel="apple-touch-icon" href="admin-apple-touch-icon.png"><link rel="manifest" href="admin.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="ניהול">' : '<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="בהזמנה">'); window.BZ_ADMIN_MF = a; if (a) { var t = document.querySelector('meta[name=theme-color]'); if (t) t.content = '#191c13'; } })();</script>
 <script>/* the home photo changes on every visit: four photos of professionals at work in turn (the next one each load, a random one the first time).
    Chosen here, before paint, so that only the chosen photo is preloaded and the page then uses that same download. */
 (function () {
@@ -41,16 +41,16 @@
    two faces (Karantina, Miriam Libre), no lines, no resting shadows, no gradients. Motion: the stamp landing on "how it works", plus quiet continuity (see the motion block). */
 :root {
   color-scheme: only light;
-  --ground: #e2dccd;      /* Jerusalem stone in shade */
-  --paper: #fcfbf8;       /* stone in sun: slips, fields, sheets */
-  --tone: #d0c9b6;        /* one step darker than the ground: chips, resting buttons, photo mats (ink 10.4:1) */
-  --ink: #1f2218;         /* olive-black, 12:1 on the ground */
-  --muted: #55554a;       /* 5.6:1 on the ground, 6.8:1 on paper, 4.7:1 on tone */
-  --olive: #c9d1b6;       /* olive leaf, light sage: the one tinted field (ink 11:1) */
-  --on-olive: #1f2218;
-  --olive-soft: #3a4230;  /* secondary type on sage, 8:1 */
-  --clay: #9c4128;        /* Acre clay: warnings, the closing field (5.9:1 with paper type) */
-  --stamp: #2443a0;       /* the signature: stamp ink (7.9:1 with paper type) */
+  --ground: #e5dfd1;      /* Jerusalem stone in shade */
+  --paper: #fbfaf6;       /* stone in sun: slips, fields, sheets */
+  --tone: #cec5b0;        /* one step darker than the ground: chips, resting buttons, photo mats (ink 10.4:1) */
+  --ink: #191c13;         /* olive-black, 12:1 on the ground */
+  --muted: #4e4e41;       /* 5.6:1 on the ground, 6.8:1 on paper, 4.7:1 on tone */
+  --olive: #d3e1bd;       /* olive leaf, light sage: the one tinted field (ink 11:1) */
+  --on-olive: #191c13;
+  --olive-soft: #3d462f;  /* secondary type on sage, 8:1 */
+  --clay: #933d1c;        /* Acre clay: warnings, the closing field (5.9:1 with paper type) */
+  --stamp: #1040c3;       /* the signature: stamp ink (7.9:1 with paper type) */
   --fs-1: .8125rem; --fs-2: 1rem; --fs-3: 1.25rem; --fs-4: 1.75rem; --fs-5: 2.75rem;   /* 13 / 16 / 20 / 28 / 44 px at the default size */
   --display: "Karantina", "Arial Narrow", Arial, sans-serif;
   --body: "Miriam Libre", "Assistant", "Segoe UI", Arial, sans-serif;
@@ -2911,7 +2911,7 @@ const craftName = c => Object.prototype.hasOwnProperty.call(CRAFTS, c) ? CRAFTS[
    tags, control characters and line breaks become spaces, invisible direction marks and angle brackets go, spaces collapse, 40 characters at most. */
 const cleanOther = s => Array.from(String(s == null ? '' : s).replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ').replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff<>]/g, '').replace(/\s+/g, ' ').trim()).slice(0, 40).join('').trim();
 /* every craft a maker works in (the older rows have only the one in craft) and the same as one line of text */
-const THEMES = { stone: { l: 'אבן', b: '#ddd7c9', t: '#1f2218', s: '#55554a' }, olive: { l: 'זית', b: '#c9d1b6', t: '#1f2218', s: '#3a4230' }, clay: { l: 'חימר', b: '#9c4128', t: '#f2f1ee', s: '#f3dfd6' }, blue: { l: 'כחול', b: '#2443a0', t: '#f2f1ee', s: '#dfe3ef' }, ink: { l: 'שחור זית', b: '#1f2218', t: '#f2f1ee', s: '#c9d1b6' }, sand: { l: 'חול', b: '#e8dcc0', t: '#1f2218', s: '#5a4e2e' }, mist: { l: 'ערפל', b: '#d5dad6', t: '#1f2218', s: '#3f4a44' }, sage: { l: 'מרווה', b: '#b8c4a5', t: '#1f2218', s: '#2f3a26' }, moss: { l: 'אזוב', b: '#a9b58a', t: '#1f2218', s: '#2a3320' }, straw: { l: 'קש', b: '#e0cf94', t: '#1f2218', s: '#5a4a14' }, ochre: { l: 'אוכרה', b: '#dfb86a', t: '#1f2218', s: '#4f3600' }, honey: { l: 'דבש', b: '#e2b24f', t: '#1f2218', s: '#4a3200' }, peach: { l: 'אפרסק', b: '#efc3a5', t: '#1f2218', s: '#6a3420' }, blush: { l: 'סומק', b: '#ecc9bd', t: '#1f2218', s: '#6a3a2c' }, rose: { l: 'ורד', b: '#dba9a0', t: '#1f2218', s: '#5e2a22' }, lilac: { l: 'לילך', b: '#cfc6d6', t: '#1f2218', s: '#4a3f5a' }, sky: { l: 'שמיים', b: '#bccbdc', t: '#1f2218', s: '#2c3f5e' }, sea: { l: 'ים', b: '#b4cdc6', t: '#1f2218', s: '#244640' }, brick: { l: 'לבנה', b: '#8a3a2a', t: '#f2f1ee', s: '#f1d9cf' }, rust: { l: 'חלודה', b: '#a04b24', t: '#f2f1ee', s: '#f6e0d2' }, wine: { l: 'יין', b: '#6e2b3a', t: '#f2f1ee', s: '#ecd3d9' }, plum: { l: 'שזיף', b: '#5b3a5a', t: '#f2f1ee', s: '#e6d5e5' }, night: { l: 'כחול לילה', b: '#1c2e5e', t: '#f2f1ee', s: '#d5dcf0' }, teal: { l: 'טורקיז כהה', b: '#1f5a5a', t: '#f2f1ee', s: '#cfe6e3' }, pine: { l: 'אורן', b: '#2d4a34', t: '#f2f1ee', s: '#d3e4d6' }, deepolive: { l: 'זית כהה', b: '#55612f', t: '#f2f1ee', s: '#e3e9cf' }, umber: { l: 'אדמה', b: '#5a3d2a', t: '#f2f1ee', s: '#ecdccf' }, slate: { l: 'צפחה', b: '#3e4650', t: '#f2f1ee', s: '#d9dee3' } };
+const THEMES = { stone: { l: 'אבן', b: '#cec5b0', t: '#191c13', s: '#4e4e41' }, olive: { l: 'זית', b: '#d3e1bd', t: '#191c13', s: '#3d462f' }, clay: { l: 'חימר', b: '#933d1c', t: '#fbfaf6', s: '#f3dfd6' }, blue: { l: 'כחול', b: '#1040c3', t: '#fbfaf6', s: '#dfe3ef' }, ink: { l: 'שחור זית', b: '#191c13', t: '#fbfaf6', s: '#d3e1bd' }, sand: { l: 'חול', b: '#e8dcc0', t: '#191c13', s: '#5a4e2e' }, mist: { l: 'ערפל', b: '#d5dad6', t: '#191c13', s: '#3f4a44' }, sage: { l: 'מרווה', b: '#b8c4a5', t: '#191c13', s: '#2f3a26' }, moss: { l: 'אזוב', b: '#a9b58a', t: '#191c13', s: '#2a3320' }, straw: { l: 'קש', b: '#e0cf94', t: '#191c13', s: '#5a4a14' }, ochre: { l: 'אוכרה', b: '#dfb86a', t: '#191c13', s: '#4f3600' }, honey: { l: 'דבש', b: '#e2b24f', t: '#191c13', s: '#4a3200' }, peach: { l: 'אפרסק', b: '#efc3a5', t: '#191c13', s: '#6a3420' }, blush: { l: 'סומק', b: '#ecc9bd', t: '#191c13', s: '#6a3a2c' }, rose: { l: 'ורד', b: '#dba9a0', t: '#191c13', s: '#5e2a22' }, lilac: { l: 'לילך', b: '#cfc6d6', t: '#191c13', s: '#4a3f5a' }, sky: { l: 'שמיים', b: '#bccbdc', t: '#191c13', s: '#2c3f5e' }, sea: { l: 'ים', b: '#b4cdc6', t: '#191c13', s: '#244640' }, brick: { l: 'לבנה', b: '#8a3a2a', t: '#fbfaf6', s: '#f1d9cf' }, rust: { l: 'חלודה', b: '#a04b24', t: '#fbfaf6', s: '#f6e0d2' }, wine: { l: 'יין', b: '#6e2b3a', t: '#fbfaf6', s: '#ecd3d9' }, plum: { l: 'שזיף', b: '#5b3a5a', t: '#fbfaf6', s: '#e6d5e5' }, night: { l: 'כחול לילה', b: '#1c2e5e', t: '#fbfaf6', s: '#d5dcf0' }, teal: { l: 'טורקיז כהה', b: '#1f5a5a', t: '#fbfaf6', s: '#cfe6e3' }, pine: { l: 'אורן', b: '#2d4a34', t: '#fbfaf6', s: '#d3e4d6' }, deepolive: { l: 'זית כהה', b: '#55612f', t: '#fbfaf6', s: '#e3e9cf' }, umber: { l: 'אדמה', b: '#5a3d2a', t: '#fbfaf6', s: '#ecdccf' }, slate: { l: 'צפחה', b: '#3e4650', t: '#fbfaf6', s: '#d9dee3' } };
 const themeKey = k => typeof k === 'string' && Object.prototype.hasOwnProperty.call(THEMES, k) ? k : 'stone';
 const themeOf = m => THEMES[themeKey(m && m.theme)];
 const themeVars = m => { const t = themeOf(m); return `--tb:${t.b};--tt:${t.t};--ts:${t.s}`; };
@@ -2988,25 +2988,25 @@ function reviewsHTML(m) {
 }
 const FLYER_CSS = `#flyer{display:none}
 #flyer.show{display:block;position:fixed;inset:0;z-index:9999;background:#cfc9ba;overflow:auto}
-#flyer .fl-bar{display:grid;gap:16px;padding:14px 14px 18px;background:#1f2218;color:#f2f1ee}
+#flyer .fl-bar{display:grid;gap:16px;padding:14px 14px 18px;background:#191c13;color:#fbfaf6}
 #flyer .fl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px}
 #flyer .fl-title{font:700 20px var(--body)}
-#flyer .fl-x{flex:none;width:44px;height:44px;padding:0;border:0;background:#2f3326;color:#f2f1ee;display:grid;place-items:center}
+#flyer .fl-x{flex:none;width:44px;height:44px;padding:0;border:0;background:#2f3326;color:#fbfaf6;display:grid;place-items:center}
 #flyer .fl-x svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
 #flyer .fl-grp{display:grid;gap:8px}
-#flyer .fl-lbl{font-size:14px;color:#c9d1b6}
+#flyer .fl-lbl{font-size:14px;color:#d3e1bd}
 #flyer .fl-seg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 #flyer .fl-seg.three{grid-template-columns:repeat(3,1fr)}
-#flyer .fl-chip{border:0;background:#2f3326;color:#f2f1ee;font:700 15px var(--body);padding:8px;min-height:44px;text-align:center}
-#flyer .fl-chip[aria-pressed="true"]{background:#f2f1ee;color:#1f2218}
-#flyer .fl-in{width:100%;min-height:48px;border:0;background:#f2f1ee;color:#1f2218;font:400 17px var(--body);padding:8px 12px}
-#flyer .fl-act{position:sticky;bottom:0;z-index:3;display:grid;gap:6px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:#1f2218;color:#f2f1ee}
+#flyer .fl-chip{border:0;background:#2f3326;color:#fbfaf6;font:700 15px var(--body);padding:8px;min-height:44px;text-align:center}
+#flyer .fl-chip[aria-pressed="true"]{background:#fbfaf6;color:#191c13}
+#flyer .fl-in{width:100%;min-height:48px;border:0;background:#fbfaf6;color:#191c13;font:400 17px var(--body);padding:8px 12px}
+#flyer .fl-act{position:sticky;bottom:0;z-index:3;display:grid;gap:6px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:#191c13;color:#fbfaf6}
 #flyer .fl-go{min-height:54px;font-size:18px}
-#flyer .fl-tip{font-size:13px;color:#c9d1b6;margin:0;text-align:center}
-#flyer .fl-page{position:relative;width:794px;height:1122px;margin:14px auto;overflow:hidden;box-sizing:border-box;zoom:var(--z,1);background:#f2f1ee;color:#1f2218;font-family:var(--body);box-shadow:0 10px 30px rgba(31,34,24,.25)}
+#flyer .fl-tip{font-size:13px;color:#d3e1bd;margin:0;text-align:center}
+#flyer .fl-page{position:relative;width:794px;height:1122px;margin:14px auto;overflow:hidden;box-sizing:border-box;zoom:var(--z,1);background:#fbfaf6;color:#191c13;font-family:var(--body);box-shadow:0 10px 30px rgba(31,34,24,.25)}
 #flyer .fl-page *{box-sizing:border-box}
 #flyer .fl-page img{display:block}
-#flyer .f-line{position:absolute;inset-inline:60px;z-index:2;text-align:center;font-family:var(--display);font-size:64px;line-height:1;font-weight:700;background:#f2f1ee;color:#1f2218;padding:14px 20px;border:3px dashed #2443a0;overflow-wrap:anywhere}
+#flyer .f-line{position:absolute;inset-inline:60px;z-index:2;text-align:center;font-family:var(--display);font-size:64px;line-height:1;font-weight:700;background:#fbfaf6;color:#191c13;padding:14px 20px;border:3px dashed #1040c3;overflow-wrap:anywhere}
 #flyer .f-line.s{font-size:44px}
 #flyer .f-line.p-top{top:56px}
 #flyer .f-line.p-mid{top:50%;transform:translateY(-50%)}
@@ -3020,40 +3020,40 @@ const FLYER_CSS = `#flyer{display:none}
 #flyer .f-ft{font-size:20px;letter-spacing:.02em}
 /* 1: the order slip */
 #flyer .v1{padding:58px 58px 46px;display:flex;flex-direction:column;justify-content:space-between}
-#flyer .v1::before{content:"";position:absolute;inset:22px;border:3px dashed #2443a0;pointer-events:none}
+#flyer .v1::before{content:"";position:absolute;inset:22px;border:3px dashed #1040c3;pointer-events:none}
 #flyer .v1 .f-top{display:flex;justify-content:space-between;align-items:flex-start}
 #flyer .v1 .f-top img{width:150px}
 #flyer .v1 .f-hero{display:flex;gap:30px;align-items:flex-end}
-#flyer .v1 .f-hero .f-ph{width:280px;height:280px;flex:none;background:#ddd7c9;padding:10px}
+#flyer .v1 .f-hero .f-ph{width:280px;height:280px;flex:none;background:#cec5b0;padding:10px}
 #flyer .v1 .f-hero .f-ph img{width:100%;height:100%;object-fit:cover}
 #flyer .v1 .f-hero .f-tx{flex:1;min-width:0}
 #flyer .v1 .f-works{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 #flyer .v1 .f-works img{width:100%;height:165px;object-fit:cover}
 #flyer .v1 .f-bot{display:flex;gap:30px;align-items:center}
-#flyer .v1 .f-qr{width:290px;border:4px solid #2443a0}
+#flyer .v1 .f-qr{width:290px;border:4px solid #1040c3}
 /* 2: one large picture */
 #flyer .v2{display:flex;flex-direction:column}
-#flyer .v2 .f-big{height:590px;flex:none;background:#c9d1b6;position:relative}
+#flyer .v2 .f-big{height:590px;flex:none;background:#d3e1bd;position:relative}
 #flyer .v2 .f-big img.f-photo{width:100%;height:100%;object-fit:cover}
 #flyer .v2 .f-big .f-st{position:absolute;top:34px;inset-inline-start:34px;width:92px;transform:rotate(-4deg)}
 #flyer .v2 .f-big .f-init{position:absolute;inset:0;display:grid;place-items:center;font:700 420px/1 var(--display);color:rgba(31,34,24,.16)}
-#flyer .v2 .f-card{margin:-110px 48px 0;background:#f2f1ee;padding:26px 34px 22px;position:relative}
+#flyer .v2 .f-card{margin:-110px 48px 0;background:#fbfaf6;padding:26px 34px 22px;position:relative}
 #flyer .v2 .f-bot{flex:1;display:flex;gap:34px;align-items:center;padding:0 48px}
 #flyer .v2 .f-qr{width:270px}
-#flyer .v2 .f-ft{padding:0 48px 30px;color:#55554a}
+#flyer .v2 .f-ft{padding:0 48px 30px;color:#4e4e41}
 /* 3: type only, in the stamp blue */
-#flyer .v3{background:#2443a0;color:#f2f1ee;padding:64px 64px 52px;display:flex;flex-direction:column;justify-content:space-between}
+#flyer .v3{background:#1040c3;color:#fbfaf6;padding:64px 64px 52px;display:flex;flex-direction:column;justify-content:space-between}
 #flyer .v3::before{content:"";position:absolute;inset:22px;border:3px dashed rgba(242,241,238,.85);pointer-events:none}
 #flyer .v3 .f-lg{width:190px;filter:brightness(0) invert(1)}
-#flyer .v3 .f-nm{color:#f2f1ee}
-#flyer .v3 .f-wh{color:#c9d1b6;margin-top:18px;font-size:34px}
+#flyer .v3 .f-nm{color:#fbfaf6}
+#flyer .v3 .f-wh{color:#d3e1bd;margin-top:18px;font-size:34px}
 #flyer .v3 .f-bot{display:flex;gap:34px;align-items:center}
 #flyer .v3 .f-qr{width:300px}
 #flyer .v3 .f-sub{color:#dfe3ef}
-#flyer .v3 .f-ft{color:#c9d1b6}
+#flyer .v3 .f-ft{color:#d3e1bd}
 /* 4: a collage */
-#flyer .v4{display:flex;flex-direction:column;background:#c9d1b6}
-#flyer .v4 .f-mos{height:560px;flex:none;display:grid;gap:6px;background:#f2f1ee}
+#flyer .v4{display:flex;flex-direction:column;background:#d3e1bd}
+#flyer .v4 .f-mos{height:560px;flex:none;display:grid;gap:6px;background:#fbfaf6}
 #flyer .v4 .f-mos img{width:100%;height:100%;object-fit:cover;min-height:0}
 #flyer .v4 .n1{grid-template-columns:1fr}
 #flyer .v4 .n2{grid-template-columns:1fr 1fr}
@@ -3061,10 +3061,10 @@ const FLYER_CSS = `#flyer{display:none}
 #flyer .v4 .n3 img:first-child{grid-row:1/3}
 #flyer .v4 .n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
 #flyer .v4 .f-info{flex:1;padding:34px 48px 30px;display:flex;flex-direction:column;justify-content:space-between}
-#flyer .v4 .f-wh{color:#3a4230}
+#flyer .v4 .f-wh{color:#3d462f}
 #flyer .v4 .f-bot{display:flex;gap:30px;align-items:center}
 #flyer .v4 .f-qr{width:240px}
-#flyer .v4 .f-ft{color:#3a4230;display:flex;justify-content:space-between;align-items:center}
+#flyer .v4 .f-ft{color:#3d462f;display:flex;justify-content:space-between;align-items:center}
 #flyer .v4 .f-ft img{width:120px}
 @media print{
   html.fl-printing body>*:not(#flyer){display:none!important}
@@ -3100,7 +3100,7 @@ function flyerBase(m, v) {
   return `<div class="fl-page v1"><div class="f-top"><img src="logo/logo-primary-ink.svg" alt="בהזמנה"></div>
     <div class="f-hero">${face ? `<div class="f-ph"><img src="${u(face)}" alt=""></div>` : ''}<div class="f-tx"><div class="f-nm" style="font-size:${flSize(m.name, face ? 118 : 160)}px">${name}</div><div class="f-wh" style="margin-top:12px">${where}</div></div></div>
     ${works.length ? `<div class="f-works">${works.slice(0, 3).map(p => `<img src="${u(p)}" alt="">`).join('')}</div>` : ''}
-    <div class="f-bot">${qr}<div>${cta}</div></div><div class="f-ft" style="color:#55554a">${host}</div></div>`;
+    <div class="f-bot">${qr}<div>${cta}</div></div><div class="f-ft" style="color:#4e4e41">${host}</div></div>`;
 }
 function drawFlyer() {
   const box = document.getElementById('flyer'), m = FL.m; if (!box || !m) return;
@@ -3126,12 +3126,12 @@ function showFlyer(m) {
 }
 async function cardDownload(url, name) {
   const W = 900, H = 1200, size = 640, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
-  g.fillStyle = '#f2f1ee'; g.fillRect(0, 0, W, H); g.strokeStyle = QR_FG; g.lineWidth = 6; g.setLineDash([22, 14]); g.strokeRect(30, 30, W - 60, H - 60); g.setLineDash([]);
-  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#1f2218'; const font = 'Karantina, Miriam Libre, Assistant, Arial, sans-serif';
+  g.fillStyle = '#fbfaf6'; g.fillRect(0, 0, W, H); g.strokeStyle = QR_FG; g.lineWidth = 6; g.setLineDash([22, 14]); g.strokeRect(30, 30, W - 60, H - 60); g.setLineDash([]);
+  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#191c13'; const font = 'Karantina, Miriam Libre, Assistant, Arial, sans-serif';
   g.font = `700 120px ${font}`; g.fillText('אהבתם? ספרו עלינו', W / 2, 200);
   g.font = `400 44px ${font}`; g.fillText('סרקו כדי לראות את העבודות של', W / 2, 290); g.font = `700 76px ${font}`; g.fillText(name, W / 2, 380);
   await qrCanvas(g, url, (W - size) / 2, 440, size);
-  g.fillStyle = '#1f2218'; g.font = `700 52px ${font}`; g.fillText('בהזמנה', W / 2, H - 90);
+  g.fillStyle = '#191c13'; g.font = `700 52px ${font}`; g.fillText('בהזמנה', W / 2, H - 90);
   saveCanvas(cv, 'behazmana-card.png');
 }
 const reviewKitSheet = m => { const url = makerLink(m.id), msg = `היי, אשמח אם תכתבו כמה מילים על העבודה איתי. זה הדף שלי באתר, ובו הכפתור ״לכתוב ביקורת״: ${url}`;
@@ -3169,7 +3169,7 @@ const makerLink = id => `${location.origin}${location.pathname}#maker=${id}`;
 const qrOf = (text, lvl) => { const q = qrcode(0, lvl || 'H'); q.addData(text); q.make(); return q; };
 /* A QR in the site's own look: stamp-blue square dots with a hair of air between them, finder eyes with cut corners, and the stamp in the middle.
    High error correction (30%) keeps it readable with the stamp covering the centre. The same shapes feed the on-page SVG and the downloaded picture. */
-const QR_FG = '#2443a0';
+const QR_FG = '#1040c3';
 function qrShapes(text) {
   const q = qrOf(text, 'H'), n = q.getModuleCount(), pad = 3, vb = n + pad * 2, h = Math.max(7, 2 * Math.floor(n * 0.1) + 1), c0 = Math.floor((n - h) / 2);
   const isF = (r, c) => (r < 8 && c < 8) || (r < 8 && c >= n - 8) || (r >= n - 8 && c < 8);

@@ -7,8 +7,8 @@
   "start_url": "./#admin",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#1f2218",
-  "theme_color": "#1f2218",
+  "background_color": "#191c13",
+  "theme_color": "#191c13",
   "icons": [
     { "src": "admin-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "admin-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },

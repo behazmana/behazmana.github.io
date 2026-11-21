@@ -38,7 +38,7 @@ create table if not exists public.makers (
   phone       text,
   phone_public boolean not null default false,       -- the maker chose to show the phone on the site (call and WhatsApp buttons)
   email_public boolean not null default false,       -- the maker chose to show the email on the site (mail button)
-  photos      text[] not null default '{}',          -- paths inside the storage bucket "maker-photos" (the work photos, up to 20)
+  photos      text[] not null default '{}',          -- paths inside the storage bucket "maker-photos" (the work photos, up to 30)
   portrait    text,                                  -- path of the maker's own photo in the same bucket
   craft_other text,                                  -- the maker's own words when craft = 'other' (2-40 characters)
   status      text not null default 'pending',
@@ -52,7 +52,7 @@ create table if not exists public.makers (
   constraint makers_email_ck   check (email is null or (char_length(email) between 5 and 120 and email like '%_@_%._%')),
   constraint makers_phone_ck   check (phone is null or char_length(phone) between 7 and 30),
   constraint makers_contact_ck check (email is not null or phone is not null),   -- at least one way to reach them
-  constraint makers_photos_ck  check (coalesce(array_length(photos, 1), 0) <= 20),
+  constraint makers_photos_ck  check (coalesce(array_length(photos, 1), 0) <= 30),
   constraint makers_note_ck    check (admin_note is null or char_length(admin_note) <= 300)
 );
 
@@ -2144,3 +2144,56 @@ end
 $$;
 revoke all on function public.notify_new_review() from public, anon, authenticated;
 create or replace trigger reviews_notify after insert on public.reviews for each row execute function public.notify_new_review();
+
+-- =====================================================================
+-- 26. Profile / feed photos: up to 30 (was 20). Listing photos (listings.photos, up to 7 in the app) are a separate column
+--     with its own check (listings_photos_ck) and never count toward this limit.
+-- =====================================================================
+alter table public.makers drop constraint if exists makers_photos_ck;
+alter table public.makers add constraint makers_photos_ck check (coalesce(array_length(photos, 1), 0) <= 30);
+
+-- =====================================================================
+-- 25. Favourite makers: a signed-in buyer marks makers as favourites and sees them in their own area.
+--     Each person reads, adds and removes only their own rows. Safe to run again.
+-- =====================================================================
+create table if not exists public.favorites (
+  user_id    uuid not null references auth.users on delete cascade,
+  maker_id   uuid not null references public.makers(id) on delete cascade,
+  created_at timestamptz default now(),
+  primary key (user_id, maker_id)
+);
+alter table public.favorites enable row level security;
+drop policy if exists favorites_select_own on public.favorites;
+drop policy if exists favorites_insert_own on public.favorites;
+drop policy if exists favorites_delete_own on public.favorites;
+create policy favorites_select_own on public.favorites for select to authenticated using (auth.uid() = user_id);
+create policy favorites_insert_own on public.favorites for insert to authenticated with check (auth.uid() = user_id);
+create policy favorites_delete_own on public.favorites for delete to authenticated using (auth.uid() = user_id);
+revoke all on public.favorites from public, anon;
+grant select, insert, delete on public.favorites to authenticated;
+
+-- =====================================================================
+-- 27. Hearts on photos: a signed-in buyer likes single photos of a maker (the photo path as stored in makers.photos).
+--     A person reads, adds and removes only their own hearts. A maker reads the hearts on their OWN photos only
+--     (public.my_maker_id(), section 1 of the maker-account part), which is enough to count them. Nobody else sees them.
+--     Safe to run again.
+-- =====================================================================
+create table if not exists public.photo_likes (
+  user_id    uuid not null references auth.users on delete cascade,
+  maker_id   uuid not null references public.makers(id) on delete cascade,
+  photo      text not null,
+  created_at timestamptz default now(),
+  primary key (user_id, maker_id, photo)
+);
+create index if not exists photo_likes_maker_idx on public.photo_likes (maker_id);
+alter table public.photo_likes enable row level security;
+drop policy if exists photo_likes_select_own on public.photo_likes;
+drop policy if exists photo_likes_select_maker on public.photo_likes;
+drop policy if exists photo_likes_insert_own on public.photo_likes;
+drop policy if exists photo_likes_delete_own on public.photo_likes;
+create policy photo_likes_select_own on public.photo_likes for select to authenticated using (auth.uid() = user_id);
+create policy photo_likes_select_maker on public.photo_likes for select to authenticated using (maker_id = public.my_maker_id());
+create policy photo_likes_insert_own on public.photo_likes for insert to authenticated with check (auth.uid() = user_id);
+create policy photo_likes_delete_own on public.photo_likes for delete to authenticated using (auth.uid() = user_id);
+revoke all on public.photo_likes from public, anon;
+grant select, insert, delete on public.photo_likes to authenticated;

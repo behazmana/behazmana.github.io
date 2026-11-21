@@ -4309,7 +4309,7 @@ const SCREENS = {
         <div class="acts"><button class="btn" data-act="tab" data-v="post">לכתוב בקשה</button>${canJoin() ? '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>' : ''}</div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
       <section aria-labelledby="h-how"><div class="sec-head"><h2 class="sec-title" id="h-how">איך זה עובד</h2></div>
-        <div class="tale zig"><div class="flow">${FLOW_SVG}<div class="flow-caps" aria-hidden="true"><span class="f-c1"><i>1</i>כותבים בקשה</span><span class="f-c2"><i>2</i>מוצאים יוצר</span><span class="f-c3"><i>3</i>מדברים ישירות</span></div></div>${HOW.map(([t, d]) => `<div class="tale-row"><div class="what"><b>${t}</b><span>${d}</span></div></div>`).join('')}</div></section>
+        <div class="tale zig"><div class="flow">${FLOW_SVG}<div class="flow-caps" aria-hidden="true"><span class="f-c1">כותבים בקשה</span><span class="f-c2">מוצאים יוצר</span><span class="f-c3">מדברים ישירות</span></div></div></div></section>
       ${homeStrip()}
       ${latestReviewsHTML()}
       <section aria-labelledby="h-real"><div class="sec-head"><h2 class="sec-title" id="h-real">יוצרים שהצטרפו</h2></div>
@@ -5662,12 +5662,11 @@ function playFlow(root) {
   tl.fromTo(q('.f-b2'), { autoAlpha: 0, y: 8, scale: .8, svgOrigin: '180 21' }, { autoAlpha: 1, y: 0, scale: 1, duration: .7, ease: 'back.out(1.8)' }, 'toMakers+=.35')
     .fromTo(q('.f-c2'), { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: .6 }, 'toMakers+=.35')
     .fromTo(q('.f-m'), { autoAlpha: 0, y: 14, scale: .85 }, { autoAlpha: 1, y: 0, scale: 1, duration: .7, stagger: { each: .12, from: 'start' }, ease: 'power3.out' }, 'toMakers+=.45')
-    .fromTo(q('.f-mini'), { autoAlpha: 0, x: 0, y: 0 }, { autoAlpha: 1, x: -42, y: -2, duration: .6, ease: 'sine.inOut' }, '>.1')
-    .to(q('.f-mini'), { x: -78, y: 6, duration: .7, ease: 'sine.inOut' })
-    .to(q('.f-mini'), { x: -92, y: 22, duration: .6, ease: 'power2.inOut' })
-    .fromTo(q('.f-target, .f-glyph2'), { autoAlpha: 0 }, { autoAlpha: 1, duration: .5, ease: 'sine.inOut' }, '>-.25')
+    .fromTo(q('.f-mini'), { autoAlpha: 0, x: 0, y: 0, scale: 1, svgOrigin: '300 82' }, { autoAlpha: 1, duration: .15, ease: 'none' }, '>.1')
+    .to(q('.f-mini'), { x: -97, y: 25, scale: .8, duration: .65, ease: 'power2.inOut' }, '<')
+    .fromTo(q('.f-target, .f-glyph2'), { autoAlpha: 0 }, { autoAlpha: 1, duration: .4, ease: 'sine.inOut' }, '>-.2')
     .fromTo(q('.f-hit'), { scale: 1, svgOrigin: '203 107' }, { scale: 1.14, duration: .28, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
-    .to(q('.f-mini'), { autoAlpha: 0, scale: .6, svgOrigin: '203 107', duration: .45, ease: 'power2.in' }, '<.1');
+    .to(q('.f-mini'), { autoAlpha: 0, duration: .3, ease: 'power1.in' }, '<.1');
   tl.addLabel('toTalk', '>.25');
   draw('.f-a2', 'toTalk', .7);
   tl.fromTo(q('.f-b3'), { autoAlpha: 0, y: 8, scale: .8, svgOrigin: '60 21' }, { autoAlpha: 1, y: 0, scale: 1, duration: .7, ease: 'back.out(1.8)' }, 'toTalk+=.35')

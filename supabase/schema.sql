@@ -2098,7 +2098,7 @@ alter table public.request_routes add constraint request_routes_price_ck check (
 -- =====================================================================
 alter table public.makers add column if not exists theme text not null default 'stone';
 alter table public.makers drop constraint if exists makers_theme_ck;
-alter table public.makers add constraint makers_theme_ck check (theme in ('stone', 'olive', 'clay', 'blue', 'ink'));
+alter table public.makers add constraint makers_theme_ck check (theme in ('stone','olive','clay','blue','ink','sand','mist','sage','moss','straw','ochre','honey','peach','blush','rose','lilac','sky','sea','brick','rust','wine','plum','night','teal','pine','deepolive','umber','slate'));
 
 create or replace view public.public_makers
   with (security_invoker = false)

@@ -4609,6 +4609,7 @@ const DISC_CSS = `.disc{column-count:2;column-gap:12px}
 .dtile{position:relative;background:var(--paper);text-align:start;color:var(--ink)}
 .dtile .dimg{display:block;width:100%;border:0;padding:0;background:none;cursor:zoom-in}
 .dtile img{display:block;width:100%;height:auto;min-height:110px;object-fit:cover;background:var(--tone)}
+.dtile:not(.open) img{aspect-ratio:4/5;height:auto}
 .dtile .dheart{position:absolute;inset-block-start:0;inset-inline-end:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:#fff;cursor:pointer}
 .dtile .dheart svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.55))}
 .dtile .dheart[aria-pressed="true"] svg{fill:var(--clay);stroke:var(--clay)}

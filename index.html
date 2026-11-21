@@ -4444,14 +4444,14 @@ const signinBody = () => SI.sent && !CONFIG.CODE_LOGIN ? `<div><h2 class="sec-ti
     <p class="form-err" id="si-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
     <button type="submit" class="btn block" ${SI.busy ? 'disabled' : ''}>${SI.busy ? 'בודקים...' : 'כניסה'}</button>
     <div class="field"><button type="button" class="btn ghost block" id="si-resend" data-act="siresend" ${Date.now() - SI.sent >= RESEND_MS && !SI.busy ? '' : 'disabled'}>לא הגיע?</button><span class="small muted" id="si-wait"></span></div></form>`
-  : `<form class="sheet-body" data-form="signin" novalidate>${SI.buyer ? '<div><h2 class="sec-title">יצירת חשבון קונה</h2><p style="margin-top:6px">נשלח קוד למייל. בלי סיסמה, בחינם. אפשר לשמור יוצרים מועדפים.</p></div>' : '<div><h2 class="sec-title">כניסה</h2><p style="margin-top:6px">כתבו את המייל שבו נרשמתם, ונשלח אליו קישור.</p></div>'}
+  : `<form class="sheet-body" data-form="signin" novalidate>${SI.buyer ? '<div><h2 class="sec-title">הרשמה</h2><p style="margin-top:6px">נשלח קוד למייל. בלי סיסמה, בחינם. אפשר לשמור יוצרים מועדפים.</p></div>' : '<div><h2 class="sec-title">כניסה</h2><p style="margin-top:6px">כתבו את המייל שבו נרשמתם, ונשלח אליו קישור.</p></div>'}
     <div class="field"><label for="si-email">מייל</label><input class="input" id="si-email" name="email" type="email" dir="ltr" maxlength="120" autocomplete="email" inputmode="email" aria-required="true" value="${esc(SI.email)}" ${SI.err ? 'aria-invalid="true"' : ''}></div>
     <p class="form-err" id="si-err" role="alert" ${SI.err ? '' : 'hidden'}>${esc(SI.err)}</p>
     <button type="submit" class="btn block" ${SI.busy ? 'disabled' : ''}>${SI.busy ? 'שולחים...' : SI.buyer ? 'שליחת קוד' : 'שליחת קישור כניסה'}</button>
-    <button type="button" class="link" data-act="sitoggle">${SI.buyer ? 'כבר יש חשבון? כניסה' : 'יצירת חשבון קונה'}</button></form>`;
+    <button type="button" class="link" data-act="sitoggle">${SI.buyer ? 'כבר יש חשבון? כניסה' : 'הרשמה'}</button></form>`;
 const signinSheet = () => `<div class="sheet-body" id="si-body">${signinBody()}</div>`;
 /* the buyer sign-up: the same emailed-code sheet, worded for a new buyer account */
-function openSignup() { SI.buyer = true; SI.sent = 0; SI.err = ''; SI.busy = false; clearInterval(SI.t); SI.t = 0; if (document.getElementById('sheet').hidden) openSheet(signinSheet(), 'יצירת חשבון קונה'); else drawSignin(true); const i = document.getElementById('si-email'); if (i) i.focus({ preventScroll: true }); }
+function openSignup() { SI.buyer = true; SI.sent = 0; SI.err = ''; SI.busy = false; clearInterval(SI.t); SI.t = 0; if (document.getElementById('sheet').hidden) openSheet(signinSheet(), 'הרשמה'); else drawSignin(true); const i = document.getElementById('si-email'); if (i) i.focus({ preventScroll: true }); }
 function drawSignin(focusH) { const b = document.getElementById('si-body'); if (!b) return; b.innerHTML = signinBody(); if (focusH) { const h = b.querySelector('h2'); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } } siTick(); }
 function siTick() {
   const b = document.getElementById('si-body'); if (!b) { clearInterval(SI.t); SI.t = 0; return; }
@@ -4594,7 +4594,7 @@ SCREENS.settings = () => {
   const em = AD.session && AD.session.user && AD.session.user.email, mk = meMode() === 'maker';
   return `${head('הגדרות')}<div class="stack g">
     <section class="panel"><h2 class="sec-title">החשבון</h2>
-      ${em ? `<p style="margin-top:6px">מחוברים כ־<span dir="ltr">${esc(em)}</span></p><p class="small muted">${mk ? 'חשבון של יוצר מאושר.' : 'חשבון של קונה.'}</p><button type="button" class="btn ghost" data-act="signout">התנתקות</button>` : `<p class="muted" style="margin-top:6px">עוד לא נכנסתם.</p>${signinOK() ? '<button type="button" class="btn" data-act="signin">כניסה</button>' : ''}`}</section>
+      ${em ? `<p style="margin-top:6px">מחוברים כ־<span dir="ltr">${esc(em)}</span></p><p class="small muted">${mk ? 'חשבון של יוצר מאושר.' : ''}</p><button type="button" class="btn ghost" data-act="signout">התנתקות</button>` : `<p class="muted" style="margin-top:6px">עוד לא נכנסתם.</p>${signinOK() ? '<button type="button" class="btn" data-act="signin">כניסה</button>' : ''}`}</section>
     ${mk ? `<section class="panel"><h2 class="sec-title">הפרופיל שלי</h2><div class="bgrid" style="margin-top:8px"><button type="button" class="btn wide" data-act="editprofile">עריכת הפרופיל</button><button type="button" class="btn ghost" data-act="rvkit" data-v="${esc(AU.maker.id)}">הקוד והדף להדפסה</button><button type="button" class="btn ghost" data-act="rmaker" data-v="${esc(AU.maker.id)}">איך הפרופיל נראה באתר</button></div></section>` : ''}
     <section class="panel"><h2 class="sec-title">במכשיר הזה</h2><p class="small muted" style="margin:6px 0 8px">${MYREQ.length ? plural(MYREQ.length, 'בקשה אחת שמורה', 'בקשות שמורות') : 'אין בקשות שמורות'} במכשיר.</p>${MYREQ.length ? '<button type="button" class="btn small ghost" data-act="clearreqs">ניקוי הרשימה במכשיר</button>' : ''}</section>
     <section class="panel"><h2 class="sec-title">פרטיות</h2>${legalLinks()}<p class="small muted" style="margin:8px 0">למחיקת פרטים כתבו לנו.</p><div class="links-col">${mailLink('בקשה למחיקת פרטים מבהזמנה')}</div></section>
@@ -4800,7 +4800,7 @@ function buyerPageHTML(title) {
       ${reqSec}
       ${favSpot()}
       ${showJoin ? joined : ''}
-      ${!AD.session && signinOK() ? '<button class="entry" data-act="signup"><span class="t">יצירת חשבון קונה</span><span class="small muted">לשמירת יוצרים מועדפים</span></button>' : ''}
+      ${!AD.session && signinOK() ? '<button class="entry" data-act="signup"><span class="t">הרשמה</span><span class="small muted">לשמירת יוצרים מועדפים</span></button>' : ''}
       ${!AD.session && signinOK() ? '<button class="entry" data-act="signin"><span class="t">כניסה ליוצרים</span><span class="small muted">עם קוד שנשלח למייל</span></button>' : ''}
       ${adminHint}
       ${aboutTail()}
@@ -4843,12 +4843,12 @@ SCREENS.mine = () => {
   const adminHint = isOwner() ? '<button type="button" class="link sm" data-act="toadmin">למסך הניהול</button>' : '';
   return `${head('אני', gearBtn())}<div class="stack g">
       <div class="row wrap" style="justify-content:space-between"><p><b>היי ${esc(firstOf(AU.maker.name))}</b></p>${signoutBtn()}</div>
-      <button class="entry" data-act="go" data-v="mebuyer"><span class="t">אני כקונה</span><span class="small muted">מה ביקשתם ומה אהבתם</span></button>
+      <button class="entry" data-act="go" data-v="mebuyer"><span class="t">הבקשות והמועדפים</span><span class="small muted">מה ביקשתם ומה אהבתם</span></button>
       <button class="entry" data-act="go" data-v="memaker"><span class="t">אני כיוצר</span><span class="small muted">בקשות, יצירות ופרופיל</span></button>
       ${adminHint}
     </div>`;
 };
-SCREENS.mebuyer = () => buyerPageHTML('אני כקונה');
+SCREENS.mebuyer = () => buyerPageHTML('הבקשות והמועדפים');
 SCREENS.memaker = () => meMode() === 'maker' ? makerPageHTML() : buyerPageHTML('אני');
 
 /* ---------- the owner's screen: listings, requests with routing ---------- */

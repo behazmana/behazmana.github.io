@@ -168,6 +168,14 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .tale-row:nth-child(even) { background: var(--ground); margin-inline: -20px; padding-inline: 20px; }
 .tale .what { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .tale .what b { font-size: var(--fs-3); line-height: 1.3; }
+.flow { padding-top: 12px; }
+.flow-svg { display: block; width: 100%; height: auto; max-width: 440px; margin-inline: auto; }
+.flow-svg text { font-family: inherit; font-weight: 700; font-size: 15px; }
+.f-bg { fill: var(--ground); } .f-paper { fill: var(--paper); } .f-tone { fill: var(--tone); } .f-olive { fill: var(--olive); }
+.f-stamp, .f-target { fill: var(--stamp); } .f-ink { fill: var(--ink); } .f-onstamp { fill: var(--paper); } .f-num { fill: var(--paper); }
+.f-target { fill: var(--stamp); } .f-glyph { fill: none; stroke: var(--olive); stroke-width: 3; stroke-linejoin: miter; } .f-glyph2 { fill: var(--paper); }
+.f-arr, .f-link { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; }
+.f-arr { stroke-dasharray: none; } .f-mini { opacity: 0; }
 .stamp { align-self: start; background: var(--stamp); color: var(--paper); font-weight: 700; font-size: var(--fs-1); padding: 4px 10px; transform: rotate(-3deg); white-space: nowrap; }
 
 /* makers who joined */
@@ -230,6 +238,29 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .sent-list .t { font-weight: 700; }
 .entry { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border: 0; background: var(--paper); text-align: start; width: 100%; }
 .entry .t { font-weight: 700; }
+.entry.ic { flex-direction: row; align-items: center; gap: 14px; }
+.entry.ic .tx, .mecta .tx { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.mic { width: 44px; height: 44px; flex: none; display: grid; place-items: center; background: var(--tone); color: var(--ink); }
+.mic svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fwd svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: scaleX(-1); display: block; }
+.mehead { display: flex; align-items: center; gap: 14px; background: var(--olive); color: var(--on-olive); padding: 18px 16px; }
+.meav { width: 56px; height: 56px; flex: none; display: grid; place-items: center; background: var(--paper); color: var(--olive-soft); }
+.meav svg { width: 32px; height: 32px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.mewho { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mehi { font-family: var(--display); font-size: var(--fs-4); line-height: 1; }
+.mewho .small { color: var(--olive-soft); overflow-wrap: anywhere; }
+.mehead .link { color: var(--on-olive); flex: none; }
+.mecta { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; padding: 16px; background: var(--stamp); color: var(--paper); text-align: start; }
+.mecta .t { font-family: var(--display); font-size: var(--fs-4); line-height: 1; }
+.mecta .small { color: #dfe3ef; }
+.mecta .mic { background: var(--paper); color: var(--stamp); }
+.mecta .fwd svg { width: 24px; height: 24px; }
+.mecta .cnt { background: var(--paper); color: var(--stamp); font-weight: 700; min-width: 28px; text-align: center; padding: 2px 8px; }
+.mecard { background: var(--paper); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.mecard-h { display: flex; align-items: center; gap: 12px; }
+.mecard-h .sec-title { flex: 1; margin: 0; font-size: var(--fs-3); }
+.mecard .sent-list li, .mecard .mrow, .mecard .entry { background: var(--ground); }
+.mecard .s-empty { padding: 4px 0; }
 
 /* forms */
 form.f { display: flex; flex-direction: column; gap: 26px; }
@@ -244,6 +275,11 @@ legend { padding: 0; margin-bottom: 8px; }
 .look-sub { margin: 0 0 4px; }
 .input { border: 0; background: var(--paper); padding: 12px 14px; min-height: 48px; width: 100%; min-width: 0; outline: none; font-size: var(--fs-2); }
 .input:focus { outline: 3px solid var(--stamp); outline-offset: 0; }
+.ahead-w { position: relative; }
+.ahead { position: absolute; inset-inline: 0; top: 100%; z-index: 20; margin: 0; padding: 0; list-style: none; background: var(--paper); max-height: 264px; overflow-y: auto; overscroll-behavior: contain; scroll-margin-bottom: 110px; outline: 3px solid var(--stamp); outline-offset: -3px; }
+.ahead li { min-height: 44px; display: flex; align-items: center; padding: 8px 14px; cursor: pointer; }
+.ahead li[aria-selected="true"] { background: var(--tone); }
+.ahead li.none { color: var(--muted); cursor: default; }
 textarea.input { min-height: 112px; resize: vertical; }
 select.input { appearance: auto; }
 .sheet-panel .input { background: var(--ground); }
@@ -298,6 +334,7 @@ body.sheet-open { overflow: hidden; }
 /* the paper tab is one persistent block behind the labels, so it can slide from tab to tab */
 .nav-ind { position: absolute; top: 0; inset-inline-start: 0; width: 25%; height: var(--nav-h); background: var(--paper); pointer-events: none; z-index: 0; opacity: 0; transform: translateX(calc(var(--i, 0) * -100%)); }
 .nav[data-on="1"] .nav-ind { opacity: 1; }
+.nav.nav-first .nav-ind { transition: none !important; }
 .nav .plus .c { width: 40px; height: 40px; background: var(--stamp); color: var(--paper); display: grid; place-items: center; }
 .nav .plus .c svg { width: 20px; height: 20px; stroke-width: 2; }
 .no-nav .nav { display: none; }
@@ -398,7 +435,8 @@ body.sheet-open { overflow: hidden; }
 /* reaching a maker directly: WhatsApp and call. Only for makers who chose to show their phone at signup. */
 .cbtn { width: 44px; height: 44px; border: 0; background: var(--tone); color: var(--ink); display: grid; place-items: center; flex: none; padding: 0; text-decoration: none; }
 .cbtn svg, .cbtn2 svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.contact { display: flex; flex-wrap: wrap; gap: 8px; }
+.contact { display: flex; flex-wrap: wrap; gap: 2px; }
+.banner + .stack.g { padding-top: 0; }
 .contact .cbtn2 { flex: 1 1 120px; }
 .cbtn2 { min-height: 52px; padding: 10px 12px; background: var(--tone); color: var(--ink); font-weight: 700; font-size: var(--fs-2); display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; text-align: center; border-radius: 0; clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
 .cbtn2:focus-visible { clip-path: none; }
@@ -519,8 +557,6 @@ body.sheet-open { overflow: hidden; }
 <body>
 <script>/* the page may not be framed by another site (frame-ancestors cannot be set from a meta tag on GitHub Pages) */
 if (window.top !== window.self) { try { window.top.location.href = window.location.href; } catch (e) { document.documentElement.hidden = true; } }</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <div class="app" dir="rtl" lang="he">
   <a class="skip" href="#view">דילוג לתוכן</a>
@@ -2916,6 +2952,7 @@ function tab(s) {
 }
 window.addEventListener('popstate', e => {
   const st = e.state, sheetOpen = !document.getElementById('sheet').hidden;
+  if (DPO && !(st && st.dp)) { dpHide(DPN); DPN = false; }
   if (sheetOpen) hideSheet(SHEET_NOW); SHEET_NOW = false;
   if (st && st.bz) HN = st.n;
   /* someone who came to sign up stays on the form until they send it: back does not leave it */
@@ -3856,14 +3893,17 @@ async function favToggle(id) {
   }
   if (cur().s === 'mine') meRedraw();
 }
+function favBody() {
+  const list = REAL.list.filter(m => favOn(m.id));
+  return list.length ? `<div class="mlist">${list.map(m => realRow(m)).join('')}</div>`
+    : FAV.st === 'loading' ? '<p class="muted" role="status">טוענים</p>'
+    : FAV.st === 'failed' || FAV.st === 'gone' ? '<p class="note">המועדפים לא נטענו.</p>'
+    : '<div class="s-empty"><p>עוד אין מועדפים. לחצו על הלב ליד יוצר.</p><button type="button" class="btn small" data-act="tab" data-v="makers">ליוצרים</button></div>';
+}
 function favoritesHTML() {
   if (!AD.session) return '';
-  const list = REAL.list.filter(m => favOn(m.id));
-  return `<section aria-labelledby="h-fav"><div class="sec-head"><h2 class="sec-title" id="h-fav">יוצרים מועדפים</h2>${list.length ? `<span class="small muted">${list.length}</span>` : ''}</div>${
-    list.length ? `<div class="mlist">${list.map(m => realRow(m)).join('')}</div>`
-      : FAV.st === 'loading' ? '<p class="muted" role="status">טוענים</p>'
-      : FAV.st === 'failed' || FAV.st === 'gone' ? '<p class="note">המועדפים לא נטענו.</p>'
-      : '<p class="muted">עוד אין מועדפים. לחצו על הלב ליד יוצר.</p>'}</section>`;
+  const n = REAL.list.filter(m => favOn(m.id)).length;
+  return meCard(UI.heart, 'יוצרים מועדפים', n, favBody(), 'h-fav');
 }
 async function loadMe(force) {
   const uid = AD.session && AD.session.user ? String(AD.session.user.id || '') : '';
@@ -4196,9 +4236,37 @@ const head = (title, extra = '') => `<header class="top g">${S.stack.length > 1 
 const findBtn = () => `<button class="round" data-act="search" aria-label="חיפוש יוצרים">${svg(UI.search)}</button>`;
 const legalLinks = (first = '') => `<div class="links-row">${first}<button type="button" class="link" data-act="privacy">מדיניות הפרטיות</button><button type="button" class="link" data-act="terms">תנאי השימוש</button></div>`;
 const HOW = [
-  ['כותבים בקשה', 'מה, חומר ומתי. בלי מחיר.', 'בקשה'],
-  ['אנחנו מתאימים יוצר', 'כל יוצר אושר אצלנו אישית.', 'יוצרים'],
-  ['מדברים ישירות', 'מחיר ומועד מסכמים ביניכם.', 'ביחד']];
+  ['כותבים בקשה', 'מה, איזה חומר ומתי', 'בקשה'],
+  ['אנחנו מוצאים יוצר', 'כל יוצר אושר אצלנו אישית', 'יוצרים'],
+  ['מדברים ישירות', 'מול היוצר, בלי מתווכים', 'ביחד']];
+/* the picture above the three steps: a request is written, the site finds a maker, the two talk. Hand-drawn in the site's own colours, sharp corners.
+   Drawn in its final state, so it says everything without motion; motionFor() plays a short GSAP timeline once if GSAP can be loaded. */
+const FLOW_SVG = `<svg class="flow-svg" viewBox="0 0 360 170" role="img" aria-label="הבקשה נכתבת, האתר מוצא יוצר מתאים, ואתם מדברים איתו ישירות" focusable="false">
+  <rect class="f-bg" width="360" height="170"/>
+  <g class="f-b1"><rect class="f-stamp" x="289" y="10" width="22" height="22"/><text class="f-num" x="300" y="26" text-anchor="middle">1</text></g>
+  <g class="f-b2"><rect class="f-stamp" x="169" y="10" width="22" height="22"/><text class="f-num" x="180" y="26" text-anchor="middle">2</text></g>
+  <g class="f-b3"><rect class="f-stamp" x="49" y="10" width="22" height="22"/><text class="f-num" x="60" y="26" text-anchor="middle">3</text></g>
+  <path class="f-arr f-a1" d="M280 21H206M212 16L204 21L212 26"/>
+  <path class="f-arr f-a2" d="M160 21H86M92 16L84 21L92 26"/>
+  <g class="f-slip"><rect class="f-paper" x="268" y="46" width="64" height="84"/><rect class="f-stamp" x="268" y="46" width="64" height="14"/>
+    <rect class="f-ink f-l" x="276" y="70" width="48" height="4"/><rect class="f-ink f-l" x="276" y="82" width="40" height="4"/><rect class="f-ink f-l" x="276" y="94" width="46" height="4"/><rect class="f-ink f-l" x="276" y="106" width="28" height="4"/></g>
+  <g class="f-makers">
+    <g class="f-m"><rect class="f-tone" x="128" y="44" width="30" height="30"/><path class="f-glyph" d="M135 54H151L148 66H138Z"/></g>
+    <g class="f-m"><rect class="f-tone" x="168" y="44" width="30" height="30"/><path class="f-glyph" d="M174 66L183 52L192 66Z"/></g>
+    <g class="f-m"><rect class="f-tone" x="208" y="44" width="30" height="30"/><path class="f-glyph" d="M214 52H232M214 59H232M214 66H232" /></g>
+    <g class="f-m"><rect class="f-tone" x="148" y="92" width="30" height="30"/><path class="f-glyph" d="M156 100V114M163 100V114M170 100V114"/></g>
+    <g class="f-m f-hit"><rect class="f-tone" x="188" y="92" width="30" height="30"/><rect class="f-target" x="188" y="92" width="30" height="30"/><path class="f-glyph2" d="M196 107L203 100L210 107L203 114Z"/></g>
+  </g>
+  <g class="f-mini"><rect class="f-paper" x="289" y="68" width="22" height="28"/><rect class="f-stamp" x="289" y="68" width="22" height="6"/></g>
+  <g class="f-talk">
+    <rect class="f-paper f-bub1" x="46" y="44" width="62" height="30"/><path class="f-paper f-bub1" d="M96 74H104L104 82Z"/>
+    <rect class="f-ink f-bub1" x="54" y="53" width="38" height="4"/><rect class="f-ink f-bub1" x="54" y="62" width="26" height="4"/>
+    <rect class="f-stamp f-bub2" x="12" y="88" width="62" height="30"/><path class="f-stamp f-bub2" d="M24 118H16L16 126Z"/>
+    <rect class="f-onstamp f-bub2" x="20" y="97" width="38" height="4"/><rect class="f-onstamp f-bub2" x="20" y="106" width="30" height="4"/>
+    <rect class="f-olive f-who" x="84" y="134" width="20" height="20"/><rect class="f-stamp f-who" x="16" y="134" width="20" height="20"/>
+    <path class="f-link f-who" d="M42 144H78"/>
+  </g>
+</svg>`;
 /* the hero photo settles once (scale 1.04 to 1, 1.2 s). A re-render inside that window carries on from where it was instead of starting over. */
 let DRIFT_T0 = 0;
 function driftAttr() { const now = performance.now(); if (!DRIFT_T0) DRIFT_T0 = now; const t = now - DRIFT_T0; return t < 1150 ? ` data-drift style="animation-delay:-${Math.round(t)}ms"` : ''; }
@@ -4213,7 +4281,7 @@ const SCREENS = {
         <div class="acts"><button class="btn" data-act="tab" data-v="post">לכתוב בקשה</button>${canJoin() ? '<button class="link" data-act="join">יוצרים? אפשר להצטרף</button>' : ''}</div></div></div><div class="below-slip"></div></section>
     <div class="stack g">
       <section aria-labelledby="h-how"><div class="sec-head"><h2 class="sec-title" id="h-how">איך זה עובד</h2></div>
-        <div class="tale zig">${HOW.map(([t, d]) => `<div class="tale-row"><div class="what"><b>${t}</b><span>${d}</span></div></div>`).join('')}</div></section>
+        <div class="tale zig"><div class="flow">${FLOW_SVG}</div>${HOW.map(([t, d]) => `<div class="tale-row"><div class="what"><b>${t}</b><span>${d}</span></div></div>`).join('')}</div></section>
       ${homeStrip()}
       ${latestReviewsHTML()}
       <section aria-labelledby="h-real"><div class="sec-head"><h2 class="sec-title" id="h-real">יוצרים שהצטרפו</h2></div>
@@ -4264,9 +4332,8 @@ const SCREENS = {
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
       ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהסדנה</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}
       ${reviewsHTML(m)}
-      ${m.contact || m.email ? `<p class="note">רוצים יצירה שנעשית בשבילכם? כתבו בקשה.</p>
-      <button class="btn block" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>` : ''}
-      <div class="row wrap">${favLink(m)}${shareBtn(m)}</div>
+      ${m.contact || m.email ? `<button class="btn block" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>` : ''}
+      <div class="row wrap">${favLink(m)}${writeBtn(m)}${shareBtn(m)}</div>
     </div>`; },
 
   search: () => `<header class="top g">${S.stack.length > 1 ? `<button class="round" data-act="back" aria-label="חזרה">${svg(UI.back)}</button>` : ''}<h1 class="sr">חיפוש יוצרים</h1>
@@ -4282,7 +4349,7 @@ const SCREENS = {
       <form class="f" data-form="join" novalidate>
         <p class="hint">כוכבית (<span aria-hidden="true">*</span><span class="sr">כוכבית</span>) מסמנת שדה חובה.</p>
         <div class="field"><label for="j-name">שם ${STAR}</label><input class="input" id="j-name" name="name" maxlength="80" autocomplete="name" aria-required="true"></div>
-        <div class="field"><label for="j-city">עיר ${STAR}</label><input class="input" id="j-city" name="city" maxlength="60" autocomplete="address-level2" aria-required="true"></div>
+        <div class="field"><label for="j-city">עיר מגורים ${STAR}</label><input class="input" id="j-city" name="city" data-city maxlength="60" autocomplete="off" aria-required="true"></div>
         <fieldset class="field"><legend class="lbl">תחום ${STAR} <span class="m">(אפשר לבחור כמה)</span></legend>
           <div class="tiles">${Object.entries(CRAFTS).map(([k, v]) => `<label class="tile"><input type="checkbox" name="crafts" value="${k}" id="jc-${k}"><span class="face">${svg(UI['c_' + k])}<span class="tl">${v}</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label>`).join('')}
             <label class="tile"><input type="checkbox" name="crafts" value="other" id="jc-other"><span class="face">${svg(UI.c_other)}<span class="tl">אחר</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label></div>
@@ -4328,6 +4395,57 @@ const SCREENS = {
 const CITIES = [['תל אביב-יפו',32.08,34.78],['ירושלים',31.77,35.21],['חיפה',32.79,34.99],['ראשון לציון',31.97,34.80],['פתח תקווה',32.09,34.89],['אשדוד',31.80,34.65],['נתניה',32.33,34.86],['באר שבע',31.25,34.79],['בני ברק',32.08,34.83],['חולון',32.01,34.77],['רמת גן',32.07,34.82],['בת ים',32.02,34.75],['אשקלון',31.67,34.57],['רחובות',31.89,34.81],['הרצליה',32.16,34.84],['כפר סבא',32.18,34.91],['חדרה',32.43,34.92],['מודיעין-מכבים-רעות',31.90,35.01],['לוד',31.95,34.90],['רמלה',31.93,34.87],['רעננה',32.18,34.87],['הוד השרון',32.15,34.89],['רמת השרון',32.15,34.84],['גבעתיים',32.07,34.81],['קריית אתא',32.81,35.11],['קריית גת',31.61,34.76],['נהריה',33.00,35.10],['עכו',32.93,35.08],['כרמיאל',32.91,35.30],['טבריה',32.79,35.53],['נצרת',32.70,35.30],['נוף הגליל',32.70,35.33],['עפולה',32.61,35.29],['בית שאן',32.50,35.50],['צפת',32.96,35.50],['קריית שמונה',33.21,35.57],['מעלות-תרשיחא',33.02,35.27],['שדרות',31.52,34.60],['נתיבות',31.42,34.59],['אופקים',31.31,34.62],['דימונה',31.07,35.03],['ערד',31.26,35.21],['אילת',29.56,34.95],['מצפה רמון',30.61,34.80],['קריית ביאליק',32.84,35.08],['קריית מוצקין',32.84,35.07],['קריית ים',32.85,35.07],['טירת כרמל',32.76,34.97],['נשר',32.77,35.04],['יקנעם עילית',32.66,35.10],['זכרון יעקב',32.57,34.95],['פרדס חנה-כרכור',32.47,34.97],['בנימינה',32.52,34.95],['קיסריה',32.50,34.90],['קריית טבעון',32.72,35.13],['מגדל העמק',32.68,35.24],['מעלה אדומים',31.78,35.30],['בית שמש',31.75,34.99],['מבשרת ציון',31.80,35.15],['ביתר עילית',31.69,35.12],['מודיעין עילית',31.94,35.04],['אלעד',32.05,34.95],['ראש העין',32.10,34.96],['יבנה',31.88,34.74],['גדרה',31.81,34.78],['נס ציונה',31.93,34.80],['קריית אונו',32.06,34.86],['אור יהודה',32.03,34.85],['יהוד-מונוסון',32.03,34.89],['גני תקווה',32.06,34.87],['שוהם',32.00,34.95],['כוכב יאיר',32.22,34.99],['קלנסווה',32.28,34.98],['טייבה',32.27,35.01],['טירה',32.23,34.95],['אום אל-פחם',32.52,35.15],['באקה אל-גרביה',32.42,35.04],['סחנין',32.86,35.30],['שפרעם',32.81,35.17],['טמרה',32.85,35.20],['רהט',31.39,34.75],['כפר קאסם',32.11,34.98],['קדימה-צורן',32.28,34.92],['אבן יהודה',32.27,34.88],['כפר יונה',32.32,34.93],['פרדסיה',32.31,34.91],['אור עקיבא',32.51,34.92],['גבעת שמואל',32.08,34.85],['ראש פינה',32.97,35.55],['קצרין',32.99,35.69],['חצור הגלילית',32.98,35.54],['עומר',31.27,34.85],['להבים',31.37,34.82],['מיתר',31.33,34.93],['ירוחם',30.99,34.93],['קריית מלאכי',31.73,34.74],['באר יעקב',31.94,34.84],['מזכרת בתיה',31.85,34.84],['גן יבנה',31.79,34.71],['שלומי',33.07,35.15],['עתלית',32.69,34.94],['דלית אל-כרמל',32.69,35.05],['יפיע',32.69,35.28],['גבעת זאב',31.86,35.17],['אריאל',32.10,35.17],['מעלה אפרים',32.12,35.38]];
 const normCity = t => String(t || '').replace(/["'׳״\-–.,()]/g, ' ').replace(/קרית/g, 'קריית').replace(/\s+/g, ' ').trim();
 const CITY_N = CITIES.map(([n, la, lo]) => ({ n, k: normCity(n), la, lo }));
+/* a city typeahead for every input[data-city]: a list right under the input with the cities that contain what was typed (prefix matches first). The value stays the plain city text. */
+const cityKey = t => normCity(String(t || '').replace(/[֑-ׇ]/g, '').toLowerCase()).replace(/\s+/g, '');
+const AH = { input: null, list: null, items: [], on: -1 };
+function aheadClose() {
+  if (AH.list) AH.list.remove();
+  if (AH.input) { AH.input.setAttribute('aria-expanded', 'false'); AH.input.removeAttribute('aria-activedescendant'); }
+  AH.input = AH.list = null; AH.items = []; AH.on = -1;
+}
+function aheadMatches(q) {
+  const k = cityKey(q); if (!k) return [];
+  const pre = [], mid = [];
+  CITY_N.forEach(c => { const ck = cityKey(c.n), i = ck.indexOf(k); if (i === 0) pre.push(c.n); else if (i > 0) mid.push(c.n); });
+  return pre.concat(mid).slice(0, 12);
+}
+function aheadOpen(inp) {
+  const q = inp.value.trim();
+  if (!q) { aheadClose(); return; }
+  if (AH.input !== inp) { aheadClose(); AH.input = inp; }
+  if (!AH.list) {
+    const w = inp.parentElement; w.classList.add('ahead-w');
+    AH.list = document.createElement('ul'); AH.list.className = 'ahead'; AH.list.id = 'ahead-list'; AH.list.setAttribute('role', 'listbox'); AH.list.setAttribute('aria-label', 'ערים');
+    w.appendChild(AH.list);
+    inp.setAttribute('role', 'combobox'); inp.setAttribute('aria-autocomplete', 'list'); inp.setAttribute('aria-controls', 'ahead-list');
+  }
+  AH.items = aheadMatches(q); AH.on = -1;
+  AH.list.innerHTML = AH.items.length ? AH.items.map((n, i) => `<li role="option" id="ahead-${i}" aria-selected="false" data-n="${esc(n)}">${esc(n)}</li>`).join('') : '<li class="none" role="presentation">לא מצאנו. אפשר לכתוב את העיר.</li>';
+  inp.setAttribute('aria-expanded', 'true'); inp.removeAttribute('aria-activedescendant');
+  AH.list.scrollIntoView({ block: 'nearest' });
+}
+function aheadPick(name) {
+  const inp = AH.input; if (!inp) return; inp.value = name;
+  inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true }));
+  aheadClose();
+}
+function aheadMove(d) {
+  if (!AH.items.length) return;
+  AH.on = (AH.on + d + AH.items.length) % AH.items.length;
+  [...AH.list.children].forEach((li, i) => li.setAttribute('aria-selected', String(i === AH.on)));
+  const li = AH.list.children[AH.on]; AH.input.setAttribute('aria-activedescendant', li.id); li.scrollIntoView({ block: 'nearest' });
+}
+document.addEventListener('input', e => { if (e.target.matches && e.target.matches('input[data-city]') && e.isTrusted !== false) aheadOpen(e.target); });
+document.addEventListener('keydown', e => {
+  const t = e.target; if (!t.matches || !t.matches('input[data-city]')) return;
+  if (!AH.list || AH.input !== t) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); aheadMove(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); aheadMove(-1); }
+  else if (e.key === 'Enter' && AH.on >= 0) { e.preventDefault(); aheadPick(AH.items[AH.on]); }
+  else if (e.key === 'Escape') { e.stopPropagation(); aheadClose(); }
+}, true);
+document.addEventListener('pointerdown', e => { const li = e.target.closest && e.target.closest('.ahead li[data-n]'); if (li) { e.preventDefault(); aheadPick(li.dataset.n); } else if (AH.input && e.target !== AH.input) aheadClose(); });
+document.addEventListener('focusout', e => { if (AH.input && e.target === AH.input) setTimeout(() => { if (AH.input && document.activeElement !== AH.input) aheadClose(); }, 120); });
 function cityPoint(name) {
   const q = normCity(name); if (q.length < 3) return null;
   const a = CITY_N.find(c => c.k === q) || CITY_N.find(c => c.k.includes(q) && q.length >= 4) || CITY_N.find(c => q.includes(c.k) && c.k.length >= 4);
@@ -4353,26 +4471,22 @@ function postForm({ edit = false, token = '', title = '', hint, vals = null } = 
   if (vals) { const m = POST_OTHER.exec(text); if (m) { other = m[1]; text = text.replace(POST_OTHER, '').trim(); } }
   const tile = (k, v) => `<label class="tile"><input type="checkbox" name="crafts" value="${k}" id="pc-${k}" ${set.has(k) ? 'checked' : ''}><span class="face">${svg(UI['c_' + k])}<span class="tl">${v}</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label>`;
   return `<div class="order zig">
-        <span class="stamp" aria-hidden="true">${edit ? 'עריכה' : 'בקשה'}</span>
-        <p class="order-intro">${edit ? 'אפשר לשנות הכול. היוצרים יראו את העדכון.' : 'כמה מילים. אנחנו נעביר אותה ליוצרים שמתאימים.'}</p>
+                <p class="order-intro">${edit ? 'אפשר לשנות הכול.' : 'כמה מילים, ונעביר ליוצרים.'}</p>
       <form class="f" data-form="${edit ? 'editreq' : 'post'}" data-v="${esc(token)}" novalidate>
-        <div class="field"><label for="p-title">מה תרצו שיכינו?</label><input class="input" id="p-title" name="title" maxlength="120" aria-required="true" placeholder="למשל: קרש חיתוך עם שמות הילדים" autocomplete="off" value="${esc(t)}"></div>
+        <div class="field"><label for="p-title">מה תרצו להזמין?</label><input class="input" id="p-title" name="title" maxlength="120" aria-required="true" autocomplete="off" value="${esc(t)}"></div>
         <fieldset class="field"><legend class="lbl">תחום (אפשר כמה)</legend>
           <div class="tiles">${Object.entries(CRAFTS).map(([k, v]) => tile(k, v)).join('')}
             <label class="tile"><input type="checkbox" id="pc-other" name="otherOn" value="1" ${otherOn ? 'checked' : ''}><span class="face">${svg(UI.c_other)}<span class="tl">אחר</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label></div>
           <input class="input" id="p-other" name="other" maxlength="60" aria-label="איזה תחום אחר?" placeholder="איזה? למשל זכוכית או טקסטיל" value="${esc(other)}" ${otherOn ? '' : 'hidden'}>
-          <span class="hint">עגילים מעץ? סמנו ״תכשיטים״ ו״עץ״.</span>${edit || !REAL.list.length ? '' : '<button type="button" class="link" data-act="matchopen">יוצרים שמתאימים</button>'}</fieldset>
-        <div class="field look"><h2 class="sec-title" id="p-look">איך היצירה נראית?</h2>
-          <p class="small muted look-sub">ככל שתפרטו, נתאים טוב יותר.</p>
-          <textarea class="input" id="p-text" name="text" rows="5" maxlength="1900" aria-labelledby="p-look" placeholder="חומר, צבע, מידות, סגנון, חריטה">${esc(text)}</textarea></div>
+          ${edit || !REAL.list.length ? '' : '<button type="button" class="link" data-act="matchopen">יוצרים שמתאימים</button>'}</fieldset>
+        <div class="field look"><h2 class="sec-title" id="p-look">פרטים על היצירה</h2>
+          <textarea class="input" id="p-text" name="text" rows="5" maxlength="1900" aria-labelledby="p-look">${esc(text)}</textarea></div>
         ${edit ? '' : `<fieldset class="field target"><legend class="lbl">עוד פרטים <span class="m">(לא חובה)</span></legend>
-          <span class="hint">עוזרים לנו להתאים יוצר.</span>
-          <div class="field"><label for="p-city">באיזו עיר?</label><input class="input" id="p-city" name="city" list="p-cities" maxlength="60" autocomplete="off" placeholder="בחרו או הקלידו"><datalist id="p-cities">${CITIES.map(c => `<option value="${esc(c[0])}"></option>`).join('')}</datalist></div>
-          <fieldset class="field"><legend class="lbl">איך תקבלו?</legend>${Object.entries(DELIV).map(([k, v]) => `<label class="opt"><input type="checkbox" name="delivery" value="${k}"><span class="grow">${v}</span></label>`).join('')}</fieldset>
-          <div class="field"><label for="p-occ">למה זה מיועד?</label><select class="input" id="p-occ" name="occasion"><option value="">לא חשוב</option>${Object.entries(OCC).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+          <div class="field"><label for="p-city">עיר מגורים</label><input class="input" id="p-city" name="city" data-city maxlength="60" autocomplete="off"></div>
+          <div class="field"><label for="p-occ">למה זה מיועד?</label><select class="input" id="p-occ" name="occasion"><option value=""></option>${Object.entries(OCC).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
           <div class="field"><label for="p-date">תאריך יעד</label><input class="input" id="p-date" name="due_date" type="date" min="${todayStr()}"></div></fieldset>`}
         ${edit ? `<div class="field"><label for="p-due">עד מתי? <span class="m">(לא חובה)</span></label><input class="input" id="p-due" name="due" maxlength="80" placeholder="למשל לפני יום ההולדת, ב־12.12" value="${esc(due)}"></div>` : ''}
-        <div class="field"><label for="p-contact">איך חוזרים אליכם?</label><input class="input" id="p-contact" name="contact" dir="auto" maxlength="120" autocomplete="email" placeholder="מייל או טלפון" aria-required="true" aria-describedby="p-contact-h" value="${esc(contact)}"><span class="hint" id="p-contact-h">${edit ? 'היוצרים רואים אותם רק כל עוד הבקשה פתוחה.' : 'נעביר אותם רק ליוצרים שמתאימים.'}</span></div>
+        <div class="field"><label for="p-contact">איך חוזרים אליכם?</label><input class="input" id="p-contact" name="contact" dir="auto" maxlength="120" autocomplete="email" placeholder="מייל או טלפון" aria-required="true" aria-describedby="p-contact-h" value="${esc(contact)}"><span class="hint" id="p-contact-h">${edit ? 'רק ליוצרים שמתאימים.' : 'רק ליוצרים שמתאימים.'}</span></div>
         <p class="form-err" id="p-err" role="alert" hidden></p>
         <button class="btn block" type="submit">${edit ? 'שמירת השינויים' : 'שליחת הבקשה'}</button>
         ${edit ? '' : `<p class="small muted" id="p-agree">בשליחה אתם מסכימים שנעביר את הבקשה ופרטי הקשר שלכם ליוצרים שמתאימים.</p><div class="links-col"><button type="button" class="link" data-act="privacy">מדיניות הפרטיות</button></div>`}
@@ -4540,7 +4654,7 @@ SCREENS.editprofile = () => {
   return `${head('עריכת הפרופיל')}<div class="stack tight g">
     <form class="f" data-form="editprofile" novalidate>
       <div class="field"><label for="ep-name">שם</label><input class="input" id="ep-name" name="name" maxlength="80" value="${esc(m.name)}" aria-required="true"></div>
-      <div class="field"><label for="ep-city">עיר</label><input class="input" id="ep-city" name="city" maxlength="60" value="${esc(m.city)}" aria-required="true"></div>
+      <div class="field"><label for="ep-city">עיר מגורים</label><input class="input" id="ep-city" name="city" data-city maxlength="60" value="${esc(m.city)}" aria-required="true"></div>
       <fieldset class="field"><legend class="lbl">תחום <span class="m">(אפשר לבחור כמה)</span></legend><div class="tiles">${Object.entries(CRAFTS).map(([k, v]) => tile(k, v)).join('')}${tile('other', 'אחר')}</div>
         <input class="input" id="ep-other" name="craft_other" maxlength="40" placeholder="איזה תחום?" value="${esc(m.other || '')}"></fieldset>
       <div class="field"><label for="ep-story">הסיפור שלכם</label><textarea class="input" id="ep-story" name="story" rows="5" maxlength="1000">${esc(m.story || '')}</textarea></div>
@@ -4609,14 +4723,22 @@ const DISC_CSS = `.disc{column-count:2;column-gap:12px}
 .dtile{position:relative;background:var(--paper);text-align:start;color:var(--ink)}
 .dtile .dimg{display:block;width:100%;border:0;padding:0;background:none;cursor:zoom-in}
 .dtile img{display:block;width:100%;height:auto;min-height:110px;object-fit:cover;background:var(--tone)}
-.dtile:not(.open) img{aspect-ratio:4/5;height:auto}
+.dtile img{aspect-ratio:4/5}
+.dtile.dp-src img{visibility:hidden}
 .dtile .dheart{position:absolute;inset-block-start:0;inset-inline-end:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:#fff;cursor:pointer}
 .dtile .dheart svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.55))}
 .dtile .dheart[aria-pressed="true"] svg{fill:var(--clay);stroke:var(--clay)}
-.dtile.open{column-span:all}
-.dtile.open .dimg{cursor:zoom-out}
-.dtile.open img{height:45vh;max-height:45vh;object-fit:contain}
-.dtile .dopen{padding:0 11px 12px}.dtile .dbtns{display:flex;flex-wrap:wrap;gap:6px}.dtile .dinfo{margin:8px 0 0}
+.dp{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;overscroll-behavior:contain;touch-action:none}
+.dp-back{position:absolute;inset:0;background:rgba(31,34,24,.45)}
+.dp-card{position:relative;width:min(440px,100%);background:var(--paper);color:var(--ink);max-height:100%;overflow:hidden}
+.dp-photo{position:relative;background:var(--tone)}
+.dp-photo img{display:block;width:100%;height:46vh;object-fit:contain}
+.dp .dheart{position:absolute;inset-block-start:0;inset-inline-end:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:var(--ink);cursor:pointer}
+.dp .dheart svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.dp .dheart[aria-pressed="true"] svg{fill:var(--clay);stroke:var(--clay)}
+body.dp-open{overflow:hidden}
+.dp .dopen{padding:0}.dp .dbtns{display:flex;gap:2px;background:var(--paper)}.dp .dbtns .btn{flex:1 1 0;min-width:0;padding-inline:8px;clip-path:none;text-decoration:none}.dp .dinfo{margin:0;padding:10px 12px}
+.dp .dclose{position:absolute;inset-block-start:0;inset-inline-start:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:var(--ink);cursor:pointer}.dp .dclose svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
 .dtile .dcap{display:block;padding:9px 11px 11px;font-size:var(--fs-1);color:var(--muted);line-height:1.3}
 .dtile .dcap b{display:block;font-family:var(--display);font-size:var(--fs-3);line-height:1;color:var(--ink);font-weight:700;margin-bottom:2px}
 .dquote{border:0;text-align:start;cursor:pointer;padding:20px 18px 18px;background:var(--olive);color:var(--on-olive)}
@@ -4639,17 +4761,17 @@ async function loadPhotoLikes() {
   if (LKS.uid !== uid) { LKS.set = new Set(); LKS.uid = uid; }
   const r = await dbq(s => s.from('photo_likes').select('maker_id,photo').eq('user_id', uid).limit(2000));
   if (!AD.session || String(AD.session.user.id) !== uid || r.error || !Array.isArray(r.data)) return;
-  LKS.set = new Set(r.data.map(x => plKey(x.maker_id, x.photo))); LKS.st = 'ready'; plPaint();
+  LKS.set = new Set(r.data.map(x => plKey(x.maker_id, x.photo))); LKS.st = 'ready'; plPaint(); if (['liked', 'mine', 'mebuyer', 'memaker'].includes(cur().s) && !DPO) render();
 }
 function plPaint(i) {
-  const items = DISC ? DISC.items : [];
+  const items = cur().s === 'liked' ? LKI : DISC ? DISC.items : [];
   document.querySelectorAll(i == null ? '.dheart' : `.dheart[data-v="${i}"]`).forEach(b => {
     const x = items[+b.dataset.v]; if (!x) return; const on = plOn(x.m.id, x.p);
     b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'הסרת הלב מהתמונה' : 'לב לתמונה');
   });
 }
 async function plToggle(i) {
-  const x = discItems()[+i]; if (!x || x.k !== 'p') return;
+  const x = tileItems()[+i]; if (!x || x.k !== 'p') return;
   if (!SB || !AD.session) { openSignup(); return; }
   const key = plKey(x.m.id, x.p); if (LKS.busy.has(key)) return; LKS.busy.add(key);
   const uid = String(AD.session.user.id), was = LKS.set.has(key);
@@ -4659,18 +4781,70 @@ async function plToggle(i) {
   LKS.busy.delete(key);
   if (r.error && !(String(r.error.code) === '23505' && !was)) { if (was) LKS.set.add(key); else LKS.set.delete(key); plPaint(i); toast('לא הצלחנו לשמור. נסו שוב.'); }
 }
-document.addEventListener('click', e => { if (!e.target.closest('.dtile.open') && document.querySelector('.dtile.open')) dpClose(); });
-function dpClose() {
-  document.querySelectorAll('.dtile.open').forEach(t => { t.classList.remove('open'); const b = t.querySelector('.dimg'); if (b) b.setAttribute('aria-expanded', 'false'); const o = t.querySelector('.dopen'); if (o) { o.hidden = true; o.innerHTML = ''; } });
+/* write to the maker about a photo: the maker's own contact path (WhatsApp or mail), only if they chose to show it; otherwise no button (a request still reaches them) */
+const loveText = (m, p) => `היי ${firstName(m)}, ראיתי את העבודה שלך באתר בהזמנה ואהבתי.${p ? ' ' + photoURL(p) : ''}`;
+const loveHref = (m, p) => m.contact ? `${m.contact.wa}?text=${encodeURIComponent(loveText(m, p))}` : m.email ? `mailto:${m.email}?subject=${encodeURIComponent('אהבתי את העבודה שלך בבהזמנה')}&body=${encodeURIComponent(loveText(m, p))}` : '';
+const writeBtn = (m, p, cls = 'link') => loveHref(m, p) ? `<a class="${cls}" data-write href="${esc(loveHref(m, p))}" ${OUT}>לכתוב ליוצר</a>` : '';
+const photoTile = (x, i) => `<div class="dtile" id="dt-${i}" style="--i:${i % 12}"><button type="button" class="dimg" data-act="dphoto" data-v="${i}" aria-expanded="false" aria-label="${esc('הגדלת התמונה של ' + x.m.name)}"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"></button>${plBtn(x, i)}<span class="dcap"><b>${esc(x.m.name)}</b></span></div>`;
+/* the photos this person hearted (their own photo_likes rows), from the makers' real data; photos that are gone are skipped */
+let LKI = [];
+function likedItems() { const out = []; REAL.list.forEach(m => m.photos.forEach(p => { if (plOn(m.id, p)) out.push({ k: 'p', p, m }); })); return out; }
+const tileItems = () => cur().s === 'liked' ? LKI : discItems();
+SCREENS.liked = () => {
+  LKI = likedItems();
+  if (!document.getElementById('disc-css')) { const st = document.createElement('style'); st.id = 'disc-css'; st.textContent = DISC_CSS; document.head.appendChild(st); }
+  return `${head('תמונות שאהבתי')}<div class="stack tight g">${LKI.length ? `<div class="disc">${LKI.map(photoTile).join('')}</div>`
+    : '<p class="empty">עוד אין. <button type="button" class="link" data-act="tab" data-v="shop">לפיד</button></p>'}</div>`;
+};
+const likedSpot = () => AD.session ? meEntry(UI.grid, 'תמונות שאהבתי', likedItems().length ? plural(likedItems().length, 'תמונה אחת', 'תמונות') : 'עוד אין', 'go', 'liked') : '';
+/* the enlarged photo: an overlay card over the still feed (nothing underneath moves). The photo grows from its tile (FLIP) and shrinks back.
+   Back button, Escape, the backdrop and the close button all collapse it. */
+let DPO = null, DPN = false;
+const DP_MS = 280, DP_EASE = 'cubic-bezier(.2,.7,.2,1)';
+const dpCalm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+const dpFrom = (r0, r1) => { const s = Math.max(r0.width / r1.width, r0.height / r1.height), cx = r0.left + r0.width / 2 - (r1.left + r1.width / 2), cy = r0.top + r0.height / 2 - (r1.top + r1.height / 2), ix = (r1.width - r0.width / s) / 2, iy = (r1.height - r0.height / s) / 2;
+  return { transform: `translate(${cx}px,${cy}px) scale(${s})`, clipPath: `inset(${iy}px ${ix}px ${iy}px ${ix}px)` }; };
+function dpOpen(i) {
+  if (DPO) return;
+  const t = document.getElementById('dt-' + i), x = tileItems()[+i]; if (!t || !x || x.k !== 'p') return;
+  const img0 = t.querySelector('img'), r0 = img0.getBoundingClientRect();
+  const el = document.createElement('div'); el.className = 'dp'; el.id = 'dp';
+  el.innerHTML = `<div class="dp-back" data-act="dpclose"></div><div class="dp-card" role="dialog" aria-modal="true" aria-label="${esc('עבודה של ' + x.m.name)}">
+    <div class="dp-photo"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" draggable="false">${plBtn(x, i)}<button type="button" class="dclose" data-act="dpclose" aria-label="סגירה">${svg(UI.close)}</button></div>
+    <div class="dopen"><div class="dbtns"><button type="button" class="btn small" data-act="rmaker" data-v="${esc(x.m.id)}">לפרופיל</button><button type="button" class="btn small ghost" data-act="dpinfo" data-v="${i}" aria-expanded="false">פרטים</button>${writeBtn(x.m, x.p, "btn small ghost")}</div><p class="small dinfo" hidden>${esc(x.m.name)} · ${esc(craftsLine(x.m))}${x.m.city ? ' · ' + esc(x.m.city) : ''}</p></div></div>`;
+  DPO = { el, tile: t, i, y: window.scrollY, ret: document.activeElement };
+  document.body.appendChild(el); document.body.classList.add('dp-open'); t.classList.add('dp-src');
+  img0.closest('.dimg').setAttribute('aria-expanded', 'true');
+  pushH({ dp: 1 });
+  const ph = el.querySelector('.dp-photo'), r1 = ph.getBoundingClientRect();
+  if (!dpCalm() && ph.animate) {
+    const o = { duration: DP_MS, easing: DP_EASE, fill: 'backwards' };
+    ph.animate([dpFrom(r0, r1), { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }], o);
+    el.querySelector('.dp-back').animate([{ opacity: 0 }, { opacity: 1 }], o);
+    el.querySelector('.dopen').animate([{ opacity: 0 }, { opacity: 1 }], { ...o, duration: DP_MS * 0.8 });
+  }
+  const b = el.querySelector('[data-act="rmaker"]'); if (b) b.focus({ preventScroll: true });
 }
-function dpToggle(i) {
-  const t = document.getElementById('dt-' + i), x = discItems()[+i]; if (!t || !x) return;
-  const was = t.classList.contains('open'); dpClose(); if (was) return;
-  t.classList.add('open'); t.querySelector('.dimg').setAttribute('aria-expanded', 'true');
-  const o = t.querySelector('.dopen'); o.hidden = false;
-  o.innerHTML = `<div class="dbtns"><button type="button" class="btn small" data-act="rmaker" data-v="${esc(x.m.id)}">לפרופיל</button><button type="button" class="btn small ghost" data-act="dpinfo" data-v="${i}" aria-expanded="false">פרטים</button><button type="button" class="btn small ghost" data-act="dpclose">סגירה</button></div><p class="small dinfo" hidden>${esc(x.m.name)} · ${esc(craftsLine(x.m))}${x.m.city ? ' · ' + esc(x.m.city) : ''}</p>`;
-  t.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+function dpClose(now) {
+  if (!DPO) return; DPN = !!now;
+  if (history.state && history.state.dp) history.back(); else dpHide(now);
 }
+function dpHide(now) {
+  const o = DPO; if (!o) return; DPO = null;
+  const { el, tile } = o, ph = el.querySelector('.dp-photo'), done = () => { el.remove(); tile.classList.remove('dp-src'); };
+  document.body.classList.remove('dp-open'); if (window.scrollY !== o.y) window.scrollTo(0, o.y);
+  const b = tile.querySelector('.dimg'); if (b) b.setAttribute('aria-expanded', 'false');
+  if (o.ret && document.contains(o.ret)) o.ret.focus({ preventScroll: true });
+  const img0 = tile.querySelector('img');
+  if (now || dpCalm() || !ph.animate || !img0) { done(); return; }
+  const r0 = img0.getBoundingClientRect(), r1 = ph.getBoundingClientRect(), opt = { duration: DP_MS, easing: DP_EASE, fill: 'forwards' };
+  el.inert = true; el.querySelector('.dp-card').style.pointerEvents = 'none';
+  const a = ph.animate([{ transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }, dpFrom(r0, r1)], opt);
+  el.querySelector('.dp-back').animate([{ opacity: 1 }, { opacity: 0 }], opt);
+  el.querySelector('.dopen').animate([{ opacity: 1 }, { opacity: 0 }], { ...opt, duration: DP_MS * 0.5 });
+  a.onfinish = done; setTimeout(done, DP_MS + 120);
+}
+document.addEventListener('keydown', e => { if (DPO && e.key === 'Escape' && document.getElementById('sheet').hidden) { e.preventDefault(); dpClose(); } });
 const shuffled = a => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
 function discItems() {
   const key = REAL.list.map(m => m.id + m.photos.length).join(',');
@@ -4694,7 +4868,7 @@ function discoverHTML() {
   const items = discItems();
   return `<div class="dhead"><p class="muted">מהסדנאות של היוצרים. לחצו על תמונה להגדלה.</p><button type="button" class="chip" data-act="discshuffle">ערבוב</button></div>
     <div class="disc">${items.map((x, i) => x.k === 'p'
-      ? `<div class="dtile" id="dt-${i}" style="--i:${i % 12}"><button type="button" class="dimg" data-act="dphoto" data-v="${i}" aria-expanded="false" aria-label="${esc('הגדלת התמונה של ' + x.m.name)}"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"></button>${plBtn(x, i)}<span class="dcap"><b>${esc(x.m.name)}</b></span><div class="dopen" hidden></div></div>`
+      ? photoTile(x, i)
       : `<button type="button" class="dquote" style="--i:${i % 12};background:var(--stamp);color:var(--paper)" data-act="rmaker" data-v="${esc(x.m.id)}"><p>${esc(excerpt(x.m.story))}</p><span class="by" style="color:#dfe3ef">${esc(x.m.name)} · ${esc(craftsLine(x.m))}</span></button>`).join('')}</div>`;
 }
 /* ---------- the makers who fit a request: sort and filter by fit, distance and reviews ---------- */
@@ -4745,7 +4919,7 @@ SCREENS.match = () => `${head('יוצרים שמתאימים לכם')}
     <p class="muted">סינון לפי תחום, מרחק ודירוג.</p>
     <fieldset class="field"><legend class="lbl">תחום</legend><div class="filters" style="flex-wrap:wrap;overflow:visible" role="group" aria-label="תחום הבקשה">${Object.entries(CRAFTS).map(([k, v]) => `<button type="button" data-act="mtcraft" data-v="${k}" aria-pressed="${MT.crafts.includes(k)}">${v}</button>`).join('')}</div>
       <label class="opt"><input type="checkbox" data-mt="only" ${MT.only ? 'checked' : ''}><span class="grow">רק יוצרים בתחומים שבחרתי</span></label></fieldset>
-    <div class="field"><label for="mt-city">העיר שלכם</label><input class="input" id="mt-city" data-mt="city" list="mt-cities" maxlength="60" autocomplete="off" placeholder="בחרו או הקלידו" value="${esc(MT.city)}"><datalist id="mt-cities">${CITIES.map(c => `<option value="${esc(c[0])}"></option>`).join('')}</datalist></div>
+    <div class="field"><label for="mt-city">עיר מגורים</label><input class="input" id="mt-city" data-mt="city" data-city maxlength="60" autocomplete="off" value="${esc(MT.city)}"></div>
     <div class="field"><label for="mt-sort">סדר</label><select class="input" id="mt-sort" data-mt="sort">${[['fit', 'התאמה לבקשה'], ['near', 'הכי קרוב אליי'], ['rating', 'דירוג גבוה'], ['name', 'לפי שם']].map(([k, l]) => `<option value="${k}" ${MT.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div class="field"><label for="mt-dist">מרחק</label><select class="input" id="mt-dist" data-mt="dist">${[[0, 'לא משנה'], [25, 'עד 25 ק״מ'], [50, 'עד 50 ק״מ'], [100, 'עד 100 ק״מ']].map(([k, l]) => `<option value="${k}" ${MT.dist === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div class="field"><label for="mt-stars">דירוג</label><select class="input" id="mt-stars" data-mt="stars">${[[0, 'לא משנה'], [4, '4 ומעלה'], [4.5, '4.5 ומעלה']].map(([k, l]) => `<option value="${k}" ${MT.stars === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
@@ -4784,25 +4958,39 @@ const profileHTML = () => { const m = AU.maker, face = m.portrait || m.photos[0]
    The two pages never share buttons. favoritesHTML() (favourite makers) is added by another change; it is called from the buyer page if it exists. */
 const aboutTail = () => `<section class="panel" aria-labelledby="h-about"><h2 class="sec-title" id="h-about">כתבו לנו</h2><div class="links-col">${mailLink('שלום מבהזמנה')}</div>${legalLinks()}</section>`;
 const favSpot = () => { try { return typeof favoritesHTML === 'function' ? favoritesHTML() : ''; } catch (e) { return ''; } };
+/* the personal page: a header with the person, then cards with an icon each (requests, favourite makers, liked photos) */
+const meIc = p => `<span class="mic">${svg(p)}</span>`;
+const meCard = (ic, title, n, body, id) => `<section class="mecard" aria-labelledby="${id}"><div class="mecard-h">${meIc(ic)}<h2 class="sec-title" id="${id}">${title}</h2>${n ? `<span class="small muted">${n}</span>` : ''}</div>${body}</section>`;
+const meEntry = (ic, title, sub, act, v) => `<button type="button" class="entry ic" data-act="${act}" data-v="${v}">${meIc(ic)}<span class="tx"><span class="t">${title}</span><span class="small muted">${sub}</span></span><span class="fwd" aria-hidden="true">${svg(UI.back)}</span></button>`;
+function meHead(mode) {
+  const em = AD.session && AD.session.user && AD.session.user.email ? String(AD.session.user.email) : '';
+  const nm = mode === 'maker' && AU.maker ? firstOf(AU.maker.name) : em ? em.split('@')[0] : '';
+  return `<section class="mehead"><span class="meav">${svg(UI.user)}</span><div class="mewho"><p class="mehi">${AD.session ? `היי${nm ? ' <span dir="auto">' + esc(nm) + '</span>' : ''}` : 'שלום'}</p><p class="small">${AD.session ? (em ? `מחוברים כ־<span dir="ltr">${esc(em)}</span>` : 'מחוברים') : 'עוד לא נכנסתם'}</p></div>${signoutBtn()}</section>`;
+}
 function buyerPageHTML(title) {
-  const mode = meMode(), reqSec = `<section aria-labelledby="h-mine"><div class="sec-head"><h2 class="sec-title" id="h-mine">הבקשות שלי</h2>${MYREQ.length ? `<span class="small muted">${MYREQ.length}</span>` : ''}</div>${myReqsList()}${MYREQ.length ? '<button class="btn block" style="margin-top:12px" data-act="tab" data-v="post">לכתוב בקשה חדשה</button>' : ''}</section>`;
+  const mode = meMode();
   const joined = JOINED && !AU.maker ? `<section class="panel" aria-labelledby="h-joined"><h2 class="sr" id="h-joined">ההרשמה שלכם</h2><p>נרשמתם. אחרי האישור הפרופיל יופיע באתר.</p>${AD.session ? '' : signinOK() ? '<p class="small muted">אישרנו אתכם? היכנסו עם מייל ההרשמה.</p><button type="button" class="btn" data-act="signin">כניסה</button>' : ''}</section>` : joinCard();
   const adminHint = isOwner() ? '<button type="button" class="link sm" data-act="toadmin">למסך הניהול</button>' : '';
-  if (mode === 'loading') return `${head(title, gearBtn())}<div class="stack g"><p class="muted" role="status">טוענים</p>${AD.session ? signoutBtn() : ''}</div>`;
+  if (mode === 'loading') return `${head(title, gearBtn())}<div class="stack g">${meHead(mode)}<p class="muted" role="status">טוענים</p></div>`;
   const note = mode === 'pending' ? meNote('ההרשמה בבדיקה. אחרי האישור כאן יופיעו הבקשות.')
     : mode === 'rejected' ? meNote('ההרשמה הקודמת לא אושרה. אפשר לכתוב לנו.')
     : mode === 'nonmaker' && !isOwner() ? meNote(`המייל הזה לא מקושר ליוצר מאושר. היכנסו עם מייל ההרשמה${AD.session && AD.session.user && AD.session.user.email ? ` (נכנסתם עם <span dir="ltr">${esc(AD.session.user.email)}</span>)` : ''}.`)
     : mode === 'failed' ? '<div class="note" role="note">לא הצלחנו לבדוק את הכניסה. <button type="button" class="link sm" data-act="meretry">לנסות שוב</button></div>' : '';
   const showJoin = mode !== 'pending' && mode !== 'maker';
+  const nNew = mode === 'maker' ? AU.inbox.list.filter(x => x.rs === 'sent' && x.rstatus !== 'closed').length : 0;
+  const makerBtn = mode === 'maker' ? `<button type="button" class="mecta" data-act="go" data-v="memaker">${meIc(UI.pencil)}<span class="tx"><span class="t">אני כיוצר</span><span class="small">בקשות, יצירות ופרופיל</span></span>${nNew ? `<span class="cnt" aria-label="${nNew} חדשות">${nNew}</span>` : ''}<span class="fwd" aria-hidden="true">${svg(UI.back)}</span></button>` : '';
+  const reqCard = meCard(UI.mail, 'הבקשות שלי', MYREQ.length, `${myReqsList()}${MYREQ.length ? '<button class="btn block" style="margin-top:12px" data-act="tab" data-v="post">לכתוב בקשה חדשה</button>' : ''}`, 'h-mine');
+  const guest = !AD.session && signinOK() ? `<section class="mecard" aria-labelledby="h-guest"><div class="mecard-h">${meIc(UI.heart)}<h2 class="sec-title" id="h-guest">שומרים מה שאהבתם</h2></div><p class="muted">הרשמה קצרה בלי סיסמה, כדי לשמור יוצרים ותמונות.</p><div class="bgrid"><button type="button" class="btn" data-act="signup">הרשמה</button><button type="button" class="btn ghost" data-act="signin">כניסה</button></div></section>` : '';
   return `${head(title, gearBtn())}
-    <div class="stack g">
-      ${AD.session ? `<div class="row wrap" style="justify-content:space-between"><span class="small muted">מחוברים${AD.session.user && AD.session.user.email ? ` כ־<span dir="ltr">${esc(AD.session.user.email)}</span>` : ''}</span>${signoutBtn()}</div>` : ''}
+    <div class="stack tight g">
+      ${meHead(mode)}
+      ${makerBtn}
       ${note}
-      ${reqSec}
+      ${reqCard}
       ${favSpot()}
+      ${likedSpot()}
+      ${guest}
       ${showJoin ? joined : ''}
-      ${!AD.session && signinOK() ? '<button class="entry" data-act="signup"><span class="t">הרשמה</span><span class="small muted">לשמירת יוצרים מועדפים</span></button>' : ''}
-      ${!AD.session && signinOK() ? '<button class="entry" data-act="signin"><span class="t">כניסה ליוצרים</span><span class="small muted">עם קוד שנשלח למייל</span></button>' : ''}
       ${adminHint}
       ${aboutTail()}
     </div>`;
@@ -4831,6 +5019,7 @@ function makerPageHTML() {
   const tabs = [['inbox', 'בקשות אליי', nNew], ['listings', 'היצירות שלי', 0], ['profile', 'הפרופיל', 0]];
   const body = ME.tab === 'listings' ? myListingsHTML() : ME.tab === 'profile' ? profileHTML() : inboxHTML();
   return `${head('אני כיוצר', gearBtn())}<div class="stack tight g">
+      ${meEntry(UI.user, 'אני', 'הבקשות והמועדפים שלי', 'tab', 'mine')}
       <div class="row wrap" style="justify-content:space-between"><p><b>היי ${esc(firstOf(AU.maker.name))}</b> <span class="small muted">מחוברים כיוצרים</span></p>${signoutBtn()}</div>
       <div class="bgrid"><button type="button" class="btn" data-act="rvkit" data-v="${esc(AU.maker.id)}">הקוד והדף להדפסה</button><button type="button" class="btn ghost" data-act="editprofile">עריכת הפרופיל</button></div>
       ${likesHTML()}
@@ -4839,17 +5028,8 @@ function makerPageHTML() {
       ${isOwner() ? '<button type="button" class="link sm" data-act="toadmin">למסך הניהול</button>' : ''}
     </div>`;
 }
-SCREENS.mine = () => {
-  if (meMode() !== 'maker') return buyerPageHTML('אני');
-  const adminHint = isOwner() ? '<button type="button" class="link sm" data-act="toadmin">למסך הניהול</button>' : '';
-  return `${head('אני', gearBtn())}<div class="stack g">
-      <div class="row wrap" style="justify-content:space-between"><p><b>היי ${esc(firstOf(AU.maker.name))}</b></p>${signoutBtn()}</div>
-      <button class="entry" data-act="go" data-v="mebuyer"><span class="t">הבקשות והמועדפים</span><span class="small muted">מה ביקשתם ומה אהבתם</span></button>
-      <button class="entry" data-act="go" data-v="memaker"><span class="t">אני כיוצר</span><span class="small muted">בקשות, יצירות ופרופיל</span></button>
-      ${adminHint}
-    </div>`;
-};
-SCREENS.mebuyer = () => buyerPageHTML('הבקשות והמועדפים');
+SCREENS.mine = () => buyerPageHTML('אני');
+SCREENS.mebuyer = () => buyerPageHTML('אני');
 SCREENS.memaker = () => meMode() === 'maker' ? makerPageHTML() : buyerPageHTML('אני');
 
 /* ---------- the owner's screen: listings, requests with routing ---------- */
@@ -5086,7 +5266,7 @@ function runSearch() {
 }
 const craftOf = q => { const ws = toks(q); for (const [c, words] of Object.entries(CRAFT_WORDS)) { const t = toks(words); if (ws.some(w => t.some(x => wordHit({ alts: forms(w), fz: new Set(sing(w)), pre: [] }, x)))) return c; } return undefined; };
 
-const NAV = [['home', 'בית', UI.home], ['shop', 'יצירות', UI.grid], ['makers', 'יוצרים', UI.users], ['post', 'בקשה', UI.plus], ['mine', 'אני', UI.user]];
+const NAV = [['home', 'בית', UI.home], ['shop', 'יצירות', UI.grid], ['post', 'בקשה', UI.plus], ['makers', 'יוצרים', UI.users], ['mine', 'אני', UI.user]];
 const NAVKEYS = NAV.map(n => n[0]);
 const root = document.documentElement;
 const navOn = () => S.stack.length > 1 && NAVKEYS.includes(S.stack[1].s) ? S.stack[1].s : S.stack[0].s === 'home' ? 'home' : '';
@@ -5099,6 +5279,7 @@ function drawNav(noNav, on) {
   nav.querySelectorAll('button').forEach(b => b.remove());
   if (noNav) return;
   const i = NAVKEYS.indexOf(on);
+  if (!nav.dataset.ready) { nav.classList.add('nav-first'); requestAnimationFrame(() => requestAnimationFrame(() => { nav.classList.remove('nav-first'); nav.dataset.ready = '1'; })); }
   if (i >= 0) nav.style.setProperty('--i', i);
   nav.dataset.on = i >= 0 ? '1' : '0';
   nav.insertAdjacentHTML('beforeend', NAV.map(([k, label, icon]) => k === 'post'
@@ -5173,7 +5354,7 @@ function revealCards(view) {
 
 const ACT = {
   back, tab: v => tab(v),
-  rmaker: v => go('rmaker', { id: v }),
+  rmaker: v => { if (DPO) { dpClose(true); setTimeout(() => go('rmaker', { id: v }), 80); } else go('rmaker', { id: v }); },
   share: v => { const m = REAL.list.find(x => x.id === v) || (AU.maker && AU.maker.id === v ? AU.maker : null); if (m) openSheet(shareSheet(m), 'שיתוף הפרופיל'); },
   sharecopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('share-url'); if (i) { i.select(); } toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('share-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
   sharesend: v => { const m = REAL.list.find(x => x.id === v) || AU.maker; try { navigator.share({ title: m ? m.name : 'בהזמנה', url: makerLink(v) }); } catch (e) { /* the person closed the share sheet */ } },
@@ -5266,7 +5447,7 @@ Object.assign(ACT, {
   signup: () => openSignup(),
   sitoggle: () => { SI.buyer = !SI.buyer; SI.err = ''; drawSignin(true); const i = document.getElementById('si-email'); if (i) i.focus({ preventScroll: true }); },
   fav: v => favToggle(v),
-  dphoto: v => dpToggle(v), dpclose: () => dpClose(),
+  dphoto: v => dpOpen(v), dpclose: () => dpClose(),
   dpinfo: (v, b) => { const p = b.closest('.dopen').querySelector('.dinfo'); p.hidden = !p.hidden; b.setAttribute('aria-expanded', String(!p.hidden)); },
   plike: v => plToggle(v),
   buyeracct: v => { SI.sent = 0; SI.err = ''; SI.busy = false; SI.email = v; clearInterval(SI.t); SI.t = 0; openSheet(signinSheet(), 'כניסה'); sendLink(v); },
@@ -5417,27 +5598,57 @@ if (window.visualViewport) { visualViewport.addEventListener('resize', vvUpdate)
 window.addEventListener('resize', vvUpdate);
 vvUpdate();
 
-/* ---------- motion (GSAP from cdnjs): the stamp ----------
-   A stamp presses onto each line of "how it works" once, as it scrolls into view (scale 1.35 to 1, a slight turn, 280 ms). Everything is fully visible without it,
-   and it only runs when GSAP loaded and the person hasn't asked for less motion. The other motion (screens, sheets, tabs, cards) is CSS and WAAPI above. */
-const GS = window.gsap && window.ScrollTrigger ? window.gsap : null;
-if (GS) { gsap.registerPlugin(ScrollTrigger); ScrollTrigger.config({ ignoreMobileResize: true }); }
-let MM = null;
-const STAMPED = new Set();                           // each stamp lands once, the first time it scrolls into view
-function motionFor(c) {
-  if (MM) { MM.revert(); MM = null; }
-  if (!GS || c.s !== 'home') return;
-  MM = gsap.matchMedia();
-  MM.add('(prefers-reduced-motion: no-preference)', () => {
-    document.querySelectorAll('.tale .stamp').forEach((st, i) => {
-      if (STAMPED.has(i)) return;
-      gsap.set(st, { autoAlpha: 0 });
-      ScrollTrigger.create({ trigger: st, start: 'top 92%', once: true, onEnter: () => { STAMPED.add(i);
-        gsap.fromTo(st, { scale: 1.35, rotation: -9, autoAlpha: 0 }, { scale: 1, rotation: -3, autoAlpha: 1, duration: .28, ease: 'power3.in', clearProps: 'transform,opacity,visibility' }); } });
-    });
-  });
+/* ---------- motion (GSAP from cdnjs): the picture on "how it works" ----------
+   The picture is drawn in its final state, so it is complete without any script. When the section is about to scroll into view, GSAP 3.12.5 is fetched
+   from cdnjs (never at first paint), and a short timeline plays once: the request is written, travels to a maker, the two start to talk. If GSAP cannot load
+   (offline, blocked) nothing happens and the final picture stays. With prefers-reduced-motion: reduce nothing is fetched. The other motion is CSS and WAAPI above. */
+let FLOW_DONE = false, FLOW_IO = null, GSAP_P = null;
+function loadGsap() {
+  if (window.gsap) return Promise.resolve(window.gsap);
+  return GSAP_P || (GSAP_P = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js'; sc.integrity = 'sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt';
+    sc.crossOrigin = 'anonymous'; sc.referrerPolicy = 'no-referrer';
+    sc.onload = () => window.gsap ? res(window.gsap) : rej(new Error('no gsap')); sc.onerror = () => { GSAP_P = null; rej(new Error('gsap blocked')); };
+    document.head.appendChild(sc);
+  }));
 }
-if (GS && document.fonts && document.fonts.ready) document.fonts.ready.then(() => ScrollTrigger.refresh());
+function playFlow(root) {
+  const q = s => root.querySelectorAll(s), g = window.gsap, tl = g.timeline({ defaults: { ease: 'power2.out' } });
+  tl.pause();
+  tl.fromTo(q('.f-b1'), { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: .35 })
+    .fromTo(q('.f-slip > .f-paper, .f-slip > .f-stamp'), { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: .45 }, '<.1')
+    .fromTo(q('.f-l'), { scaleX: 0, transformOrigin: '100% 50%' }, { scaleX: 1, duration: .4, stagger: .28, ease: 'power1.inOut' }, '>.05')
+    .fromTo(q('.f-a1'), { autoAlpha: 0, x: 10 }, { autoAlpha: 1, x: 0, duration: .4 }, '>.15')
+    .fromTo(q('.f-b2'), { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: .35 }, '<.1')
+    .fromTo(q('.f-m'), { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: .4, stagger: .1 }, '<.1')
+    .fromTo(q('.f-mini'), { autoAlpha: 0, x: 0 }, { autoAlpha: 1, x: -78, duration: .7, ease: 'power2.inOut' }, '>.1')
+    .to(q('.f-mini'), { x: -92, y: 22, duration: .35 }, '>')
+    .fromTo(q('.f-target, .f-glyph2'), { autoAlpha: 0 }, { autoAlpha: 1, duration: .2 }, '>-.05')
+    .to(q('.f-mini'), { autoAlpha: 0, duration: .2 }, '<')
+    .fromTo(q('.f-a2'), { autoAlpha: 0, x: 10 }, { autoAlpha: 1, x: 0, duration: .4 }, '>.2')
+    .fromTo(q('.f-b3'), { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: .35 }, '<.1')
+    .fromTo(q('.f-bub1'), { autoAlpha: 0, scale: .85, transformOrigin: '100% 100%' }, { autoAlpha: 1, scale: 1, duration: .35, ease: 'back.out(1.6)' }, '>.05')
+    .fromTo(q('.f-bub2'), { autoAlpha: 0, scale: .85, transformOrigin: '0% 100%' }, { autoAlpha: 1, scale: 1, duration: .35, ease: 'back.out(1.6)' }, '>.25')
+    .fromTo(q('.f-who'), { autoAlpha: 0 }, { autoAlpha: 1, duration: .35 }, '>.1');
+  tl.eventCallback('onComplete', () => { tl.revert(); root.classList.add('f-done'); });
+  return tl;
+}
+function motionFor(c) {
+  if (FLOW_IO) { FLOW_IO.disconnect(); FLOW_IO = null; }
+  if (c.s !== 'home' || FLOW_DONE || !('IntersectionObserver' in window)) return;
+  const root = document.querySelector('.flow-svg');
+  if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const near = new IntersectionObserver(es => { if (!es.some(e => e.isIntersecting)) return; near.disconnect();
+    loadGsap().then(() => {   /* offline or blocked: the final picture stays as it is */
+      if (!root.isConnected || FLOW_DONE) return;
+      const tl = playFlow(root);   /* built paused, so the first frame is set before it can be seen */
+      FLOW_IO = new IntersectionObserver(es => { if (!es.some(e => e.isIntersecting)) return; FLOW_IO.disconnect(); FLOW_IO = null; FLOW_DONE = true; tl.play(); }, { rootMargin: '0px 0px -10% 0px', threshold: .3 });
+      FLOW_IO.observe(root);
+    }).catch(() => {});
+  }, { rootMargin: '0px 0px 700px 0px' });
+  near.observe(root); FLOW_IO = near;
+}
 
 /* ---------- where to start ----------
    #admin opens the owner's screen (only with a backend). #join opens the signup form as a gate (unless this device already joined).

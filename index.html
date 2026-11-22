@@ -439,10 +439,10 @@ body.sheet-open { overflow: hidden; }
 /* reaching a maker directly: WhatsApp and call. Only for makers who chose to show their phone at signup. */
 .cbtn { width: 44px; height: 44px; border: 0; background: var(--tone); color: var(--ink); display: grid; place-items: center; flex: none; padding: 0; text-decoration: none; }
 .cbtn svg, .cbtn2 svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.contact { display: flex; flex-wrap: wrap; gap: 2px; }
+.contact { display: flex; flex-wrap: wrap; gap: 12px; }
 .banner + .stack.g { padding-top: 0; }
-.contact .cbtn2 { flex: 1 1 120px; }
-.cbtn2 { min-height: 52px; padding: 10px 12px; background: var(--tone); color: var(--ink); font-weight: 700; font-size: var(--fs-2); display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; text-align: center; border-radius: 0; clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
+.contact .cbtn2 { flex: 0 0 64px; }
+.cbtn2 { min-height: 52px; padding: 10px 12px; min-width: 52px; background: var(--tone); color: var(--ink); font-weight: 700; font-size: var(--fs-2); display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; text-align: center; border-radius: 0; clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
 .cbtn2:focus-visible { clip-path: none; }
 .contact-alt { color: var(--muted); font-size: var(--fs-2); display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
 .contact-alt .link { font-size: var(--fs-2); }
@@ -3843,7 +3843,7 @@ function listingScreen({ id }) {
   const m = REAL.list.find(x => x.id === l.makerId);
   const av = l.mportrait ? `<span class="av">${rImg(l.mportrait, '')}</span>` : `<span class="av"><span class="ini">${esc(initials(l.mname))}</span></span>`;
   const contact = l.sold ? `<div class="askline"><p>היצירה הזו נמכרה.</p><button type="button" class="link" data-act="tab" data-v="post">אפשר לבקש יצירה דומה</button></div>`
-    : l.phone || l.email ? `<div class="contact">${l.phone ? `<a class="cbtn2 wa" href="${esc(waListing(l))}" ${OUT}>${svg(UI.wa)}וואטסאפ</a><a class="cbtn2" href="${esc(l.phone.tel)}">${svg(UI.phone)}התקשרו</a>` : ''}${l.email ? `<a class="cbtn2" href="${esc(mailListing(l))}">${svg(UI.mail)}מייל</a>` : ''}</div>`
+    : l.phone || l.email ? `<div class="contact">${l.phone ? `<a class="cbtn2 wa" href="${esc(waListing(l))}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(l.phone.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a>` : ''}${l.email ? `<a class="cbtn2" href="${esc(mailListing(l))}" aria-label="שליחת מייל">${svg(UI.mail)}</a>` : ''}</div>`
     : `<div class="askline"><p>אפשר לפנות אליהם דרך האתר:</p><button type="button" class="link" data-act="tab" data-v="post">כתבו בקשה</button></div>`;
   return `${head(`<span class="sr">${esc(l.title)}</span>`)}
     ${l.photos.length ? `<div class="pwrap"><div class="pscroll" id="pscroll" tabindex="0" role="group" aria-label="${esc(`תמונות של ${l.title}`)}">${l.photos.map((p, i) => `<div class="slide">${rImg(p, `${l.title}, ${i + 1}`, LB)}</div>`).join('')}</div>${l.photos.length > 1 ? `<span class="pcount" id="pcount" dir="ltr" aria-hidden="true">1 / ${l.photos.length}</span>` : ''}</div>` : ''}
@@ -3979,9 +3979,9 @@ async function loadInbox(more) {
 function buyerContact(c, title) {
   const raw = String(c || '').trim(); if (!raw) return '';
   const em = contactEmail(raw);
-  if (em) return `<div class="contact"><a class="cbtn2" href="${esc(`mailto:${em}?subject=${encodeURIComponent('לגבי הבקשה שלך בבהזמנה: ' + oneLine(title, 80))}`)}">${svg(UI.mail)}מייל</a></div><p class="small muted"><bdi dir="ltr">${esc(em)}</bdi></p>`;
+  if (em) return `<div class="contact"><a class="cbtn2" href="${esc(`mailto:${em}?subject=${encodeURIComponent('לגבי הבקשה שלך בבהזמנה: ' + oneLine(title, 80))}`)}" aria-label="שליחת מייל">${svg(UI.mail)}</a></div><p class="small muted"><bdi dir="ltr">${esc(em)}</bdi></p>`;
   const ph = contactPhone(raw);
-  if (ph) return `<div class="contact"><a class="cbtn2 wa" href="${esc(`${ph.wa}?text=${encodeURIComponent(`היי, קיבלתי את הבקשה שלך בבהזמנה: ״${oneLine(title, 80)}״. אפשר לדבר על זה?`)}`)}" ${OUT}>${svg(UI.wa)}וואטסאפ</a><a class="cbtn2" href="${esc(ph.tel)}">${svg(UI.phone)}התקשרו</a></div><p class="small muted"><bdi dir="ltr">${esc(oneLine(raw, 40))}</bdi></p>`;
+  if (ph) return `<div class="contact"><a class="cbtn2 wa" href="${esc(`${ph.wa}?text=${encodeURIComponent(`היי, קיבלתי את הבקשה שלך בבהזמנה: ״${oneLine(title, 80)}״. אפשר לדבר על זה?`)}`)}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(ph.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a></div><p class="small muted"><bdi dir="ltr">${esc(oneLine(raw, 40))}</bdi></p>`;
   return `<p class="note">פרטי הקשר: <span dir="auto">${esc(oneLine(raw, 120))}</span></p>`;
 }
 const RT_MAKER = { sent: 'חדשה', seen: 'נקראה', thinking: 'בבדיקה', offered: 'הצעתם', declined: 'לא מתאים' };
@@ -4221,7 +4221,7 @@ function myReqScreen({ token }) {
     return `<li class="route ${r.rs}"><div class="route-top">${m ? `<button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${who}</button>` : `<span class="mmain">${who}</span>`}${stChip(RT_BUYER[r.rs], r.rs === 'offered' ? 'go' : r.rs === 'declined' ? 'dim' : r.rs === 'sent' ? '' : 'seen')}</div>
       ${r.rs === 'offered' ? `<div class="note"><b>ההצעה:</b> ${esc(r.note)}<br>${priceHTML(r.price)}</div>` : ''}
       ${closed && r.rs === 'offered' && m ? `<div class="row"><button type="button" class="btn small ghost" data-act="rvwrite" data-v="${esc(m.id)}">איך היה? ספרו על ${esc(firstOf(r.name))}</button></div>` : ''}
-      ${r.rs !== 'declined' && (r.phone || r.email) ? `<div class="contact">${r.phone ? `<a class="cbtn2 wa" href="${esc(`${r.phone.wa}?text=${encodeURIComponent(`היי ${firstOf(r.name)}, כתבתי בבהזמנה בקשה: ״${oneLine(title, 80)}״. אשמח לדבר.`)}`)}" ${OUT}>${svg(UI.wa)}וואטסאפ</a><a class="cbtn2" href="${esc(r.phone.tel)}">${svg(UI.phone)}התקשרו</a>` : ''}${r.email ? `<a class="cbtn2" href="${esc(`mailto:${r.email}?subject=${encodeURIComponent('הבקשה שלי בבהזמנה: ' + oneLine(title, 80))}`)}">${svg(UI.mail)}מייל</a>` : ''}</div>` : ''}</li>`; }).join('') : '') : '';
+      ${r.rs !== 'declined' && (r.phone || r.email) ? `<div class="contact">${r.phone ? `<a class="cbtn2 wa" href="${esc(`${r.phone.wa}?text=${encodeURIComponent(`היי ${firstOf(r.name)}, כתבתי בבהזמנה בקשה: ״${oneLine(title, 80)}״. אשמח לדבר.`)}`)}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(r.phone.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a>` : ''}${r.email ? `<a class="cbtn2" href="${esc(`mailto:${r.email}?subject=${encodeURIComponent('הבקשה שלי בבהזמנה: ' + oneLine(title, 80))}`)}" aria-label="שליחת מייל">${svg(UI.mail)}</a>` : ''}</div>` : ''}</li>`; }).join('') : '') : '';
   return `${head('הבקשה שלי', canEdit ? pencilBtn() : '')}
   <div class="stack tight g">
     ${o.saved ? '<p class="form-ok" role="status"><b>נשמר.</b> היוצרים יראו את העדכון.</p>' : ''}
@@ -4355,7 +4355,7 @@ const SCREENS = {
     return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner" style="${themeVars(m)}">${face ? rImg(face, `${m.name}`) : ''}
       <div class="copy g"><h2>${esc(m.name)}</h2><span class="where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></div></section>
     <div class="stack g">
-      ${m.contact || m.email ? `<div class="contact">${m.contact ? `<a class="cbtn2 wa" href="${esc(waHref(m))}" ${OUT}>${svg(UI.wa)}וואטסאפ</a><a class="cbtn2" href="${esc(m.contact.tel)}">${svg(UI.phone)}התקשרו</a>` : ''}${m.email ? `<a class="cbtn2" href="${esc(mailHref(m))}">${svg(UI.mail)}מייל</a>` : ''}</div>`
+      ${m.contact || m.email ? `<div class="contact">${m.contact ? `<a class="cbtn2 wa" href="${esc(waHref(m))}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(m.contact.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a>` : ''}${m.email ? `<a class="cbtn2" href="${esc(mailHref(m))}" aria-label="שליחת מייל">${svg(UI.mail)}</a>` : ''}</div>`
         : `<div class="askline"><p>כתבו בקשה ואנחנו נעביר אותה.</p><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
       ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהסדנה</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}
@@ -4755,7 +4755,6 @@ const DISC_CSS = `.disc{column-count:2;column-gap:12px}
 .dtile{position:relative;background:var(--paper);text-align:start;color:var(--ink)}
 .dtile .dimg{display:block;width:100%;border:0;padding:0;background:none;cursor:zoom-in}
 .dtile img{display:block;width:100%;height:auto;min-height:110px;object-fit:cover;background:var(--tone)}
-.dtile img{aspect-ratio:4/5}
 .dtile.dp-src img{visibility:hidden}
 .dtile .dheart{position:absolute;inset-block-start:0;inset-inline-end:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:#fff;cursor:pointer}
 .dtile .dheart svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.55))}

@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://behazmana.github.io/img/hero.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<script>(function () { /* the admin manifest is added only for the signed-in owner (see ensureAdminManifest); the owner's own device remembers that, so a reload of #admin has it from the start */ var a = false; try { a = location.hash === '#admin' && localStorage.getItem('behazmana.owner') === '1'; } catch (e) { } document.write(a ? '<link rel="apple-touch-icon" href="admin-apple-touch-icon.png"><link rel="manifest" href="admin.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="ניהול">' : '<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="בהזמנה">'); window.BZ_ADMIN_MF = a; if (a) { var t = document.querySelector('meta[name=theme-color]'); if (t) t.content = '#191c13'; } })();</script>
+<script>(function () { /* the admin manifest is added only for the signed-in owner (see ensureAdminManifest); the owner's own device remembers that, so a reload of #admin has it from the start */ var a = false; try { a = location.hash === '#admin'; } catch (e) { } document.write(a ? '<link rel="apple-touch-icon" href="admin-apple-touch-icon.png"><link rel="manifest" href="admin.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="ניהול">' : '<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest" id="mf"><meta name="apple-mobile-web-app-title" content="בהזמנה">'); window.BZ_ADMIN_MF = a; if (a) { var t = document.querySelector('meta[name=theme-color]'); if (t) t.content = '#191c13'; } })();</script>
 <script>/* the home photo changes on every visit: four photos of professionals at work in turn (the next one each load, a random one the first time).
    Chosen here, before paint, so that only the chosen photo is preloaded and the page then uses that same download. */
 (function () {
@@ -5134,7 +5134,7 @@ function ensureAdminManifest() {
   const ic = document.querySelector('link[rel=apple-touch-icon]'); if (ic) ic.href = 'admin-apple-touch-icon.png';
   const ti = document.querySelector('meta[name=apple-mobile-web-app-title]'); if (ti) ti.content = 'ניהול';
 }
-window.addEventListener('beforeinstallprompt', e => { if (!adminUrl() || !window.BZ_ADMIN_MF || !isOwner()) return; e.preventDefault(); DEFER_INSTALL = e; redrawAdmin(); });
+window.addEventListener('beforeinstallprompt', e => { if (!adminUrl() || !window.BZ_ADMIN_MF) return; e.preventDefault(); DEFER_INSTALL = e; redrawAdmin(); });
 const installCard = () => { if (!isOwner()) return ''; ensureAdminManifest(); return isStandalone() ? '' : `<section class="panel" aria-labelledby="a-app"><h2 class="sec-title" id="a-app">אפליקציה לניהול</h2><p class="small muted" style="margin:6px 0 8px">אפשר להתקין את מסך הניהול כאפליקציה בטלפון, עם סמל משלה. היא נפתחת ישר לכאן ונשארת מחוברת.</p>${DEFER_INSTALL ? '<button type="button" class="btn" data-act="installadmin">התקנה</button>' : '<p class="small">בתפריט של הדפדפן (שלוש נקודות) בחרי ״התקנת האפליקציה״ או ״הוספה למסך הבית״.</p>'}</section>`; };
 function adminBody() {
   const gapList = 'display:flex;flex-direction:column;gap:12px';

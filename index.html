@@ -5124,6 +5124,7 @@ const reqRow = r => { const mt = mailtoFor(r), ro = AD.ro, rs = routesOf(r), nt 
           <div class="row wrap">${ro ? `<button class="btn small" data-act="rroutesopen" data-v="${esc(r.id)}">להעביר ליוצרים</button>` : ''}${ro && nt.mails.length && !nt.tooLong ? `<a class="btn small ghost" href="${esc(nt.href)}">מייל לכל מי שהועברה אליו</a>` : ''}${ro && nt.mails.length && nt.tooLong ? `<button class="btn small ghost" data-act="copynotify" data-v="${esc(r.id)}">העתקת ${nt.mails.length} המיילים</button><a class="btn small ghost" href="${esc(nt.bare)}">מייל בלי נמענים</a>` : ''}
           ${mt.mails.length && !mt.tooLong ? `<a class="btn small ghost" href="${esc(mt.href)}">מייל ליוצרים מתאימים</a>` : ''}${mt.mails.length && mt.tooLong ? `<button class="btn small ghost" data-act="copymails" data-v="${esc(r.id)}">העתקת ${mt.mails.length} המיילים</button><a class="btn small ghost" href="${esc(mt.bare)}">פתיחת מייל בלי נמענים</a>` : ''}${ro ? '' : `<button class="btn small ghost" data-act="rroute" data-v="${esc(r.id)}">סימון כהועברה</button>`}</div></article>`; };
 let DEFER_INSTALL = null;
+const ownerDevice = () => { try { return localStorage.getItem('behazmana.owner') === '1'; } catch (e) { return false; } };
 const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
 /* the admin app can be installed only once the owner is signed in on the admin screen: before that the page carries the public manifest, and an install event is left to the browser and ignored here */
 function ensureAdminManifest() {
@@ -5741,6 +5742,7 @@ function returning() {
 (function boot() {
   const st = history.state;
   if (CFG_ON && adminUrl()) { S.stack = [{ s: 'radmin' }]; BH = 0; HN = st && st.bz ? st.n : 0; replaceH(); }
+  else if (CFG_ON && isStandalone() && ownerDevice() && !location.hash && !(st && st.bz)) { S.stack = [{ s: 'radmin' }]; BH = 0; HN = 0; replaceH(location.pathname + location.search + '#admin'); }   /* the app opened from the owner's home screen goes straight to the admin screen */
   else if (joinUrl()) gateJoin();
   else if (mkUrl()) { S.stack = [{ s: 'home' }, { s: 'rmaker', id: mkUrl() }]; BH = 1; HN = 0; replaceH(); }
   else if (meUrl()) { S.stack = [{ s: 'home' }, { s: 'mine' }]; BH = 1; HN = 0; replaceH(); }

@@ -5063,7 +5063,7 @@ function buyerPageHTML(title) {
     </div>`;
 }
 /* a small invitation for makers to pass the site on: copy a ready message with the join link, or open the phone's own share sheet */
-const inviteCard = () => `<section class="invite" aria-labelledby="h-invite"><div class="invite-t"><h2 class="invite-h" id="h-invite">שתפו את המתנה של בהזמנה</h2><p class="small muted">מקום בחינם ליוצרים כמוכם.</p></div><div class="invite-b"><button type="button" class="btn small ghost" data-act="invitecopy">העתקת קישור</button>${navigator.share ? '<button type="button" class="btn small ghost" data-act="invitesend">שיתוף</button>' : ''}</div></section>`;
+const inviteCard = () => `<section class="invite" aria-labelledby="h-invite"><div class="invite-t"><h2 class="invite-h" id="h-invite">שתפו את המתנה של בהזמנה</h2></div><div class="invite-b"><button type="button" class="btn small ghost" data-act="invitecopy">העתקת קישור</button>${navigator.share ? '<button type="button" class="btn small ghost" data-act="invitesend">שיתוף</button>' : ''}</div></section>`;
 /* hearts on a maker's own photos: only their own rows can be read (database policy), so this counts, with no names */
 const LKC = { st: 'idle', n: {}, mid: '' };
 async function loadLikeCounts() {

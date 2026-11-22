@@ -260,6 +260,10 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .mecta .mic { background: var(--paper); color: var(--stamp); }
 .mecta .fwd svg { width: 24px; height: 24px; }
 .mecta .cnt { background: var(--paper); color: var(--stamp); font-weight: 700; min-width: 28px; text-align: center; padding: 2px 8px; }
+.invite { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--olive); color: var(--on-olive); }
+.invite-h { margin: 0; font-size: var(--fs-2); font-weight: 700; }
+.invite-t .small { color: var(--olive-soft); margin: 0; }
+.invite-b { display: flex; gap: 8px; flex: none; }
 .mecard { background: var(--paper); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 .mecard-h { display: flex; align-items: center; gap: 12px; }
 .mecard-h .sec-title { flex: 1; margin: 0; font-size: var(--fs-3); }
@@ -3166,6 +3170,9 @@ let RV_AUTO = '';
 const mkUrl = () => { const m = MK_RE.exec(location.hash); if (m && m[1] === 'review') RV_AUTO = m[2]; return m ? m[2] : ''; };
 const reviewLink = id => `${location.origin}${location.pathname}#review=${id}`;
 const makerLink = id => `${location.origin}${location.pathname}#maker=${id}`;
+const inviteLink = () => `${location.origin}${location.pathname}#join`;
+const INVITE_MSG = 'מצאתי את בהזמנה: אנשים כותבים באתר מה הם מחפשים, והבקשות מגיעות ליוצרים מתאימים. אפשר להצטרף כיוצרים כאן:';
+const inviteText = () => INVITE_MSG + String.fromCharCode(10) + inviteLink();
 const qrOf = (text, lvl) => { const q = qrcode(0, lvl || 'H'); q.addData(text); q.make(); return q; };
 /* A QR in the site's own look: stamp-blue square dots with a hair of air between them, finder eyes with cut corners, and the stamp in the middle.
    High error correction (30%) keeps it readable with the stamp covering the centre. The same shapes feed the on-page SVG and the downloaded picture. */
@@ -5044,6 +5051,7 @@ function buyerPageHTML(title) {
     <div class="stack tight g">
       ${meHead(mode)}
       ${makerBtn}
+      ${mode === 'maker' ? inviteCard() : ''}
       ${note}
       ${reqCard}
       ${favSpot()}
@@ -5054,6 +5062,8 @@ function buyerPageHTML(title) {
       ${aboutTail()}
     </div>`;
 }
+/* a small invitation for makers to pass the site on: copy a ready message with the join link, or open the phone's own share sheet */
+const inviteCard = () => `<section class="invite" aria-labelledby="h-invite"><div class="invite-t"><h2 class="invite-h" id="h-invite">אוהבים את בהזמנה?</h2><p class="small muted">ספרו על זה ליוצרים כמוכם.</p></div><div class="invite-b"><button type="button" class="btn small ghost" data-act="invitecopy">העתקת קישור</button>${navigator.share ? '<button type="button" class="btn small ghost" data-act="invitesend">שיתוף</button>' : ''}</div></section>`;
 /* hearts on a maker's own photos: only their own rows can be read (database policy), so this counts, with no names */
 const LKC = { st: 'idle', n: {}, mid: '' };
 async function loadLikeCounts() {
@@ -5416,6 +5426,8 @@ const ACT = {
   back, tab: v => tab(v),
   rmaker: v => { if (DPO) { dpClose(true); setTimeout(() => go('rmaker', { id: v }), 80); } else go('rmaker', { id: v }); },
   share: v => { const m = REAL.list.find(x => x.id === v) || (AU.maker && AU.maker.id === v ? AU.maker : null); if (m) openSheet(shareSheet(m), 'שיתוף הפרופיל'); },
+  invitecopy: () => { const t = inviteText(), done = () => toast('הקישור הועתק. אפשר להדביק ולשלוח'), fail = () => toast('ההעתקה לא הצליחה, נסו שוב'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fail); else { const i = document.createElement('textarea'); i.value = t; i.style.position = 'fixed'; i.style.opacity = '0'; document.body.appendChild(i); i.select(); try { document.execCommand('copy'); done(); } catch (e) { fail(); } i.remove(); } },
+  invitesend: () => { try { navigator.share({ title: 'בהזמנה', text: INVITE_MSG, url: inviteLink() }); } catch (e) { /* the person closed the share sheet */ } },
   sharecopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('share-url'); if (i) { i.select(); } toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('share-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
   sharesend: v => { const m = REAL.list.find(x => x.id === v) || AU.maker; try { navigator.share({ title: m ? m.name : 'בהזמנה', url: makerLink(v) }); } catch (e) { /* the person closed the share sheet */ } },
   shareqr: v => { const m = REAL.list.find(x => x.id === v) || AU.maker; qrDownload(makerLink(v), `behazmana-${(m && m.name ? m.name : 'maker').replace(/[^\w\u0590-\u05ff-]+/g, '-').slice(0, 30)}.png`); },

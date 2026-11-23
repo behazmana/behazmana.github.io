@@ -179,7 +179,7 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .f-stamp, .f-target { fill: var(--stamp); } .f-ink { fill: var(--ink); } .f-onstamp { fill: var(--paper); } .f-num { fill: var(--paper); }
 .f-target { fill: var(--stamp); } .f-glyph { fill: none; stroke: var(--olive); stroke-width: 3; stroke-linejoin: miter; } .f-glyph2 { fill: var(--paper); }
 .f-arr, .f-link { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; }
-.f-arr { stroke-dasharray: none; } .f-mini { opacity: 0; }
+.f-arr { stroke-dasharray: none; } .f-mini { opacity: 0; } .f-glass { opacity: 0; } .f-lens { fill: var(--paper); fill-opacity: .35; stroke: var(--ink); stroke-width: 3; } .f-handle { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: square; }
 .stamp { align-self: start; background: var(--stamp); color: var(--paper); font-weight: 700; font-size: var(--fs-1); padding: 4px 10px; transform: rotate(-3deg); white-space: nowrap; }
 
 /* makers who joined */
@@ -3827,7 +3827,7 @@ const emptyShop = () => `<div class="s-empty"><p class="say">עוד אין כא�
 function shopBody() {
   const c = S.scraft, sh = shopOf(c), st = shopState(c);
   if (st === 'loading') return lskel(4);
-  if (st === 'gone') return '<div class="s-empty"><p class="say">היצירות יעלו בקרוב.</p><p class="small muted">בינתיים אפשר לכתוב בקשה.</p><button type="button" class="btn" data-act="tab" data-v="post">לכתוב בקשה</button></div>';
+  if (st === 'gone') return '<div class="s-empty"><p class="say">היצירות יעלו בקרוב.</p><button type="button" class="btn" data-act="tab" data-v="post">לכתוב בקשה</button></div>';
   if (st === 'failed') return '<div class="s-empty"><p class="say">היצירות לא נטענו.</p><p class="small muted">בדקו את החיבור ונסו שוב.</p><button type="button" class="btn" data-act="shopretry">לנסות שוב</button></div>';
   if (!sh.list.length) return c === 'all' ? emptyShop() : `<p class="empty">עוד אין יצירות בתחום הזה.</p>${askMore}`;
   return `<div class="lgrid">${sh.list.map(l => lcard(l)).join('')}</div>${sh.err ? '<p class="note" role="alert">לא הצלחנו לטעון עוד. נסו שוב.</p>' : ''}${sh.more ? `<button type="button" class="btn ghost block" data-act="shopmore" ${sh.busy ? 'disabled' : ''}>${sh.busy ? 'טוענים' : 'עוד'}</button>` : ''}${askMore}`;
@@ -3851,7 +3851,7 @@ function listingScreen({ id }) {
   const av = l.mportrait ? `<span class="av">${rImg(l.mportrait, '')}</span>` : `<span class="av"><span class="ini">${esc(initials(l.mname))}</span></span>`;
   const contact = l.sold ? `<div class="askline"><p>היצירה הזו נמכרה.</p><button type="button" class="link" data-act="tab" data-v="post">אפשר לבקש יצירה דומה</button></div>`
     : l.phone || l.email ? `<div class="contact">${l.phone ? `<a class="cbtn2 wa" href="${esc(waListing(l))}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(l.phone.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a>` : ''}${l.email ? `<a class="cbtn2" href="${esc(mailListing(l))}" aria-label="שליחת מייל">${svg(UI.mail)}</a>` : ''}</div>`
-    : `<div class="askline"><p>אפשר לפנות אליהם דרך האתר:</p><button type="button" class="link" data-act="tab" data-v="post">כתבו בקשה</button></div>`;
+    : `<div class="askline"><button type="button" class="link" data-act="tab" data-v="post">כתבו בקשה</button></div>`;
   return `${head(`<span class="sr">${esc(l.title)}</span>`)}
     ${l.photos.length ? `<div class="pwrap"><div class="pscroll" id="pscroll" tabindex="0" role="group" aria-label="${esc(`תמונות של ${l.title}`)}">${l.photos.map((p, i) => `<div class="slide">${rImg(p, `${l.title}, ${i + 1}`, LB)}</div>`).join('')}</div>${l.photos.length > 1 ? `<span class="pcount" id="pcount" dir="ltr" aria-hidden="true">1 / ${l.photos.length}</span>` : ''}</div>` : ''}
     <div class="stack tight g">
@@ -4292,13 +4292,14 @@ const FLOW_SVG = `<svg class="flow-svg" viewBox="0 0 360 170" role="img" aria-la
     <g class="f-m"><rect class="f-tone" x="148" y="92" width="30" height="30"/><path class="f-glyph" d="M156 100V114M163 100V114M170 100V114"/></g>
     <g class="f-m f-hit"><rect class="f-tone" x="188" y="92" width="30" height="30"/><rect class="f-target" x="188" y="92" width="30" height="30"/><path class="f-glyph2" d="M196 107L203 100L210 107L203 114Z"/></g>
   </g>
+  <g class="f-glass"><circle class="f-lens" cx="0" cy="0" r="19"/><path class="f-handle" d="M13.5 13.5L28 28"/></g>
   <g class="f-mini"><rect class="f-paper" x="289" y="68" width="22" height="28"/><rect class="f-stamp" x="289" y="68" width="22" height="6"/></g>
   <g class="f-talk">
     <rect class="f-paper f-bub1" x="46" y="44" width="62" height="30"/><path class="f-paper f-bub1" d="M96 74H104L104 82Z"/>
     <rect class="f-ink f-bub1" x="62" y="53" width="38" height="4"/><rect class="f-ink f-bub1" x="74" y="62" width="26" height="4"/>
     <rect class="f-stamp f-bub2" x="12" y="88" width="62" height="30"/><path class="f-stamp f-bub2" d="M24 118H16L16 126Z"/>
     <rect class="f-onstamp f-bub2" x="28" y="97" width="38" height="4"/><rect class="f-onstamp f-bub2" x="36" y="106" width="30" height="4"/>
-    <rect class="f-olive f-who" x="84" y="134" width="20" height="20"/><rect class="f-stamp f-who" x="16" y="134" width="20" height="20"/>
+    <rect class="f-paper f-who" x="84" y="134" width="20" height="20"/><rect class="f-stamp f-who" x="16" y="134" width="20" height="20"/>
     <path class="f-link f-who" d="M42 144H78"/>
   </g>
 </svg>`;
@@ -4352,7 +4353,7 @@ const SCREENS = {
       <p class="muted">כולם אושרו אצלנו אישית.</p>
       ${REAL.list.length > 1 && crafts.size > 1 ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button data-act="mcraft" data-v="${k}" aria-pressed="${S.mcraft === k}">${v}</button>`).join('')}</div>` : ''}
       ${REAL.list.length && !list.length ? `<p class="empty">עוד אין יוצרים ב${CRAFTS[S.mcraft] || 'תחום הזה'}.</p>` : makersBlock(list)}
-      ${REAL.list.length ? '<p class="note">רוצים יצירה שנעשית בשבילכם? כתבו בקשה.</p><button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>' : ''}
+      ${REAL.list.length ? '<button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>' : ''}
     </div>`; },
 
   /* a real maker (approved, from public_makers): full story and photos. Every field goes through esc(). */
@@ -4363,7 +4364,7 @@ const SCREENS = {
       <div class="copy g"><h2>${esc(m.name)}</h2><span class="where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></div></section>
     <div class="stack g">
       ${m.contact || m.email ? `<div class="contact">${m.contact ? `<a class="cbtn2 wa" href="${esc(waHref(m))}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(m.contact.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a>` : ''}${m.email ? `<a class="cbtn2" href="${esc(mailHref(m))}" aria-label="שליחת מייל">${svg(UI.mail)}</a>` : ''}</div>`
-        : `<div class="askline"><p>כתבו בקשה ואנחנו נעביר אותה.</p><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
+        : `<div class="askline"><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
       ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהסדנה</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}
       ${reviewsHTML(m)}
@@ -4991,7 +4992,7 @@ SCREENS.match = () => `${head('יוצרים שמתאימים לכם')}
     <div class="field"><label for="mt-stars">דירוג</label><select class="input" id="mt-stars" data-mt="stars">${[[0, 'לא משנה'], [4, '4 ומעלה'], [4.5, '4.5 ומעלה']].map(([k, l]) => `<option value="${k}" ${MT.stars === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <p class="small muted" id="mt-count" role="status" aria-live="polite">${REAL.loaded && !matchList().length ? 'אין יוצרים שמתאימים' : ''}</p>
     <div id="mt-results">${matchResults()}</div>
-    <p class="note">רוצים שנעביר בקשה? כתבו אותה.</p><button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>
+    <button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>
   </div>`;
 document.addEventListener('change', e => {
   const t = e.target, k = t && t.dataset && t.dataset.mt; if (!k) return;
@@ -5678,6 +5679,7 @@ vvUpdate();
    The picture is drawn in its final state, so it is complete without any script. When the section is about to scroll into view, GSAP 3.12.5 is fetched
    from cdnjs (never at first paint), and a short timeline plays once: the request is written, travels to a maker, the two start to talk. If GSAP cannot load
    (offline, blocked) nothing happens and the final picture stays. With prefers-reduced-motion: reduce nothing is fetched. The other motion is CSS and WAAPI above. */
+const FLOW_B = /[?&]anim=b(&|$)/.test(location.search);   /* the second how-it-works animation, opened with ?anim=b while it is being compared */
 let FLOW_DONE = false, FLOW_IO = null, GSAP_P = null;
 function loadGsap() {
   if (window.gsap) return Promise.resolve(window.gsap);
@@ -5702,11 +5704,23 @@ function playFlow(root) {
   tl.fromTo(q('.f-b2'), { autoAlpha: 0, y: 8, scale: .8, svgOrigin: '180 21' }, { autoAlpha: 1, y: 0, scale: 1, duration: .7, ease: 'back.out(1.8)' }, 'toMakers+=.35')
     .fromTo(q('.f-c2'), { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: .6 }, 'toMakers+=.35')
     .fromTo(q('.f-m'), { autoAlpha: 0, y: 14, scale: .85 }, { autoAlpha: 1, y: 0, scale: 1, duration: .7, stagger: { each: .12, from: 'start' }, ease: 'power3.out' }, 'toMakers+=.45')
-    .fromTo(q('.f-mini'), { autoAlpha: 0, x: 0, y: 0, scale: 1, svgOrigin: '300 82' }, { autoAlpha: 1, duration: .15, ease: 'none' }, '>.1')
+    ;
+  if (FLOW_B) {   /* version B: a magnifying glass sweeps the makers and stops on the one that fits */
+    tl.fromTo(q('.f-glass'), { x: 252, y: 34, autoAlpha: 0 }, { x: 223, y: 59, autoAlpha: 1, duration: .5, ease: 'power2.out' }, '>.1')
+      .to(q('.f-glass'), { x: 183, y: 59, duration: .5, ease: 'power2.inOut' }, '>.15')
+      .to(q('.f-glass'), { x: 143, y: 59, duration: .5, ease: 'power2.inOut' }, '>.15')
+      .to(q('.f-glass'), { x: 163, y: 107, duration: .55, ease: 'power2.inOut' }, '>.15')
+      .to(q('.f-glass'), { x: 203, y: 107, duration: .5, ease: 'power2.inOut' }, '>.15')
+      .fromTo(q('.f-target, .f-glyph2'), { autoAlpha: 0 }, { autoAlpha: 1, duration: .4, ease: 'sine.inOut' }, '>-.1')
+      .to(q('.f-hit'), { scale: 1.14, svgOrigin: '203 107', duration: .28, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
+      .to(q('.f-glass'), { x: 236, y: 140, autoAlpha: 0, duration: .5, ease: 'power1.in' }, '>.2');
+  } else {
+  tl.fromTo(q('.f-mini'), { autoAlpha: 0, x: 0, y: 0, scale: 1, svgOrigin: '300 82' }, { autoAlpha: 1, duration: .15, ease: 'none' }, '>.1')
     .to(q('.f-mini'), { x: -97, y: 25, scale: .8, duration: .65, ease: 'power2.inOut' }, '<')
     .fromTo(q('.f-target, .f-glyph2'), { autoAlpha: 0 }, { autoAlpha: 1, duration: .4, ease: 'sine.inOut' }, '>-.2')
     .to(q('.f-hit'), { scale: 1.14, svgOrigin: '203 107', duration: .28, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')   /* a .to, so the origin is only set when the tile is already at rest: a fromTo set it at build time and left the tile about 3 units off its centre */
     .to(q('.f-mini'), { autoAlpha: 0, scale: .5, duration: .3, ease: 'power1.in' }, '<.2');   /* lands on the tile centre first (x and y are measured from the mini's own centre, 300 82 to 203 107), then fades and shrinks there */
+  }
   tl.addLabel('toTalk', '>.25');
   draw('.f-a2', 'toTalk', .7);
   tl.fromTo(q('.f-b3'), { autoAlpha: 0, y: 8, scale: .8, svgOrigin: '60 21' }, { autoAlpha: 1, y: 0, scale: 1, duration: .7, ease: 'back.out(1.8)' }, 'toTalk+=.35')

@@ -211,17 +211,16 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 #sheet.viewer .sheet-panel { width: 100%; height: 100%; max-height: 100%; background: #0f100c; overflow: hidden; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px); }
 #sheet.viewer .sheet-head { flex: none; padding-top: calc(8px + env(safe-area-inset-top, 0px)); background: transparent; }
 #sheet.viewer .grab { visibility: hidden; }
-#sheet.viewer, #sheet.viewer * { touch-action: manipulation; }
-#sheet.viewer .viewer-scroll, #sheet.viewer .viewer-scroll * { touch-action: pan-x; }
-#sheet.viewer .viewer-scroll.zoomed, #sheet.viewer .viewer-scroll.zoomed * { touch-action: none; }
-.viewer-scroll { gap: 24px; flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior: contain; }
-.viewer-slide { flex: 0 0 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: grid; place-items: center; grid-template: 100% / 100%; }
-.viewer-slide { overflow: hidden; }
-.viewer-slide img { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+#sheet.viewer, #sheet.viewer * { touch-action: none; overscroll-behavior: none; }
+#sheet.viewer { top: 0; bottom: 0; height: auto; }   /* a full screen of its own: it does not follow the visible-area measurements the other sheets use, which change while fingers move */
+#sheet.viewer .sheet-panel { animation: none; }
+.viewer-scroll { flex: 1; min-height: 0; overflow: hidden; direction: rtl; }
+.viewer-track { display: flex; gap: 24px; height: 100%; }
+.viewer-slide { flex: 0 0 100%; min-width: 0; height: 100%; overflow: hidden; }
+.viewer-slide img { display: block; width: 100%; height: 100%; object-fit: contain; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; pointer-events: none; }
 .viewer-nav { flex: none; display: flex; align-items: center; justify-content: center; gap: 24px; padding: 12px; color: #fbfaf6; }
 .viewer-nav .fwd svg { transform: scaleX(-1); }
 .viewer-nav .round { color: var(--ink); }
-.viewer-scroll.zoomed { scroll-snap-type: none; overflow-x: hidden; }
 .rstory { white-space: pre-wrap; }
 
 /* the reply card: the closing invitation */
@@ -3712,64 +3711,69 @@ const sheetFocusables = () => [...document.querySelectorAll('#sheet .sheet-panel
 /* tap a photo on a maker's page to see it large. It uses the sheet, so the back button, Escape and the X all close it. Swipe or the arrows move between photos */
 const viewPhotos = m => [...new Set([m.portrait || m.photos[0], ...(m.portrait ? m.photos : m.photos.slice(1))].filter(okPath))];
 const zoomBtn = (m, p, art) => !okPath(p) ? art : `<button type="button" class="zoom" data-act="pzoom" data-v="${esc(m.id)}" data-k="${viewPhotos(m).indexOf(p)}" aria-haspopup="dialog" aria-label="${esc(`הגדלת תמונה ${viewPhotos(m).indexOf(p) + 1} של ${m.name}`)}">${art}</button>`;
-const slideStep = sc => (sc.clientWidth + (parseFloat(getComputedStyle(sc).columnGap) || 0)) || 1;
-/* zoom only the photo, not the whole page: the phone's own page zoom made everything jump. Two fingers zoom, one finger moves a zoomed photo, a double tap zooms in and out.
-   While nothing is zoomed, one finger is left to the browser, so swiping between photos stays native. Only a transform changes, so nothing on the page is laid out again */
-function pinchZoom(sc) {
-  const MAX = 4; let img = null, s = 1, x = 0, y = 0, from = null, moved = false, tap = 0, frame = 0;
-  const paint = () => { frame = 0; if (img) img.style.transform = s > 1 ? `translate3d(${x}px,${y}px,0) scale(${s})` : ''; };
+let VIEW = null;
+/* every finger movement in the viewer is handled here and nowhere else (touch-action: none). When the browser handled some of it (its own scrolling, or page zoom) it fought with ours and the screen jumped.
+   One finger swipes between photos, two fingers zoom the photo, one finger moves a zoomed photo, a double tap zooms in and out. Only transforms change, once per frame, so nothing is laid out again */
+function viewerGestures(box, track, n, first, onIndex) {
+  const MAX = 4, slides = [...track.children]; let i = first, s = 1, x = 0, y = 0, off = 0, g = null, tap = 0, frame = 0, step = 1, size = null;
+  const img = () => slides[i].querySelector('img');
+  const paint = () => { frame = 0; img().style.transform = s > 1 ? `translate3d(${x}px,${y}px,0) scale(${s})` : ''; track.style.transform = `translate3d(${i * step + off}px,0,0)`; };   /* right to left: the next photo waits on the left */
   const draw = () => { if (!frame) frame = requestAnimationFrame(paint); };
-  const clamp = () => { const mx = img.clientWidth * (s - 1) / 2, my = img.clientHeight * (s - 1) / 2; x = Math.max(-mx, Math.min(mx, x)); y = Math.max(-my, Math.min(my, y)); };
-  const mode = () => sc.classList.toggle('zoomed', s > 1);
-  const reset = () => { s = 1; x = 0; y = 0; from = null; mode(); if (frame) cancelAnimationFrame(frame); paint(); img = null; };
-  const centre = () => { const r = img.parentNode.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
-  const mid = t => t.length > 1 ? { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1 } : { x: t[0].clientX, y: t[0].clientY, d: 0 };
-  const start = t => { from = { ...mid(t), s, tx: x, ty: y, c: centre(), n: Math.min(2, t.length) }; };
-  const zoomAt = (ns, px, py, f) => { s = Math.max(1, Math.min(MAX, ns)); const k = s / f.s; x = px - f.c.x - (f.x - f.c.x - f.tx) * k; y = py - f.c.y - (f.y - f.c.y - f.ty) * k; clamp(); };
-  sc.addEventListener('touchstart', e => {
-    const slide = e.target.closest('.viewer-slide'), el = slide && slide.querySelector('img'); if (!el) return;
-    if (img && img !== el) reset();
-    img = el; moved = false;
-    if (e.touches.length > 1 || s > 1) { if (e.cancelable) e.preventDefault(); start(e.touches); }
+  const now = () => { if (frame) cancelAnimationFrame(frame); paint(); };
+  const measure = () => { const r = box.getBoundingClientRect(); step = slides[0].offsetWidth + (parseFloat(getComputedStyle(track).columnGap) || 0) || 1; size = { w: slides[0].offsetWidth, h: slides[0].offsetHeight, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; };
+  /* how far a zoomed photo may move: measured on the picture itself, not on the empty bands around it, so it never slides off the screen */
+  const clamp = () => { const el = img(), nw = el.naturalWidth || size.w, nh = el.naturalHeight || size.h, fit = Math.min(size.w / nw, size.h / nh), mx = Math.max(0, (nw * fit * s - size.w) / 2), my = Math.max(0, (nh * fit * s - size.h) / 2); x = Math.max(-mx, Math.min(mx, x)); y = Math.max(-my, Math.min(my, y)); };
+  const glide = on => { const t = on && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'transform .26s cubic-bezier(.22,.8,.3,1)' : 'none'; track.style.transition = t; img().style.transition = t; };
+  const unzoom = () => { s = 1; x = 0; y = 0; };
+  const go = (k, anim) => { k = Math.max(0, Math.min(n - 1, k)); if (k !== i) { glide(false); unzoom(); img().style.transform = ''; i = k; } off = 0; measure(); glide(anim); now(); onIndex(i); };
+  const points = t => t.length > 1 ? { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1, n: 2 } : { x: t[0].clientX, y: t[0].clientY, d: 0, n: 1 };
+  const grab = (t, moved) => { const q = points(t); g = { ...q, s0: s, x0: x, y0: y, kind: q.n === 2 ? 'pinch' : s > 1 ? 'pan' : 'swipe', moved: !!moved, at: performance.now(), dx: 0 }; };
+  const zoomTo = (ns, px, py, f) => { s = Math.max(1, Math.min(MAX, ns)); const k = s / f.s0; x = px - size.cx - (f.x - size.cx - f.x0) * k; y = py - size.cy - (f.y - size.cy - f.y0) * k; clamp(); };
+  box.addEventListener('touchstart', e => {
+    if (e.cancelable && e.touches.length > 1) e.preventDefault();
+    measure(); glide(false); if (e.touches.length > 1) off = 0;
+    grab(e.touches, g && g.moved || e.touches.length > 1); draw();
   }, { passive: false });
-  sc.addEventListener('touchmove', e => {
-    moved = true;
-    if (!img || (e.touches.length < 2 && s <= 1)) return;
+  box.addEventListener('touchmove', e => {
     if (e.cancelable) e.preventDefault();
-    if (!from || from.n !== Math.min(2, e.touches.length)) { start(e.touches); return; }
-    const now = mid(e.touches);
-    zoomAt(from.n === 2 ? from.s * now.d / from.d : from.s, now.x, now.y, from);
-    mode(); draw();
+    if (!g || g.n !== Math.min(2, e.touches.length)) { grab(e.touches, true); return; }
+    const q = points(e.touches);
+    if (Math.abs(q.x - g.x) > 8 || Math.abs(q.y - g.y) > 8 || g.n === 2) g.moved = true;
+    if (g.kind === 'pinch') zoomTo(g.s0 * q.d / g.d, q.x, q.y, g);
+    else if (g.kind === 'pan') { x = g.x0 + q.x - g.x; y = g.y0 + q.y - g.y; clamp(); }
+    else { g.dx = q.x - g.x; off = (i === 0 && g.dx < 0) || (i === n - 1 && g.dx > 0) ? g.dx * .3 : g.dx; }   /* resists past the first and the last */
+    draw();
   }, { passive: false });
   const end = e => {
-    if (!img) return;
-    if (e.touches.length) { if (s > 1) start(e.touches); return; }
-    from = null;
-    if (s < 1.05) { s = 1; x = 0; y = 0; mode(); draw(); }
-    if (e.type === 'touchend' && !moved && e.changedTouches.length === 1) {
-      const t = e.changedTouches[0], now = Date.now();
-      if (now - tap < 300) { tap = 0; if (e.cancelable) e.preventDefault(); if (s > 1) { s = 1; x = 0; y = 0; } else zoomAt(2.5, t.clientX, t.clientY, { x: t.clientX, y: t.clientY, s: 1, tx: 0, ty: 0, c: centre() }); mode(); draw(); } else tap = now;
+    if (!g) return;
+    if (e.touches.length) { grab(e.touches, true); return; }
+    const was = g; g = null;
+    if (was.kind === 'swipe' && was.moved) { const fast = Math.abs(was.dx) > 30 && Math.abs(was.dx) / (performance.now() - was.at) > .35; go(i + (Math.abs(was.dx) > step * .22 || fast ? Math.sign(was.dx) : 0), true); return; }
+    if (s < 1.08) { glide(true); unzoom(); now(); }
+    if (e.type === 'touchend' && !was.moved) {
+      if (e.cancelable) e.preventDefault();
+      const t = e.changedTouches[0], time = Date.now();
+      if (time - tap < 320) { tap = 0; glide(true); if (s > 1) unzoom(); else zoomTo(2.5, t.clientX, t.clientY, { x: t.clientX, y: t.clientY, s0: 1, x0: 0, y0: 0 }); now(); } else tap = time;
     }
   };
-  sc.addEventListener('touchend', end, { passive: false });
-  sc.addEventListener('touchcancel', end, { passive: false });
-  sc.addEventListener('scroll', () => { if (img && s > 1 && Math.abs(img.parentNode.getBoundingClientRect().left - sc.getBoundingClientRect().left) > sc.clientWidth / 2) reset(); }, { passive: true });
-  sc.addEventListener('gesturestart', e => e.preventDefault());   /* iPhone: no page zoom on top of ours */
+  box.addEventListener('touchend', end, { passive: false });
+  box.addEventListener('touchcancel', end, { passive: false });
+  go(first, false);
+  return { step: d => go(i + d, true), resize: () => { unzoom(); go(i, false); } };
 }
+/* iPhone also zooms the whole page from a pinch that begins outside the photo: not while the viewer is open */
+['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => { if (VIEW && document.getElementById('sheet').classList.contains('viewer')) e.preventDefault(); }, { passive: false }));
+window.addEventListener('resize', () => { if (VIEW && document.getElementById('sheet').classList.contains('viewer')) VIEW.resize(); });
 function openViewer(m, k) {
   const all = viewPhotos(m); if (!all.length) return;
   const many = all.length > 1;
-  openSheet(`<div class="viewer-scroll" tabindex="-1">${all.map((p, i) => `<div class="viewer-slide"><img src="${esc(photoURL(p))}" alt="${esc(`תמונה ${i + 1} של ${m.name}`)}" draggable="false"></div>`).join('')}</div>${many ? `<div class="viewer-nav"><button type="button" class="round" data-act="vstep" data-v="-1" aria-label="התמונה הקודמת">${svg(UI.back)}</button><span class="viewer-count" role="status"></span><button type="button" class="round fwd" data-act="vstep" data-v="1" aria-label="התמונה הבאה">${svg(UI.back)}</button></div>` : ''}`, `התמונות של ${m.name}`);
-  const root = document.getElementById('sheet'), sc = root.querySelector('.viewer-scroll'), count = root.querySelector('.viewer-count');
+  openSheet(`<div class="viewer-scroll"><div class="viewer-track">${all.map((p, i) => `<div class="viewer-slide"><img src="${esc(photoURL(p))}" alt="${esc(`תמונה ${i + 1} של ${m.name}`)}" decoding="async" draggable="false"></div>`).join('')}</div></div>${many ? `<div class="viewer-nav"><button type="button" class="round" data-act="vstep" data-v="-1" aria-label="התמונה הקודמת">${svg(UI.back)}</button><span class="viewer-count" role="status"></span><button type="button" class="round fwd" data-act="vstep" data-v="1" aria-label="התמונה הבאה">${svg(UI.back)}</button></div>` : ''}`, `התמונות של ${m.name}`);
+  const root = document.getElementById('sheet'), count = root.querySelector('.viewer-count');
   root.classList.add('viewer');
-  const at = () => Math.min(all.length - 1, Math.round(Math.abs(sc.scrollLeft) / slideStep(sc)));
-  const show = () => { if (count) count.textContent = `${at() + 1} מתוך ${all.length}`; };
-  sc.children[Math.max(0, k)].scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' });
-  sc.addEventListener('scroll', show, { passive: true }); show();
-  pinchZoom(sc);
+  VIEW = viewerGestures(root.querySelector('.viewer-scroll'), root.querySelector('.viewer-track'), all.length, Math.max(0, Math.min(all.length - 1, k)), i => { if (count) count.textContent = `${i + 1} מתוך ${all.length}`; [...root.querySelectorAll('.viewer-slide')].forEach((el, j) => el.setAttribute('aria-hidden', j === i ? 'false' : 'true')); });
   const x = root.querySelector('.sheet-head button'); if (x) x.focus({ preventScroll: true });
 }
-const viewerStep = d => { const sc = document.querySelector('#sheet .viewer-scroll'); if (!sc) return; const i = Math.round(Math.abs(sc.scrollLeft) / slideStep(sc)) + d, el = sc.children[i]; if (el) el.scrollIntoView({ block: 'nearest', inline: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); };
+const viewerStep = d => { if (VIEW && document.querySelector('#sheet .viewer-scroll')) VIEW.step(d); };
 function openSheet(html, label) {
   const s = document.getElementById('sheet');
   sheetReturn = document.activeElement; s.classList.remove('viewer');

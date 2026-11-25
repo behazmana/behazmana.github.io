@@ -207,6 +207,16 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .banner .where { color: var(--ts, var(--olive-soft)); }
 .strip { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .strip .art { aspect-ratio: 4 / 5; }
+.zoom { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; min-width: 0; }
+#sheet.viewer .sheet-panel { width: 100%; height: 100%; max-height: 100%; background: #0f100c; overflow: hidden; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px); }
+#sheet.viewer .sheet-head { flex: none; padding-top: calc(8px + env(safe-area-inset-top, 0px)); background: transparent; }
+#sheet.viewer .grab { visibility: hidden; }
+.viewer-scroll { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior: contain; }
+.viewer-slide { flex: 0 0 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: grid; place-items: center; grid-template: 100% / 100%; }
+.viewer-slide img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.viewer-nav { flex: none; display: flex; align-items: center; justify-content: center; gap: 24px; padding: 12px; color: #fbfaf6; }
+.viewer-nav .fwd svg { transform: scaleX(-1); }
+.viewer-nav .round { color: var(--ink); }
 .rstory { white-space: pre-wrap; }
 
 /* the reply card: the closing invitation */
@@ -2919,7 +2929,7 @@ const UI = {
   tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   s_ig: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17 7h.01"/>',
   s_tt: '<path d="M14 3v12a4 4 0 1 1-4-4"/><path d="M14 3c.4 3 2.4 4.8 5.5 5"/>',
-  s_fb: '<path d="M14.5 21v-8h3l.5-3.5h-3.5V7.8c0-1.1.6-1.8 2-1.8H18V3.1c-.6-.1-1.5-.2-2.4-.2-2.6 0-4.1 1.5-4.1 4.2v2.4h-3V13h3v8"/>',
+  s_fb: '<path transform="translate(1.5 1.5) scale(.875)" style="fill:currentColor;stroke:none" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/>',
   s_web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.6 5.6 3.6 9s-1.1 6.4-3.6 9c-2.5-2.6-3.6-5.6-3.6-9S9.500 5.600 12 3z"/>',
   grid: '<rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/>',
   pencil: '<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/>',
@@ -3694,9 +3704,25 @@ async function rejectMaker(f, id) {
 /* ---------- bottom sheets: a close button on top, Escape and the phone's back button close them, Tab stays inside ---------- */
 let sheetReturn = null, SHEET_NOW = false;
 const sheetFocusables = () => [...document.querySelectorAll('#sheet .sheet-panel :is(a[href], button:not([disabled]), input:not([type=hidden]), textarea, select)')].filter(el => el.offsetParent !== null);
+/* tap a photo on a maker's page to see it large. It uses the sheet, so the back button, Escape and the X all close it. Swipe or the arrows move between photos */
+const viewPhotos = m => [...new Set([m.portrait || m.photos[0], ...(m.portrait ? m.photos : m.photos.slice(1))].filter(okPath))];
+const zoomBtn = (m, p, art) => !okPath(p) ? art : `<button type="button" class="zoom" data-act="pzoom" data-v="${esc(m.id)}" data-k="${viewPhotos(m).indexOf(p)}" aria-haspopup="dialog" aria-label="${esc(`הגדלת תמונה ${viewPhotos(m).indexOf(p) + 1} של ${m.name}`)}">${art}</button>`;
+function openViewer(m, k) {
+  const all = viewPhotos(m); if (!all.length) return;
+  const many = all.length > 1;
+  openSheet(`<div class="viewer-scroll" tabindex="-1">${all.map((p, i) => `<div class="viewer-slide"><img src="${esc(photoURL(p))}" alt="${esc(`תמונה ${i + 1} של ${m.name}`)}" draggable="false"></div>`).join('')}</div>${many ? `<div class="viewer-nav"><button type="button" class="round" data-act="vstep" data-v="-1" aria-label="התמונה הקודמת">${svg(UI.back)}</button><span class="viewer-count" role="status"></span><button type="button" class="round fwd" data-act="vstep" data-v="1" aria-label="התמונה הבאה">${svg(UI.back)}</button></div>` : ''}`, `התמונות של ${m.name}`);
+  const root = document.getElementById('sheet'), sc = root.querySelector('.viewer-scroll'), count = root.querySelector('.viewer-count');
+  root.classList.add('viewer');
+  const at = () => Math.min(all.length - 1, Math.round(Math.abs(sc.scrollLeft) / (sc.clientWidth || 1)));
+  const show = () => { if (count) count.textContent = `${at() + 1} מתוך ${all.length}`; };
+  sc.children[Math.max(0, k)].scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' });
+  sc.addEventListener('scroll', show, { passive: true }); show();
+  const x = root.querySelector('.sheet-head button'); if (x) x.focus({ preventScroll: true });
+}
+const viewerStep = d => { const sc = document.querySelector('#sheet .viewer-scroll'); if (!sc) return; const i = Math.round(Math.abs(sc.scrollLeft) / (sc.clientWidth || 1)) + d, el = sc.children[i]; if (el) el.scrollIntoView({ block: 'nearest', inline: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); };
 function openSheet(html, label) {
   const s = document.getElementById('sheet');
-  sheetReturn = document.activeElement;
+  sheetReturn = document.activeElement; s.classList.remove('viewer');
   s.innerHTML = `<div class="sheet-back" data-act="closesheet"></div><div class="sheet-panel" role="dialog" aria-modal="true" aria-label="${esc(label)}"><div class="sheet-head"><span class="grab" aria-hidden="true"></span><button type="button" class="round" data-act="closesheet" aria-label="סגירה">${svg(UI.close)}</button></div>${html}</div>`;
   s.hidden = false; document.body.classList.add('sheet-open');
   ['view', 'nav'].forEach(id => { document.getElementById(id).inert = true; }); document.querySelector('.skip').inert = true;
@@ -3705,7 +3731,7 @@ function openSheet(html, label) {
 }
 function hideSheet() {
   const s = document.getElementById('sheet'); if (s.hidden) return;
-  s.hidden = true; s.innerHTML = ''; document.body.classList.remove('sheet-open');
+  s.hidden = true; s.innerHTML = ''; s.classList.remove('viewer'); document.body.classList.remove('sheet-open');
   ['view', 'nav'].forEach(id => { document.getElementById(id).inert = false; }); document.querySelector('.skip').inert = false;
   if (sheetReturn && document.contains(sheetReturn)) sheetReturn.focus({ preventScroll: true });
 }
@@ -4422,14 +4448,14 @@ const SCREENS = {
   rmaker: ({ id }) => { const m = REAL.list.find(x => x.id === id);
     if (!m) return `${head('יוצר')}<div class="stack g">${realState() === 'loading' ? '<p class="muted" role="status">טוענים...</p>' : '<p class="empty">לא מצאנו את היוצר הזה.</p>'}</div>`;
     const face = m.portrait || m.photos[0], works = m.portrait ? m.photos : m.photos.slice(1);   /* old rows have no portrait: their first photo stands in */
-    return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner" style="${themeVars(m)}">${face ? rImg(face, `${m.name}`) : ''}
+    return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner" style="${themeVars(m)}">${face ? zoomBtn(m, face, rImg(face, `${m.name}`)) : ''}
       <div class="copy g"><h2>${esc(m.name)}</h2><span class="where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></div></section>
     <div class="stack g">
       ${profileButtons(m)}
       ${m.contact || m.email ? '' : `<div class="askline"><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
       ${workshopSection(m)}
-      ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהעבודות</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}
+      ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהעבודות</h2></div><div class="strip">${works.map((p, i) => zoomBtn(m, p, rImg(p, `עבודה של ${m.name}, ${i + 1}`))).join('')}</div></section>` : ''}
       ${reviewsHTML(m)}
       ${m.contact || m.email ? `<button class="btn block" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>` : ''}
       <div class="row wrap">${favLink(m)}${writeBtn(m)}${shareBtn(m)}</div>
@@ -5491,6 +5517,8 @@ function revealCards(view) {
 }
 
 const ACT = {
+  pzoom: (v, t) => { const m = REAL.list.find(x => x.id === v), el = t || document.activeElement; if (m) openViewer(m, +(el && el.dataset.k) || 0); },
+  vstep: v => viewerStep(+v),
   back, tab: v => tab(v),
   rmaker: v => { if (DPO) { dpClose(true); setTimeout(() => go('rmaker', { id: v }), 80); } else go('rmaker', { id: v }); },
   share: v => { const m = REAL.list.find(x => x.id === v) || (AU.maker && AU.maker.id === v ? AU.maker : null); if (m) openSheet(shareSheet(m), 'שיתוף הפרופיל'); },

@@ -302,10 +302,11 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .mecta .mic { background: var(--paper); color: var(--stamp); }
 .mecta .fwd svg { width: 24px; height: 24px; }
 .mecta .cnt { background: var(--paper); color: var(--stamp); font-weight: 700; min-width: 28px; text-align: center; padding: 2px 8px; }
-.invite { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--olive); color: var(--on-olive); }
-.invite-h { margin: 0; font-size: var(--fs-2); font-weight: 700; }
-.invite-t .small { color: var(--olive-soft); margin: 0; }
-.invite-b { display: flex; gap: 8px; flex: none; }
+.invite { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; padding-inline-start: 14px; background: var(--olive); color: var(--on-olive); }
+.invite-t { min-width: 0; }
+.invite-h { margin: 0; font-size: min(var(--fs-2), 4.4vw); font-weight: 700; white-space: nowrap; }
+.btn.invite-share { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; }
+.invite-share svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .mecard { background: var(--paper); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 .mecard-h { display: flex; align-items: center; gap: 12px; }
 .mecard-h .sec-title { flex: 1; margin: 0; font-size: var(--fs-3); }
@@ -2969,6 +2970,7 @@ const CONFIG = { SELLING: false, POSTS: false, SUPABASE_URL: 'https://ierrrodori
 
 const CRAFTS = { wood: 'עץ', leather: 'עור', ceramic: 'קרמיקה', jewelry: 'תכשיטים', metal: 'מתכת', glass: 'זכוכית', textile: 'בדים', paper: 'נייר', art: 'ציור' };
 const UI = {
+  share: '<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4"/>',
   back: '<path d="M9 6l6 6-6 6"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>',
   home: '<path d="M4 11l8-7 8 7v9H4z"/>', plus: '<path d="M12 5v14M5 12h14"/>',
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>',
@@ -5553,8 +5555,13 @@ function buyerPageHTML(title) {
       ${aboutTail()}
     </div>`;
 }
-/* a small invitation for makers to pass the site on: copy a ready message with the join link, or open the phone's own share sheet */
-const inviteCard = () => `<section class="invite" aria-labelledby="h-invite"><div class="invite-t"><h2 class="invite-h" id="h-invite">שתפו את המתנה של בהזמנה</h2></div><div class="invite-b"><button type="button" class="btn small ghost" data-act="invitecopy">העתקת קישור</button>${navigator.share ? '<button type="button" class="btn small ghost" data-act="invitesend">שיתוף</button>' : ''}</div></section>`;
+/* a small invitation for makers to pass the site on: one share button. It opens the phone's own share sheet; where there is none it copies the message with the join link */
+const inviteCard = () => `<section class="invite" aria-labelledby="h-invite"><div class="invite-t"><h2 class="invite-h" id="h-invite">שתפו את המתנה של בהזמנה</h2></div><button type="button" class="btn paper invite-share" data-act="invitesend" aria-label="שיתוף קישור להצטרפות כיוצרים">${svg(UI.share)}</button></section>`;
+function copyInvite() {
+  const t = inviteText(), done = () => toast('הקישור הועתק. אפשר להדביק ולשלוח'), fail = () => toast('ההעתקה לא הצליחה, נסו שוב');
+  const old = () => { const i = document.createElement('textarea'); i.value = t; i.style.position = 'fixed'; i.style.opacity = '0'; document.body.appendChild(i); i.select(); try { if (document.execCommand('copy')) done(); else fail(); } catch (e) { fail(); } i.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, old); else old();
+}
 /* hearts on a maker's own photos: only their own rows can be read (database policy), so this counts, with no names */
 const LKC = { st: 'idle', n: {}, mid: '' };
 async function loadLikeCounts() {
@@ -5979,8 +5986,11 @@ const ACT = {
   back, tab: v => tab(v),
   rmaker: (v, t) => { const from = (DPO && t && t.dataset.post) || '', to = from ? { id: v, from } : { id: v }; if (from) trackPost(v, from, 'profile'); if (DPO) { dpClose(true); setTimeout(() => go('rmaker', to), 80); } else go('rmaker', to); },
   share: v => { const m = REAL.list.find(x => x.id === v) || (AU.maker && AU.maker.id === v ? AU.maker : null); if (m) openSheet(shareSheet(m), 'שיתוף הפרופיל'); },
-  invitecopy: () => { const t = inviteText(), done = () => toast('הקישור הועתק. אפשר להדביק ולשלוח'), fail = () => toast('ההעתקה לא הצליחה, נסו שוב'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fail); else { const i = document.createElement('textarea'); i.value = t; i.style.position = 'fixed'; i.style.opacity = '0'; document.body.appendChild(i); i.select(); try { document.execCommand('copy'); done(); } catch (e) { fail(); } i.remove(); } },
-  invitesend: () => { try { navigator.share({ title: 'בהזמנה', text: INVITE_MSG, url: inviteLink() }); } catch (e) { /* the person closed the share sheet */ } },
+  invitesend: () => {
+    if (!navigator.share) { copyInvite(); return; }
+    const failed = e => { if (!e || e.name !== 'AbortError') copyInvite(); };   /* closing the share sheet is not a failure */
+    try { const p = navigator.share({ title: 'בהזמנה', text: INVITE_MSG, url: inviteLink() }); if (p && p.catch) p.catch(failed); } catch (e) { failed(e); }
+  },
   sharecopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('share-url'); if (i) { i.select(); } toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('share-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
   sharesend: v => { const m = REAL.list.find(x => x.id === v) || AU.maker; try { navigator.share({ title: m ? m.name : 'בהזמנה', url: makerLink(v) }); } catch (e) { /* the person closed the share sheet */ } },
   shareqr: v => { const m = REAL.list.find(x => x.id === v) || AU.maker; qrDownload(makerLink(v), `behazmana-${(m && m.name ? m.name : 'maker').replace(/[^\w\u0590-\u05ff-]+/g, '-').slice(0, 30)}.png`); },

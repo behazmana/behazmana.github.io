@@ -545,6 +545,9 @@ body.sheet-open { overflow: hidden; }
 .tile input:checked + .face { background: var(--ink); color: var(--paper); }
 .tile input:checked + .face .tick { display: block; }
 .tile input:focus-visible + .face { outline: 3px solid var(--stamp); outline-offset: 2px; }
+/* join and edit profile sit straight on the ground: there a resting tile is a light paper button, like the text fields */
+form[data-form="join"] .tile input:not(:checked) + .face, form[data-form="editprofile"] .tile input:not(:checked) + .face { background: var(--paper); }
+@media (hover: hover) { form[data-form="join"] .tile:hover input:not(:checked) + .face, form[data-form="editprofile"] .tile:hover input:not(:checked) + .face { background: var(--tone-press); } }
 @media (hover: hover) { .tile:hover input:not(:checked) + .face { background: var(--tone-press); } }
 @media (forced-colors: active) { .tile .face { border: 2px solid ButtonText; } .tile input:checked + .face { border-color: Highlight; outline: 2px solid Highlight; } }
 .link.sm { font-size: var(--fs-1); }

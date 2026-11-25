@@ -396,7 +396,7 @@ body.sheet-open { overflow: hidden; }
 .no-nav .nav { display: none; }
 .askbar { position: fixed; z-index: 19; left: 0; right: 0; margin-inline: auto; width: min(440px, 100%); bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); padding: 6px var(--gr) 6px var(--gl); background: var(--paper); }
 .askbar .btn { width: 100%; min-height: 44px; padding: 6px 18px; }
-.no-nav .askbar { bottom: 0; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
+.no-nav .askbar { bottom: 0 !important; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
 .kb-open .askbar { visibility: hidden; pointer-events: none; }
 .has-askbar .app { padding-bottom: calc(var(--nav-h) + 96px + env(safe-area-inset-bottom, 0px)); }
 .has-askbar .toast { bottom: calc(var(--nav-h) + 72px + env(safe-area-inset-bottom, 0px)); }
@@ -3089,7 +3089,7 @@ function reviewsHTML(m) {
 }
 const FLYER_CSS = `#flyer{display:none}
 /* the editor: a slim top bar, the sign always in view (scaled to fit), and a small control area that scrolls inside itself */
-#flyer.show{display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "stage" "panel";position:fixed;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:45;background:var(--ground);color:var(--ink);overflow:hidden}
+#flyer.show{display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "stage" "panel";position:fixed;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:9999;background:var(--ground);color:var(--ink);overflow:hidden}
 #flyer .fe-top{grid-area:top;display:flex;align-items:center;gap:10px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:var(--paper)}
 #flyer .fl-x{flex:none;width:44px;height:44px;padding:0;border:0;background:var(--ground);color:var(--ink);display:grid;place-items:center}
 #flyer .fl-x svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
@@ -3155,6 +3155,7 @@ const FLYER_CSS = `#flyer{display:none}
 #flyer .fl-page{position:absolute;left:0;top:0;width:794px;height:1122px;overflow:hidden;box-sizing:border-box;transform-origin:0 0;transform:scale(var(--z,.4));background:#fbfaf6;color:#191c13;font-family:var(--body);box-shadow:0 10px 30px rgba(31,34,24,.25);direction:rtl;text-align:start;cursor:grab}
 #flyer .fl-page *{box-sizing:border-box}
 #flyer .fl-page img{display:block;pointer-events:none;-webkit-user-drag:none}
+#flyer .fl-page img[data-el]{pointer-events:auto}
 #flyer .fl-page [data-el]:focus{outline:none}
 #flyer .fl-page [data-el]:not(.f-st){position:relative}
 #flyer .fl-page .f-qr{z-index:6}
@@ -3332,6 +3333,7 @@ function flResolve(k, want, prev) {
 function flStyle(k) {
   const e = flEl(k), c = FL.cur[k]; if (!e || !c) return;
   e.style.translate = c.x || c.y ? `${c.x}px ${c.y}px` : ''; e.style.scale = c.s !== 1 ? String(c.s) : ''; e.style.visibility = c.h ? 'hidden' : '';
+  if (k !== 'qr' && k !== 'photo' && k !== 'works' && k !== 'mark') e.style.zIndex = c.x || c.y || c.s !== 1 ? '3' : '';   /* words and the logo, once moved, lie above the pictures */
 }
 const flCovering = () => { const q = FL.base.qr && FL.cur.qr; if (!q) return []; const Q = flAt('qr', FL.cur.qr); return Object.keys(FL.cur).filter(k => k !== 'qr' && !FL.cur[k].h && flHits(flAt(k, FL.cur[k]), Q, 2)); };
 /* when the page is too full (a long name, a long line) the big letters, the photo and the code step down a little */
@@ -3347,7 +3349,7 @@ function flFitText(pg) {
 function flLayout() {
   const box = flBox(), pg = flPageEl(); if (!box || !pg || !box.classList.contains('show') || !pg.getBoundingClientRect().width) return;
   const els = flEls();
-  els.forEach(e => { e.style.translate = ''; e.style.scale = ''; e.style.visibility = ''; });
+  els.forEach(e => { e.style.translate = ''; e.style.scale = ''; e.style.visibility = ''; if (e.dataset.el !== 'qr') e.style.zIndex = ''; });
   flFitText(pg);
   FL.base = {}; FL.cur = {};
   els.forEach(e => { FL.base[e.dataset.el] = flRect(e, pg); });
@@ -3492,8 +3494,8 @@ function flDown(e) {
     FLP.g = { type: 'size', k: FL.sel, c, d: Math.hypot(e.clientX - c.x, e.clientY - c.y) || 1, s: FL.cur[FL.sel].s, id: e.pointerId }; return;
   }
   let k = flPick(e.clientX, e.clientY);
-  /* a chosen part stays in the finger even when something smaller lies on it */
-  if (FL.sel && k !== FL.sel) { const sb = stage.querySelector('.fe-box.sel'); if (sb) { const r = sb.getBoundingClientRect(); if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && (!k || k === 'photo')) k = FL.sel; } }
+  /* a chosen part stays in the finger even when it was laid over something smaller. The large photo is the exception: what lies on it can still be chosen */
+  if (FL.sel && k !== FL.sel && (FL.sel !== 'photo' || !k)) { const sb = stage.querySelector('.fe-box.sel'), mine = flEl(FL.sel), other = k && flEl(k); if (sb && !(mine && other && mine.contains(other))) { const r = sb.getBoundingClientRect(); if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) k = FL.sel; } }
   flSelect(k); if (!FL.sel) { FLP.g = null; return; }
   FLP.g = { type: 'move', k: FL.sel, x: e.clientX, y: e.clientY, from: { ...FL.cur[FL.sel] }, moved: false, id: e.pointerId };
 }
@@ -6287,7 +6289,8 @@ function drawAskBar(c) {
   const m = c.s === 'rmaker' ? REAL.list.find(x => x.id === c.id) : null;
   document.body.classList.toggle('has-askbar', !!m);
   if (!m) { if (bar) bar.remove(); return; }
-  if (!bar) { bar = document.createElement('div'); bar.id = 'askbar'; bar.className = 'askbar'; const nav = document.querySelector('.nav'); nav.parentNode.insertBefore(bar, nav); }
+  if (!bar) { bar = document.createElement('div'); bar.id = 'askbar'; bar.className = 'askbar'; const at = document.querySelector('.nav'); at.parentNode.insertBefore(bar, at); }
+  const nav = document.querySelector('.nav'); bar.style.bottom = nav && nav.offsetHeight ? nav.offsetHeight + 'px' : '';
   bar.innerHTML = `<button type="button" class="btn" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>`;
 }
 function screenHooks(c) {

@@ -3384,8 +3384,26 @@ const REAL = { list: [], loaded: false, failed: false };   // approved makers (p
 const AD = { rv: [], session: null, ro: undefined, lst: 'ok', lpend: [], lappr: [], moreLP: false, moreLA: false, routes: {}, makers: [], approved: [], requests: [], moreM: false, moreR: false, loading: false, loaded: false, err: '', msg: '', busy: false, failed: false };
 const okPath = p => typeof p === 'string' && p.length < 200 && /^[A-Za-z0-9_-]+(\/[A-Za-z0-9._-]+){1,2}$/.test(p) && !p.includes('..');
 const safeMk = m => m && typeof m === 'object' ? { ...m, portrait: okPath(m.portrait) ? m.portrait : '', photos: Array.isArray(m.photos) ? m.photos.filter(okPath) : [] } : m;   /* a path from the database is checked before it becomes a web address */
-const photoURL = (p, bucket = BUCKET) => !okPath(p) ? '#' : `${CONFIG.SUPABASE_URL.trim().replace(/\/+$/, '')}/storage/v1/object/public/${bucket}/${String(p).split('/').map(encodeURIComponent).join('/')}`;
-const rImg = (p, alt = '', bucket = BUCKET) => !okPath(p) ? '<div class="art"></div>' : `<div class="art"><img src="${esc(photoURL(p, bucket))}" alt="${esc(alt)}" loading="lazy" decoding="async" draggable="false"></div>`;
+const PV_URL = new Map();   /* the owner's preview: pictures that exist only on this screen */
+const photoURL = (p, bucket = BUCKET) => !okPath(p) ? '#' : PV_URL.has(p) ? PV_URL.get(p) : `${CONFIG.SUPABASE_URL.trim().replace(/\/+$/, '')}/storage/v1/object/public/${bucket}/${String(p).split('/').map(encodeURIComponent).join('/')}`;
+/* two files for one photo: a full one whose name ends in -2v.jpg, and a small copy beside it ending in -sm.jpg. Only the full path is saved in the database.
+   A photo uploaded earlier has no such ending, so only its one file is ever asked for */
+const smallPath = p => /-2v\.jpg$/.test(String(p)) ? String(p).slice(0, -7) + '-sm.jpg' : '';
+const bothFiles = paths => paths.flatMap(p => smallPath(p) ? [p, smallPath(p)] : [p]);   /* for deleting: both go together */
+/* lists and grids show the small copy. data-full is the way back to the full file if the small one does not load */
+const smAttrs = (p, bucket = BUCKET) => smallPath(p) ? `src="${esc(photoURL(smallPath(p), bucket))}" data-full="${esc(photoURL(p, bucket))}"` : `src="${esc(photoURL(p, bucket))}"`;
+/* a view that opens large: the small copy (often already on the phone) shows at once, and sharpen() puts the full one in its place when it has arrived */
+const zoomAttrs = (p, bucket = BUCKET) => smAttrs(p, bucket) + (smallPath(p) ? ' data-hi=""' : '');
+function sharpen(img) {
+  if (!img || img.dataset.hi === undefined) return; const full = img.dataset.full; delete img.dataset.hi; if (!full) return;
+  const hi = new Image();
+  hi.onload = () => { delete img.dataset.full; img.src = full; };
+  hi.onerror = () => { if (img.dataset.full) img.dataset.hi = ''; };   /* the small copy stays, and the next visit to this photo tries again */
+  hi.src = full;
+}
+document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.dataset.full) { const full = t.dataset.full; delete t.dataset.full; delete t.dataset.hi; t.src = full; } }, true);
+/* big = true for a photo that is shown large on the page (the top of a profile, a piece's own page): it takes the full file */
+const rImg = (p, alt = '', bucket = BUCKET, big = false) => !okPath(p) ? '<div class="art"></div>' : `<div class="art"><img ${big ? `src="${esc(photoURL(p, bucket))}"` : smAttrs(p, bucket)} alt="${esc(alt)}" loading="lazy" decoding="async" draggable="false"></div>`;
 const isOwner = () => !!(AD.session && AD.session.user && (CONFIG.ADMIN_EMAIL || '').trim() && String(AD.session.user.email || '').toLowerCase() === CONFIG.ADMIN_EMAIL.trim().toLowerCase());
 /* the owner's screen is at #admin; the magic link comes back with ?admin=1 and the login tokens in the hash */
 const ownerIn = () => { if (cur().s === 'wait' && isOwner()) { S.stack = [{ s: 'home' }]; BH = 1; replaceH(); render(true); } };   /* the owner, once signed in, gets the whole site instead of the waiting page */
@@ -3425,8 +3443,25 @@ function pvBuyer() {
   Object.assign(FAV, { uid: 'preview-buyer', st: 'ready', ids: new Set(some.map(m => m.id)) });
   Object.assign(LKS, { uid: 'preview-buyer', st: 'ready', set: new Set(some.map(m => plKey(m.id, m.photos[0]))) });
 }
+/* the example maker's creations. They live in memory only: nothing is uploaded or saved, and closing the app clears them */
+let PV_MINE = null, PV_SEQ = 0;
+const pvPhoto = url => { const path = `preview/p-${++PV_SEQ}.jpg`; PV_URL.set(path, url); return path; };
+function pvListings(photos) {
+  if (!PV_MINE && photos.length) PV_MINE = [normMine({ id: 'preview-listing', title: 'יצירה לדוגמה: ארנק מעור', description: 'ככה נראית יצירה אחרי ששומרים אותה.', price_ils: 220, photos: [pvPhoto(photoURL(photos[0]))], availability: 'available', status: 'approved' })];
+  return PV_MINE || [];
+}
+function pvSaveListing(id, vals) {
+  const photos = LP.map(x => { if (x.existing) return x.path; x.existing = true; x.path = pvPhoto(x.url); return x.path; });   /* marked as existing, so clearing the form keeps the picture */
+  const old = (PV_MINE || []).find(x => x.id === id);
+  const row = normMine({ id: id || `preview-listing-${++PV_SEQ}`, title: vals.title, description: vals.desc, price_ils: vals.price, photos, availability: old && old.sold ? 'sold' : 'available', status: 'approved' });
+  PV_MINE = old ? PV_MINE.map(x => x.id === id ? row : x) : [row, ...(PV_MINE || [])];
+  clearListingForm(false); AU.my.list = PV_MINE; AU.my.st = 'ready'; ME.tab = 'listings';
+  S.stack = [{ s: 'home' }, { s: 'mine' }, { s: 'memaker' }].concat(id ? [] : [{ s: 'lthanks' }]); replaceH(); render(true);
+  toast('תצוגה בלבד: נשמר רק על המסך שלך');
+}
 function pvRestore() {
   if (PV === 'admin') return;
+  if (LF.active) clearListingForm(false);
   PV = 'admin';
   if (PVS) { AD.session = PVS.session; AU = PVS.au; MYREQ = PVS.myreq; Object.assign(FAV, PVS.fav); Object.assign(LKS, PVS.lks); delete RQ[PV_TOKEN]; PVS = null; }
   REAL.list = REAL.list.filter(m => m.id !== PV_ID);
@@ -3446,7 +3481,7 @@ function pvSwitch(to) {
     AD.session = { user: { id: 'preview', email: 'maker@example.com' } };
     Object.assign(AU, { uid: 'preview', st: 'ready', probe: 'ok', rows: [x.mine], maker: x.mine });
     AU.inbox.st = 'ready'; AU.inbox.list = [normIb({ route_id: 'preview-route', request_id: 'preview-request', route_status: 'sent', title: 'בקשה לדוגמה: ארנק מעור', crafts: ['leather'], text: 'ככה נראית בקשה שמגיעה ליוצר.', contact: 'buyer@example.com', routed_at: new Date().toISOString(), created_at: new Date().toISOString(), request_status: 'new' })];
-    AU.my.st = 'ready';
+    AU.my.st = 'ready'; AU.my.list = pvListings(x.shown.photos);
     S.stack = [{ s: 'home' }, { s: 'mine' }, { s: 'memaker' }]; BH = 1;
   }
   replaceH(clean); render(true); window.scrollTo(0, 0);
@@ -3663,10 +3698,24 @@ async function adminLoad(which) {
       AD.moreM = AD.makers.length === PAGE; AD.moreR = AD.requests.length === PAGE; AD.moreLP = AD.lpend.length === PAGE; AD.moreLA = AD.lappr.length === PAGE; AD.loaded = true;
       if (AD.ro) await loadRoutes();
       await loadAdminReviews();
+      loadStorage();
     }
   } catch (e) { console.warn(e); AD.err = 'הנתונים לא נטענו. לחצו על ״רענון״, ואם זה חוזר, פנו למי שבנה את האתר.'; }
   AD.loading = false; redrawAdmin();
   try { const n = AD.makers.length + AD.requests.length; if (navigator.setAppBadge) { if (n) navigator.setAppBadge(n); else navigator.clearAppBadge(); } } catch (e) { /* no badge on this device */ }
+}
+/* how full the photo storage is. Only the owner gets an answer (the database checks), and without that function the line is simply not shown.
+   The phone warnings at 70% and 90% are sent by the database itself */
+async function loadStorage() {
+  const r = await dbq(s => s.rpc('storage_usage'));
+  const d = !r.error && r.data, used = d ? Number(d.used_bytes) : NaN, lim = d ? Number(d.limit_bytes) : NaN;
+  AD.storage = used >= 0 && lim > 0 ? { used, lim } : null; redrawAdmin();
+}
+function storageLine() {
+  const x = AD.storage; if (!x) return '';
+  const pct = Math.floor(x.used * 100 / x.lim), mb = n => (n < 1e7 ? Math.round(n / 1e5) / 10 : Math.round(n / 1e6)).toLocaleString('he-IL');
+  const text = `מקום לתמונות: בשימוש ${mb(x.used)} מתוך ${mb(x.lim)} מגה (${pct}%).`;
+  return pct >= 70 ? `<p class="note" role="note" id="a-storage">${text} ${pct >= 90 ? 'המקום כמעט מלא, כדאי לטפל בזה עכשיו.' : 'המקום מתמלא, כדאי להתארגן.'}</p>` : `<p class="small muted" id="a-storage">${text}</p>`;
 }
 /* a ready-to-edit email to the approved makers of the right craft. The buyer's contact details are NOT in it:
    the owner adds the buyer only after the buyer agreed. Text from the database becomes one plain line, and the link is kept short. */
@@ -3690,8 +3739,9 @@ const radRejectSheet = m => `<form class="sheet-body" data-form="rreject" data-v
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="submit" class="btn block warnbtn">דחייה</button></div>
   </form>`;
 
-/* ---------- joining as a maker: photos go up at full size, without their hidden details ----------
-   Every JPG, PNG or WebP is redrawn at its full size as a JPEG (quality .92) so camera and location data are removed; it must fit in 10 MB.
+/* ---------- joining as a maker: photos go up sharp, without their hidden details ----------
+   Every JPG, PNG or WebP is redrawn as a JPEG (up to 2400px on the long side, quality .92) so camera and location data are removed; it must fit in 10 MB.
+   A small copy is made too, for lists and grids.
    Previews are object URLs on small lazy images, so twenty big photos never sit decoded in memory at once. */
 const JP = [];                                     // picked photos: { blob, type, name, url, path }
 const MAX_PHOTOS = 30, MAX_FILE = 10 * 1024 * 1024, HARD_MAX = 60 * 1024 * 1024, BIG_SIDE = 4096, BIG_Q = .92;
@@ -3708,20 +3758,40 @@ function decodeImg(file) {
     img.src = url;
   });
 }
-/* every photo is drawn again on a canvas, so the hidden details in the file (camera model, GPS location) never leave the phone. The picture keeps its full size
-   (orientation is applied while drawing). Only if the result would not fit in 10 MB do we lower the quality, and as a last resort the size. */
+/* every photo is drawn again on a canvas, so the hidden details in the file (camera model, GPS location) never leave the phone (orientation is applied while drawing).
+   A photo is never made bigger than it was. Only if the result would not fit in 10 MB do we lower the quality, and as a last resort the size. */
+const FULL_TRIES = [[2400, .92], [2400, .86], [2400, .8], [2000, .78]];
+/* the small copy: 810px on the short side (a two-column tile on a sharp phone screen needs up to about 620 x 770), and no more than 1440px on the long side */
+const SM_SHORT = 810, SM_LONG = 1440, SM_Q = .9;
+/* a sharp way down in size: while the picture is more than twice too big it is halved first, because one big jump looks rough on some phones.
+   A step larger than 16 million pixels is skipped, since some phones cannot hold such a canvas */
+function scaledCanvas(src, W, H, w, h) {
+  const make = (cw, ch, from) => { const c = document.createElement('canvas'); c.width = cw; c.height = ch; const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.fillStyle = '#fff'; g.fillRect(0, 0, cw, ch); g.drawImage(from, 0, 0, cw, ch); return c; };
+  let from = src, fw = W, fh = H, step = null;
+  while (fw > w * 2 && fh > h * 2) {
+    const nw = Math.ceil(fw / 2), nh = Math.ceil(fh / 2); if (nw * nh > 16e6) break;
+    const c = make(nw, nh, from); if (step) step.width = step.height = 0; from = step = c; fw = nw; fh = nh;
+  }
+  const out = make(w, h, from); if (step) step.width = step.height = 0;
+  return out;
+}
+const jpegOf = (c, q) => new Promise(r => c.toBlob(r, 'image/jpeg', q));
 async function cleanPhoto(file) {
   const img = await decodeImg(file), W = img.naturalWidth, H = img.naturalHeight;
   if (!W || !H || W * H > 150e6) throw new Error('size');
-  let blob = null, shrunk = false;
-  for (const [side, q] of [[2400, .86], [2400, .78], [2000, .75]]) {   /* 2400px on the long side is sharper than any phone screen, and keeps a photo near half a megabyte */
-    const k = side ? Math.min(1, side / Math.max(W, H)) : 1, w = Math.max(1, Math.round(W * k)), h = Math.max(1, Math.round(H * k));
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    let b = null;
-    try { const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h); b = await new Promise(r => c.toBlob(r, 'image/jpeg', q)); } catch (e) { b = null; }
+  for (let n = 0; n < FULL_TRIES.length; n++) {
+    const [side, q] = FULL_TRIES[n], k = Math.min(1, side / Math.max(W, H)), w = Math.max(1, Math.round(W * k)), h = Math.max(1, Math.round(H * k));
+    let c = null, blob = null;
+    try { c = scaledCanvas(img, W, H, w, h); blob = await jpegOf(c, q); } catch (e) { blob = null; }
+    if (!blob || blob.size > MAX_FILE) { if (c) c.width = c.height = 0; continue; }   /* a canvas too big for this phone gives no blob: the next, smaller try */
+    let small = null;
+    const ks = Math.min(1, SM_SHORT / Math.min(w, h), SM_LONG / Math.max(w, h));
+    if (ks <= .85) {   /* a photo that is already about this small needs no second copy */
+      try { const sc = scaledCanvas(c, w, h, Math.max(1, Math.round(w * ks)), Math.max(1, Math.round(h * ks))); small = await jpegOf(sc, SM_Q); sc.width = sc.height = 0; } catch (e) { small = null; }
+      if (small && small.size >= blob.size * .8) small = null;   /* hardly lighter: not worth the room */
+    }
     c.width = c.height = 0;
-    if (b && b.size <= MAX_FILE) { return { blob: b, shrunk: false }; }   /* a canvas too big for this phone gives no blob: the next, smaller try */
-    blob = b;
+    return { blob, small, shrunk: n > 0 };
   }
   throw new Error('still too big');
 }
@@ -3730,12 +3800,12 @@ async function preparePhoto(f) {
   const nm = fileLabel(f), type = typeOf(f);
   if (!type) return { note: `לא ניתן להוסיף את ${nm}. שמרו את התמונה כ-JPEG או PNG ונסו שוב.` };
   if (f.size > HARD_MAX) return { note: `${nm} גדולה מדי. בחרו תמונה קטנה יותר.` };
-  try { const r = await cleanPhoto(f); return { photo: { blob: r.blob, type: 'image/jpeg', name: nm }, ...(r.shrunk ? { note: `${nm} כבדה מדי, אז הקטנו אותה קצת כדי שתעלה.` } : {}) }; }
+  try { const r = await cleanPhoto(f); return { photo: { blob: r.blob, ...(r.small ? { small: r.small } : {}), type: 'image/jpeg', name: nm }, ...(r.shrunk ? { note: `${nm} כבדה מדי, אז הקטנו אותה קצת כדי שתעלה.` } : {}) }; }
   catch (e) { return { note: `לא הצלחנו לקרוא את ${nm}, ולכן לא הוספנו אותה. שמרו אותה כ-JPEG או PNG ונסו שוב.` }; }
 }
 function clearPhotos() { JP.forEach(p => URL.revokeObjectURL(p.url)); if (JP.portrait) URL.revokeObjectURL(JP.portrait.url); JP.length = 0; delete JP.portrait; delete JP.folder; }
 /* one set of photo helpers for the join form (p = 'j') and the listing form (p = 'l') */
-const photosHTML = (L = JP, max = MAX_PHOTOS, p = 'j', label = 'העבודה שהוספתם') => L.map((x, i) => `<div class="art"><img src="${esc(x.url)}" alt="${label}, ${i + 1}" loading="lazy" decoding="async"><button type="button" class="rm" data-act="${p}rm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button></div>`).join('')
+const photosHTML = (L = JP, max = MAX_PHOTOS, p = 'j', label = 'העבודה שהוספתם') => L.map((x, i) => `<div class="art"><img ${x.existing ? smAttrs(x.path, LB) : `src="${esc(x.url)}"`} alt="${label}, ${i + 1}" loading="lazy" decoding="async"><button type="button" class="rm" data-act="${p}rm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button></div>`).join('')
     + (L.length < max ? `<button type="button" class="add-photo" data-act="${p}pick" id="${p}-pick" aria-label="הוספת תמונה">+</button>` : '');
 const portraitHTML = () => JP.portrait
   ? `<div class="art"><img src="${JP.portrait.url}" alt="התמונה שבחרתם" decoding="async"><button type="button" class="rm" data-act="jprm" aria-label="הסרת התמונה שלכם">${svg(UI.close)}</button></div><button type="button" class="chip" data-act="jppick">החלפת תמונה</button>`
@@ -3750,7 +3820,7 @@ async function addPhotos(files, L = JP, max = MAX_PHOTOS, msgId = 'j-pmsg', draw
     const r = await preparePhoto(f); if (r.note) notes.push(r.note);
     if (r.photo) L.push({ ...r.photo, url: URL.createObjectURL(r.photo.blob) });
   }
-  draw(); if (msg) msg.textContent = [...new Set(notes), L.length ? photoCount(L, max) : ''].filter(Boolean).join(' ');
+  draw(); if (msg) msg.textContent = [...new Set(notes), L.length || L === LP ? photoCount(L, max) : ''].filter(Boolean).join(' ');
 }
 async function addPortrait(f) {
   const msg = document.getElementById('j-prmsg'); if (!f) return;
@@ -3758,6 +3828,19 @@ async function addPortrait(f) {
   if (r.photo) { if (JP.portrait) URL.revokeObjectURL(JP.portrait.url); JP.portrait = { ...r.photo, url: URL.createObjectURL(r.photo.blob) }; }   /* a replaced portrait has no path yet, so it uploads again */
   if (msg) msg.textContent = r.note || '';
   drawPortrait(); const b = document.querySelector('#portrait .chip, #portrait .add-photo'); if (b) b.focus();
+}
+/* the small copy goes up first. The full file's name ends in -2v only when the small copy is really there, so no page asks for a file that does not exist.
+   If the small copy cannot go up (for example the database was not updated yet), the photo goes up alone. x.smBase remembers a small copy already up, so a retry reuses it */
+const isTaken = e => !!e && (errCode(e) === '409' || /already exists|duplicate/i.test(String(e.message || '')));
+async function uploadPhoto(bucket, base, x) {
+  const opts = { contentType: x.type, cacheControl: '31536000', upsert: false };
+  if (x.small && x.smBase !== base) {
+    const r = await SB.storage.from(bucket).upload(`${base}-sm.jpg`, x.small, { ...opts, contentType: 'image/jpeg' });
+    if (!r.error) x.smBase = base; else if (isTaken(r.error)) return { error: r.error };
+  }
+  const path = x.smBase === base ? `${base}-2v.jpg` : `${base}.${EXT[x.type] || 'jpg'}`;   /* extension from the real type */
+  const { error } = await SB.storage.from(bucket).upload(path, x.blob, opts);
+  return { error, path };
 }
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const phoneOK = s => /^[0-9+\-\s().]{7,25}$/.test(s) && s.replace(/\D/g, '').length >= 7;
@@ -3814,9 +3897,9 @@ async function submitJoin(f) {
     for (let i = 0; i < jobs.length; i++) {
       if (jobs[i].path) continue; /* already uploaded on an earlier try */
       stage = `${i ? `תמונה ${i + 1} מתוך ${jobs.length}` : 'התמונה שלכם'} (${jobs[i].name}) לא עלתה.`; btn.textContent = `מעלים תמונה ${i + 1} מתוך ${jobs.length}`;
-      const path = `${JP.folder}/${i ? i : 'portrait'}-${Math.random().toString(36).slice(2, 7)}.${EXT[jobs[i].type] || 'jpg'}`;   /* one folder level, extension from the real type */
-      const { error } = await SB.storage.from(BUCKET).upload(path, jobs[i].blob, { contentType: jobs[i].type, cacheControl: '31536000', upsert: false });
-      if (error) throw error; jobs[i].path = path;
+      const base = jobs[i].smBase || `${JP.folder}/${i ? i : 'portrait'}-${Math.random().toString(36).slice(2, 7)}`;   /* one folder level */
+      const { error, path } = await uploadPhoto(BUCKET, base, jobs[i]);
+      if (error) { if (isTaken(error)) delete jobs[i].smBase; throw error; } jobs[i].path = path;
     }
     stage = ''; btn.textContent = 'שומרים את ההרשמה...';
     const { error } = await SB.from('makers').insert({ name, city, craft, crafts: picked, ...(picked.includes('other') ? { craft_other: other } : {}), story, email, phone, ...(soc.links.length ? { socials: soc.links } : {}), ...(REAL.workshops && d.gives_workshops ? readWorkshops(new FormData(f)) : {}), phone_public: true, email_public: true, portrait: JP.portrait.path, photos: JP.map(p => p.path), status: 'pending' });
@@ -3905,10 +3988,10 @@ window.addEventListener('resize', () => { if (VIEW && document.getElementById('s
 function openViewer(m, k) {
   const all = viewPhotos(m); if (!all.length) return;
   const many = all.length > 1;
-  openSheet(`<div class="viewer-scroll"><div class="viewer-track">${all.map((p, i) => `<div class="viewer-slide"><img src="${esc(photoURL(p))}" alt="${esc(`תמונה ${i + 1} של ${m.name}`)}" decoding="async" draggable="false"></div>`).join('')}</div></div>${many ? `<div class="viewer-nav"><button type="button" class="round" data-act="vstep" data-v="-1" aria-label="התמונה הקודמת">${svg(UI.back)}</button><span class="viewer-count" role="status"></span><button type="button" class="round fwd" data-act="vstep" data-v="1" aria-label="התמונה הבאה">${svg(UI.back)}</button></div>` : ''}`, `התמונות של ${m.name}`);
+  openSheet(`<div class="viewer-scroll"><div class="viewer-track">${all.map((p, i) => `<div class="viewer-slide"><img ${zoomAttrs(p)} alt="${esc(`תמונה ${i + 1} של ${m.name}`)}" decoding="async" draggable="false"></div>`).join('')}</div></div>${many ? `<div class="viewer-nav"><button type="button" class="round" data-act="vstep" data-v="-1" aria-label="התמונה הקודמת">${svg(UI.back)}</button><span class="viewer-count" role="status"></span><button type="button" class="round fwd" data-act="vstep" data-v="1" aria-label="התמונה הבאה">${svg(UI.back)}</button></div>` : ''}`, `התמונות של ${m.name}`);
   const root = document.getElementById('sheet'), count = root.querySelector('.viewer-count');
   root.classList.add('viewer');
-  VIEW = viewerGestures(root.querySelector('.viewer-scroll'), root.querySelector('.viewer-track'), all.length, Math.max(0, Math.min(all.length - 1, k)), i => { if (count) count.textContent = `${i + 1} מתוך ${all.length}`; [...root.querySelectorAll('.viewer-slide')].forEach((el, j) => el.setAttribute('aria-hidden', j === i ? 'false' : 'true')); });
+  VIEW = viewerGestures(root.querySelector('.viewer-scroll'), root.querySelector('.viewer-track'), all.length, Math.max(0, Math.min(all.length - 1, k)), i => { if (count) count.textContent = `${i + 1} מתוך ${all.length}`; [...root.querySelectorAll('.viewer-slide')].forEach((el, j) => { el.setAttribute('aria-hidden', j === i ? 'false' : 'true'); if (Math.abs(j - i) <= 1) sharpen(el.querySelector('img')); }); });
   const x = root.querySelector('.sheet-head button'); if (x) x.focus({ preventScroll: true });
 }
 const viewerStep = d => { if (VIEW && document.querySelector('#sheet .viewer-scroll')) VIEW.step(d); };
@@ -4131,7 +4214,7 @@ function listingScreen({ id }) {
     : l.phone || l.email ? `<div class="contact">${l.phone ? `<a class="cbtn2 wa" href="${esc(waListing(l))}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(l.phone.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a>` : ''}${l.email ? `<a class="cbtn2" href="${esc(mailListing(l))}" aria-label="שליחת מייל">${svg(UI.mail)}</a>` : ''}</div>`
     : `<div class="askline"><button type="button" class="link" data-act="tab" data-v="post">כתבו בקשה</button></div>`;
   return `${head(`<span class="sr">${esc(l.title)}</span>`)}
-    ${l.photos.length ? `<div class="pwrap"><div class="pscroll" id="pscroll" tabindex="0" role="group" aria-label="${esc(`תמונות של ${l.title}`)}">${l.photos.map((p, i) => `<div class="slide">${rImg(p, `${l.title}, ${i + 1}`, LB)}</div>`).join('')}</div>${l.photos.length > 1 ? `<span class="pcount" id="pcount" dir="ltr" aria-hidden="true">1 / ${l.photos.length}</span>` : ''}</div>` : ''}
+    ${l.photos.length ? `<div class="pwrap"><div class="pscroll" id="pscroll" tabindex="0" role="group" aria-label="${esc(`תמונות של ${l.title}`)}">${l.photos.map((p, i) => `<div class="slide">${rImg(p, `${l.title}, ${i + 1}`, LB, true)}</div>`).join('')}</div>${l.photos.length > 1 ? `<span class="pcount" id="pcount" dir="ltr" aria-hidden="true">1 / ${l.photos.length}</span>` : ''}</div>` : ''}
     <div class="stack tight g">
       <div class="ltop"><h2 class="display l-title">${esc(l.title)}</h2><p class="l-price">${priceHTML(l.price)}${l.sold ? ` ${stChip('נמכר', 'badge-inline')}` : ''}</p></div>
       ${l.desc ? `<p class="rstory">${esc(l.desc)}</p>` : ''}
@@ -4359,7 +4442,7 @@ const LP = [];                                    // photos of the listing form:
 const LF = { id: '', batch: '', n: 0, active: false, saved: false, pending: null, busy: false };
 const MAX_LP = 7;
 function clearListingForm(dropUploaded) {
-  const orphans = dropUploaded && !LF.saved ? LP.filter(p => p.path && p.fresh).map(p => p.path) : [];
+  const orphans = dropUploaded && !LF.saved ? bothFiles(LP.filter(p => p.path && p.fresh).map(p => p.path)).concat(LP.filter(p => !p.path && p.smBase).map(p => `${p.smBase}-sm.jpg`)) : [];
   LP.forEach(p => { if (!p.existing) URL.revokeObjectURL(p.url); }); LP.length = 0;
   Object.assign(LF, { id: '', batch: '', n: 0, active: false, saved: false, pending: null, busy: false });
   if (orphans.length && SB) { try { SB.storage.from(LB).remove(orphans).catch(() => {}); } catch (e) { /* only leaves orphan files */ } }
@@ -4381,7 +4464,7 @@ const lForm = ({ id }) => {
         <label class="opt"><input type="checkbox" id="l-onreq" name="onreq" ${ed && v.price === null ? 'checked' : ''}><span class="grow">מחיר בפנייה</span></label></div>
       <div class="field"><span class="lbl" id="l-ph-l">תמונות ${STAR}<span class="sr">, חובה</span></span><div class="photos" id="l-photos" role="group" aria-labelledby="l-ph-l">${lPhotosHTML()}</div>
         <input type="file" id="l-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של היצירה">
-        <span class="hint">מתמונה אחת עד ${MAX_LP}. הן לא נספרות בתמונות הפרופיל. אנחנו מקטינים את התמונות קצת כדי שהאתר ייטען מהר, ומסירים מהן את פרטי המיקום והמצלמה. אפשר להעלות קובץ עד 60MB (JPG, PNG או WebP).</span><span class="hint" id="l-pmsg" role="status" aria-live="polite">${LP.length ? photoCount(LP, MAX_LP) : ''}</span></div>
+        <span class="hint" id="l-pmsg" role="status" aria-live="polite">${photoCount(LP, MAX_LP)}</span></div>
       <p class="form-err" id="l-err" role="alert" hidden></p>
       <button class="btn block" type="submit">${ed ? 'שמירת השינויים' : 'פרסום היצירה'}</button>
     </form></div>`;
@@ -4406,6 +4489,7 @@ async function submitListing(f) {
 }
 async function saveListing(f, vals) {
   const id = f.dataset.v, err = f.querySelector('#l-err'), btn = f.querySelector('button[type="submit"]'), mk = AU.maker;
+  if (PV !== 'admin') { pvSaveListing(id, vals); return; }
   if (!SB) { err.textContent = 'אין חיבור כרגע. נסו שוב.'; err.hidden = false; return; }
   LF.busy = true; btn.disabled = true; btn.textContent = 'שולחים...'; err.hidden = true;
   let stage = '';
@@ -4417,10 +4501,10 @@ async function saveListing(f, vals) {
       /* a fresh name for every upload (a counter, not the place in the list), and a new batch after ten or when a name is taken, so a retry never hits "already exists" */
       let path = '', error = null;
       for (let attempt = 0; attempt < 3; attempt++) {
-        if (LF.n >= 10) { LF.batch = newToken(); LF.n = 0; }
-        path = `${mk.id}/${LF.batch}-${LF.n++}.${EXT[p.type] || 'jpg'}`;
-        ({ error } = await SB.storage.from(LB).upload(path, p.blob, { contentType: p.type, cacheControl: '31536000', upsert: false }));
-        if (error && (errCode(error) === '409' || /already exists|duplicate/i.test(String(error.message || '')))) { LF.batch = newToken(); LF.n = 0; continue; }
+        let base = p.smBase;
+        if (!base) { if (LF.n >= 10) { LF.batch = newToken(); LF.n = 0; } base = `${mk.id}/${LF.batch}-${LF.n++}`; }
+        ({ error, path } = await uploadPhoto(LB, base, p));
+        if (isTaken(error)) { delete p.smBase; LF.batch = newToken(); LF.n = 0; continue; }
         break;
       }
       if (error) { const ex = new Error(storageErr(error)); ex.storage = true; throw ex; }
@@ -4435,7 +4519,7 @@ async function saveListing(f, vals) {
       const { data, error } = await SB.from('listings').update(patch).eq('id', id).select('id');
       if (error) throw error;
       if (!data || data.length !== 1) { const ex = new Error('היצירה לא נמצאה.'); ex.plain = true; throw ex; }
-      const gone = old.photos.filter(p => !photos.includes(p)); if (gone.length) { try { SB.storage.from(LB).remove(gone).catch(() => {}); } catch (e) { /* orphans only */ } }
+      const gone = old.photos.filter(p => !photos.includes(p)); if (gone.length) { try { SB.storage.from(LB).remove(bothFiles(gone)).catch(() => {}); } catch (e) { /* orphans only */ } }
     } else {
       const { data, error } = await SB.from('listings').insert({ maker_id: mk.id, title: vals.title, description: vals.desc, price_ils: vals.price, photos, availability: 'available' }).select('id');
       if (error) throw error;
@@ -4643,7 +4727,7 @@ const SCREENS = {
   rmaker: ({ id }) => { const m = REAL.list.find(x => x.id === id);
     if (!m) return `${head('יוצר')}<div class="stack g">${realState() === 'loading' ? '<p class="muted" role="status">טוענים...</p>' : '<p class="empty">לא מצאנו את היוצר הזה.</p>'}</div>`;
     const face = m.portrait || m.photos[0], works = m.portrait ? m.photos : m.photos.slice(1);   /* old rows have no portrait: their first photo stands in */
-    return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner" style="${themeVars(m)}">${face ? zoomBtn(m, face, rImg(face, `${m.name}`)) : ''}
+    return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner" style="${themeVars(m)}">${face ? zoomBtn(m, face, rImg(face, `${m.name}`, BUCKET, true)) : ''}
       <div class="copy g"><h2>${esc(m.name)}</h2><span class="where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></div></section>
     <div class="stack g">
       ${profileButtons(m)}
@@ -4940,7 +5024,7 @@ Object.assign(SCREENS, {
   myreq: p => myReqScreen(p),
   editreq: p => editScreen(p),
   lform: p => lForm(p),
-  lthanks: () => `${head('<span class="sr">היצירה</span>')}<div class="stack g"><div class="thanks zig"><span class="stamp">התקבל</span><h2 class="display">תודה.</h2><p>היצירה פורסמה ומוצגת עכשיו באתר.</p><button class="btn" data-act="mtab" data-v="listings">ליצירות שלי</button><button class="btn ghost" data-act="mladd">להוסיף עוד יצירה</button></div></div>`
+  lthanks: () => `${head('<span class="sr">היצירה</span>')}<div class="stack g"><div class="thanks zig"><span class="stamp">התקבל</span><h2 class="display">תודה.</h2><p>${PV === 'admin' ? 'היצירה פורסמה ומוצגת עכשיו באתר.' : 'ככה זה נראה ליוצר. זו תצוגה בלבד: היצירה לא פורסמה, ואף אחד אחר לא רואה אותה.'}</p><button class="btn" data-act="mtab" data-v="listings">ליצירות שלי</button><button class="btn ghost" data-act="mladd">להוסיף עוד יצירה</button></div></div>`
 });
 SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
     <div class="stack tight g">
@@ -4949,7 +5033,7 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
     </div>`;
 /* ---------- editing my own profile ---------- */
 const EP = { m: null, works: [], portrait: '', portraitUrl: '', busy: false };
-const epImg = (x, alt) => `<img src="${esc(x.url || photoURL(x.path))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
+const epImg = (x, alt) => `<img ${x.url ? `src="${esc(x.url)}"` : smAttrs(x.path)} alt="${esc(alt)}" loading="lazy" decoding="async">`;
 const storyHint = (id, v) => `<ul class="sthint" aria-label="מה כדאי לכתוב"><li><b>חומרים:</b> עם אילו חומרים אתם עובדים</li><li><b>התמחות:</b> במה אתם מתמחים</li><li><b>עבודות:</b> אילו עבודות אתם עושים בדרך כלל</li><li><b>מה אתם מציעים:</b> למשל הזמנה אישית, מתנות, תיקונים</li><li><b>ניסיון:</b> כמה שנים אתם בתחום ומה למדתם</li></ul><span class="hint"><b>כדאי לפרט:</b> ככה ימצאו אתכם בקלות בחיפוש, ויהיה קל יותר לחבר אתכם לקונים שמתאימים לכם.</span><span class="hint sthint-c" id="${id}" data-story-count>${storyCue(v)}</span>`;
 const storyCue = v => { const n = Array.from(String(v || '').trim()).length; return n >= 200 ? `${n} מתוך 1000. זה כבר סיפור מלא.` : n ? `${n} מתוך 1000. עוד קצת ויהיה לכם סיפור מלא.` : 'עוד לא כתבתם כלום. התחילו ממה שאתם מכינים.'; };
 const epWorksHTML = () => EP.works.map((x, i) => `<div class="art" data-i="${i}">${epImg(x, 'עבודה ' + (i + 1))}<button type="button" class="rm" data-act="epwrm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button>${i === 0 ? '<span class="mk1 on">מוצגת ראשונה</span>' : `<button type="button" class="mk1" data-act="epfirst" data-v="${i}" aria-label="להציג את תמונה ${i + 1} ראשונה">להציג ראשונה</button>`}</div>`).join('') + (EP.works.length < MAX_PHOTOS ? '<button type="button" class="add-photo" data-act="epwpick" aria-label="הוספת תמונה">+</button>' : '');
@@ -5022,8 +5106,7 @@ async function epUpload(files, asPortrait) {
     if (!asPortrait && EP.works.length >= MAX_PHOTOS) { notes.push(`אפשר עד ${MAX_PHOTOS} תמונות.`); break; }
     const r = await preparePhoto(f); if (r.note) notes.push(r.note); if (!r.photo) continue;
     if (msg) msg.textContent = 'מעלים תמונה...';
-    const path = `${AU.maker.id}/e-${Math.random().toString(36).slice(2, 9)}.jpg`;
-    const { error } = await SB.storage.from(BUCKET).upload(path, r.photo.blob, { contentType: r.photo.type, cacheControl: '31536000', upsert: false });
+    const { error, path } = await uploadPhoto(BUCKET, `${AU.maker.id}/e-${Math.random().toString(36).slice(2, 9)}`, r.photo);
     if (error) { notes.push(`${r.photo.name} לא עלתה. נסו שוב.`); continue; }
     const url = URL.createObjectURL(r.photo.blob);
     if (asPortrait) { EP.portrait = path; EP.portraitUrl = url; } else EP.works.push({ path, url });
@@ -5199,7 +5282,7 @@ async function plToggle(i) {
 const loveText = (m, p) => `היי ${firstName(m)}, ראיתי את העבודה שלך באתר בהזמנה ואהבתי.${p ? ' ' + photoURL(p) : ''}`;
 const loveHref = (m, p) => m.contact ? `${m.contact.wa}?text=${encodeURIComponent(loveText(m, p))}` : m.email ? `mailto:${m.email}?subject=${encodeURIComponent('אהבתי את העבודה שלך בבהזמנה')}&body=${encodeURIComponent(loveText(m, p))}` : '';
 const writeBtn = (m, p, cls = 'link') => loveHref(m, p) ? `<a class="${cls}" data-write href="${esc(loveHref(m, p))}" ${OUT}>לכתוב ליוצר</a>` : '';
-const photoTile = (x, i) => `<div class="dtile" id="dt-${i}" style="--i:${i % 12}"><button type="button" class="dimg" data-act="dphoto" data-v="${i}" aria-expanded="false" aria-label="${esc('הגדלת התמונה של ' + x.m.name)}"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"></button>${plBtn(x, i)}<span class="dcap"><b>${esc(x.m.name)}</b></span></div>`;
+const photoTile = (x, i) => `<div class="dtile" id="dt-${i}" style="--i:${i % 12}"><button type="button" class="dimg" data-act="dphoto" data-v="${i}" aria-expanded="false" aria-label="${esc('הגדלת התמונה של ' + x.m.name)}"><img ${smAttrs(x.p)} alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"></button>${plBtn(x, i)}<span class="dcap"><b>${esc(x.m.name)}</b></span></div>`;
 /* the photos this person hearted (their own photo_likes rows), from the makers' real data; photos that are gone are skipped */
 let LKI = [];
 function likedItems() { const out = []; REAL.list.forEach(m => m.photos.forEach(p => { if (plOn(m.id, p)) out.push({ k: 'p', p, m }); })); return out; }
@@ -5229,7 +5312,7 @@ function dpOpen(i) {
   el.classList.add('full');
   el.innerHTML = `<div class="dp-back"></div><div class="dp-card" role="dialog" aria-modal="true" aria-label="${esc('עבודה של ' + x.m.name)}">
     <div class="dtop"><button type="button" class="dclose" data-act="dpclose" aria-label="סגירה">${svg(UI.close)}</button>${plBtn(x, i)}</div>
-    <div class="dp-photo"><div class="viewer-track"><div class="viewer-slide"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" draggable="false"></div></div></div>
+    <div class="dp-photo"><div class="viewer-track"><div class="viewer-slide"><img ${zoomAttrs(x.p)} alt="${esc('עבודה של ' + x.m.name)}" draggable="false"></div></div></div>
     <div class="dopen"><p class="dwho">${esc(x.m.name)} · ${esc(craftsLine(x.m))}${x.m.city ? ' · ' + esc(x.m.city) : ''}</p><div class="dbtns"><button type="button" class="btn small" data-act="rmaker" data-v="${esc(x.m.id)}">לפרופיל</button>${writeBtn(x.m, x.p, "btn small ghost")}</div></div></div>`;
   DPO = { el, tile: t, i, y: window.scrollY, ret: document.activeElement };
   document.body.appendChild(el); document.body.classList.add('dp-open'); t.classList.add('dp-src');
@@ -5237,6 +5320,7 @@ function dpOpen(i) {
   pushH({ dp: 1 });
   const ph = el.querySelector('.dp-photo'), big = ph.querySelector('img');
   DPO.view = viewerGestures(ph, ph.firstElementChild, 1, 0, () => {});
+  sharpen(big);
   if (!dpCalm() && big.animate) {
     const o = { duration: DP_MS, easing: DP_EASE, fill: 'backwards' };
     ph.classList.add('moving'); setTimeout(() => ph.classList.remove('moving'), DP_MS + 40);
@@ -5531,6 +5615,7 @@ function adminBody() {
   const gapList = 'display:flex;flex-direction:column;gap:12px';
   return `<div class="adm-bar"><p class="muted">${plural(AD.makers.length, 'יוצר אחד ממתין', 'יוצרים ממתינים', 'אין יוצרים ממתינים')}${AD.moreM ? ' ויש עוד' : ''} · ${plural(AD.requests.length, 'בקשה פתוחה אחת', 'בקשות פתוחות', 'אין בקשות פתוחות')}${AD.moreR ? ' ויש עוד' : ''}${AD.lst === 'ok' && AD.lpend.length ? ` · ${plural(AD.lpend.length, 'יצירה אחת ממתינה', 'יצירות ממתינות')}` : ''}</p><span class="row"><button class="chip" data-act="radrefresh">רענון</button><button class="chip" data-act="radlogout">יציאה</button></span></div>
       ${AD.err ? `<p class="form-err" role="alert">${esc(AD.err)}</p>` : ''}
+      ${storageLine()}
       ${installCard()}
       <section aria-labelledby="a-mk"><div class="sec-head"><h2 class="sec-title" id="a-mk">יוצרים שמחכים לאישור</h2></div>
         <p class="small muted" style="margin-bottom:12px">בודקים שהעבודות באמת שלהם לפני שמאשרים. החדשות למעלה.</p>
@@ -5917,7 +6002,7 @@ Object.assign(ACT, {
   signout: async () => { try { if (SB) await SB.auth.signOut(); } catch (e) { /* the local session goes either way */ } AD.session = null; AD.loaded = false; resetMe(); if (cur().s === 'mebuyer' || cur().s === 'memaker') tab('mine'); else render(); toast('התנתקתם'); },
   meretry: () => loadMe(true),
   toadmin: () => { location.hash = '#admin'; },
-  mtab: v => { ME.tab = v; if (v === 'listings' && AU.my.st === 'idle') loadMyListings(); if (v === 'inbox' && AU.inbox.st === 'idle') loadInbox(); render(); const b = document.getElementById('mt-' + v); if (b) b.focus({ preventScroll: true }); },
+  mtab: v => { ME.tab = v; if (v === 'listings' && AU.my.st === 'idle') loadMyListings(); if (v === 'inbox' && AU.inbox.st === 'idle') loadInbox(); if (cur().s === 'lthanks') { S.stack = [{ s: 'home' }, { s: 'mine' }, { s: 'memaker' }]; replaceH(); } /* from the thank-you page the button goes to the list */ render();const b = document.getElementById('mt-' + v); if (b) b.focus({ preventScroll: true }); },
   ibopen: v => { const ib = AU.inbox, it = ib.list.find(x => x.route === v); if (!it) return; ib.open = ib.open === v ? '' : v; it.err = '';
     if (ib.open && it.rs === 'sent' && it.rstatus !== 'closed' && !ib.seenSet.has(v)) { ib.seenSet.add(v); patchRoute(it, { status: 'seen' }, 'sent').then(r => { if (r.ok) meRedraw(); }); }
     meRedraw(); const b = document.querySelector(`.rq-head[data-v="${CSS.escape(v)}"]`); if (b) b.focus({ preventScroll: true }); },
@@ -5929,18 +6014,20 @@ Object.assign(ACT, {
   mladd: () => { clearListingForm(true); LF.active = true; go('lform', {}); },
   mledit: v => { const l = AU.my.list.find(x => x.id === v); if (!l) return; clearListingForm(true); LF.active = true; l.photos.forEach(p => LP.push({ existing: true, path: p, url: photoURL(p, LB), name: '', type: '' })); go('lform', { id: v }); },
   mlsold: async v => { const l = AU.my.list.find(x => x.id === v); if (!l) return;
+    if (PV !== 'admin') { l.sold = !l.sold; meRedraw(); toast('תצוגה בלבד: השינוי רק על המסך שלך'); return; }
     const r = await dbq(s => s.from('listings').update({ availability: l.sold ? 'available' : 'sold' }).eq('id', v).select('id'));
     if (r.error) toast(friendly(r.error)); else if (!r.data || !r.data.length) toast('היצירה לא נמצאה'); else { l.sold = !l.sold; meRedraw(); toast(l.sold ? 'סימנו שהיצירה נמכרה' : 'היצירה זמינה שוב'); } },
   mldel: v => { const l = AU.my.list.find(x => x.id === v); if (l) openSheet(confirmSheet(`למחוק את ״${cleanText(l.title, 40)}״?`, 'היצירה והתמונות שלה יימחקו. אי אפשר להחזיר.', 'mldelyes', v, 'כן, למחוק'), 'מחיקת יצירה'); },
   mldelyes: async v => { const l = AU.my.list.find(x => x.id === v); if (!l) return; closeSheet(true);
+    if (PV !== 'admin') { PV_MINE = (PV_MINE || []).filter(x => x.id !== v); AU.my.list = PV_MINE; meRedraw(); toast('תצוגה בלבד: נמחק רק מהמסך שלך'); return; }
     const r = await dbq(s => s.from('listings').delete().eq('id', v).select('id'));
     if (r.error) { toast(friendly(r.error)); return; }
-    if (!r.data || !r.data.length) { toast('היצירה לא נמצאה'); } else { toast('היצירה נמחקה'); if (l.photos.length && SB) { try { SB.storage.from(LB).remove(l.photos).catch(() => {}); } catch (e) { /* orphans only */ } } }
+    if (!r.data || !r.data.length) { toast('היצירה לא נמצאה'); } else { toast('היצירה נמחקה'); if (l.photos.length && SB) { try { SB.storage.from(LB).remove(bothFiles(l.photos)).catch(() => {}); } catch (e) { /* orphans only */ } } }
     AU.my.list = AU.my.list.filter(x => x.id !== v); meRedraw(); },
   mlretry: () => loadMyListings(), mlmore: () => { loadMyListings(true); meRedraw(); },
   lfconfirm: () => { closeSheet(true); const f = document.querySelector('form[data-form="listing"]'); if (f && LF.pending) saveListing(f, LF.pending); },
   lpick: () => { const i = document.getElementById('l-file'); if (i) i.click(); },
-  lrm: v => { const p = LP.splice(+v, 1)[0]; if (p && !p.existing) URL.revokeObjectURL(p.url); drawLP(); const m = document.getElementById('l-pmsg'); if (m) m.textContent = LP.length ? photoCount(LP, MAX_LP) : ''; const b = document.querySelector('#l-photos .add-photo'); if (b) b.focus(); },
+  lrm: v => { const p = LP.splice(+v, 1)[0]; if (p && !p.existing) URL.revokeObjectURL(p.url); drawLP(); const m = document.getElementById('l-pmsg'); if (m) m.textContent = photoCount(LP, MAX_LP); const b = document.querySelector('#l-photos .add-photo'); if (b) b.focus(); },
   myreq: v => { const o = RQ[v]; if (o) o.saved = false; go('myreq', { token: v }); loadReq(v); },
   rqrefresh: () => { const t = cur().token; if (t) loadReq(t); },
   rqremove: v => { MYREQ = MYREQ.filter(x => x.token !== v); saveMyReq(); delete RQ[v]; back(); toast('הבקשה הוסרה מהרשימה'); },
@@ -5969,7 +6056,7 @@ Object.assign(ACT, {
   lsremoveyes: async v => { const l = adFind(v); if (!l) return; closeSheet(true);
     const r = await dbq(s => s.from('listings').delete().eq('id', v).select('id'));
     if (r.error || !r.data || !r.data.length) { toast(r.error ? friendly(r.error) : 'היצירה לא נמצאה'); return; }
-    const ph = (l.photos || []).filter(okPath); if (ph.length && SB) { try { SB.storage.from(LB).remove(ph).catch(() => {}); } catch (e) { /* orphans only */ } }
+    const ph = (l.photos || []).filter(okPath); if (ph.length && SB) { try { SB.storage.from(LB).remove(bothFiles(ph)).catch(() => {}); } catch (e) { /* orphans only */ } }
     adDrop(v); redrawAdmin(); toast('היצירה הוסרה'); }
 });
 ACT.radmore = v => adminLoad(['m', 'r', 'lp', 'la'].includes(v) ? v : 'r');

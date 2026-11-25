@@ -599,10 +599,22 @@ body.sheet-open { overflow: hidden; }
 .l-price { font-weight: 700; font-size: var(--fs-3); }
 
 /* the maker's own space */
-.mtabs { display: flex; flex-wrap: wrap; gap: 4px; }
-.mtabs button { flex: 1 1 auto; min-height: 44px; border: 0; background: var(--tone); padding: 8px 10px; font-weight: 700; font-size: var(--fs-2); text-align: center; }
+.mtabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 4px; background: var(--paper); }
+.mtabs button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 64px; border: 0; background: none; color: var(--ink); padding: 8px 2px; font-weight: 700; font-size: var(--fs-1); line-height: 1.1; }
+.mtabs button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .mtabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
-.mtabs .cnt { background: var(--stamp); color: var(--paper); font-size: var(--fs-1); padding: 0 7px; margin-inline-start: 4px; }
+.mtabs .cnt { position: absolute; top: 5px; inset-inline-start: calc(50% - 24px); min-width: 18px; background: var(--stamp); color: var(--paper); font-size: 11px; line-height: 18px; padding: 0 4px; text-align: center; }
+.pst-sum { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; background: var(--paper); padding: 12px 4px; text-align: center; }
+.pst-sum b, .pst-nums b { display: block; font-family: var(--display); font-size: var(--fs-4); line-height: 1; }
+.pst-sum span, .pst-nums span { font-size: 12px; color: var(--muted); }
+.pst { display: grid; grid-template-columns: 112px 1fr; gap: 12px; background: var(--paper); padding: 8px; }
+.pst > .art { aspect-ratio: 4 / 5; width: 112px; }
+.pst-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; justify-content: space-between; }
+.pst-name { font-weight: 700; line-height: 1.25; }
+.pst-name.none { font-weight: 400; color: var(--muted); }
+.pst-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+.pst-nums b { font-size: var(--fs-3); display: inline; margin-inline-end: 5px; }
+.pst .link { align-self: flex-start; }
 .mp { display: flex; flex-direction: column; gap: 12px; }
 .rq-list { display: flex; flex-direction: column; gap: 4px; }
 .rq { background: var(--paper); }
@@ -3444,7 +3456,7 @@ function pvBuyer() {
   Object.assign(LKS, { uid: 'preview-buyer', st: 'ready', set: new Set(some.map(m => plKey(m.id, m.photos[0]))) });
 }
 /* the example maker's creations. They live in memory only: nothing is uploaded or saved, and closing the app clears them */
-let PV_MINE = null, PV_SEQ = 0;
+let PV_MINE = null, PV_SEQ = 0, PV_NAMED = false;
 const pvPhoto = url => { const path = `preview/p-${++PV_SEQ}.jpg`; PV_URL.set(path, url); return path; };
 function pvListings(photos) {
   if (!PV_MINE && photos.length) PV_MINE = [normMine({ id: 'preview-listing', title: 'יצירה לדוגמה: ארנק מעור', description: 'ככה נראית יצירה אחרי ששומרים אותה.', price_ils: 220, photos: [pvPhoto(photoURL(photos[0]))], availability: 'available', status: 'approved' })];
@@ -3462,6 +3474,7 @@ function pvSaveListing(id, vals) {
 function pvRestore() {
   if (PV === 'admin') return;
   if (LF.active) clearListingForm(false);
+  LKC.st = 'idle'; PST.st = 'idle';
   PV = 'admin';
   if (PVS) { AD.session = PVS.session; AU = PVS.au; MYREQ = PVS.myreq; Object.assign(FAV, PVS.fav); Object.assign(LKS, PVS.lks); delete RQ[PV_TOKEN]; PVS = null; }
   REAL.list = REAL.list.filter(m => m.id !== PV_ID);
@@ -3482,6 +3495,10 @@ function pvSwitch(to) {
     Object.assign(AU, { uid: 'preview', st: 'ready', probe: 'ok', rows: [x.mine], maker: x.mine });
     AU.inbox.st = 'ready'; AU.inbox.list = [normIb({ route_id: 'preview-route', request_id: 'preview-request', route_status: 'sent', title: 'בקשה לדוגמה: ארנק מעור', crafts: ['leather'], text: 'ככה נראית בקשה שמגיעה ליוצר.', contact: 'buyer@example.com', routed_at: new Date().toISOString(), created_at: new Date().toISOString(), request_status: 'new' })];
     AU.my.st = 'ready'; AU.my.list = pvListings(x.shown.photos);
+    const works = myPosts(x.mine);
+    Object.assign(LKC, { st: 'ready', mid: PV_ID, n: Object.fromEntries(works.map((w, i) => [w, Math.max(0, 12 - i * 3)])) });
+    Object.assign(PST, { st: 'ready', mid: PV_ID, n: Object.fromEntries(works.map((w, i) => [w, { open: Math.max(3, 64 - i * 13), profile: Math.max(1, 15 - i * 4), contact: Math.max(0, 4 - i) }])) });
+    if (works[0] && !PV_NAMED) { PV_NAMED = true; CAP.set(plKey(PV_ID, works[0]), 'שם לדוגמה: ארנק בתפירת יד'); }
     S.stack = [{ s: 'home' }, { s: 'mine' }, { s: 'memaker' }]; BH = 1;
   }
   replaceH(clean); render(true); window.scrollTo(0, 0);
@@ -3555,7 +3572,7 @@ async function loadReal() {
       .sort(byMix);
     REAL.loaded = true;
   } catch (e) { REAL.failed = true; }
-  realChanged(); if (REAL.loaded) loadLatestReviews();
+  realChanged(); if (REAL.loaded) { loadLatestReviews(); loadCaptions(); }
 }
 const realState = () => !CFG_ON ? 'ready' : REAL.loaded ? 'ready' : REAL.failed || AD.failed ? 'failed' : 'loading';
 /* A maker's phone, only when the maker chose to show it (public_makers.contact_phone). It comes from the database, so it is checked here:
@@ -4023,6 +4040,7 @@ document.addEventListener('keydown', e => {
 const privacySheet = () => `<div class="sheet-body">
   <h2 class="sec-title">מה אנחנו עושים עם הפרטים שלכם</h2>
   <div class="field"><span class="lbl">מה נשמר</span><p>בהרשמה כיוצרים: שם, עיר, תחום, סיפור, התמונה שלכם, תמונות של העבודות, מייל וטלפון. בבקשה: מה שכתבתם בה, המייל או הטלפון שהשארתם, והסכמה שלכם שנעביר אותה. בכניסה ליוצרים: כתובת המייל, ששמורה אצל Supabase Authentication, וההתחברות עצמה, שנשמרת בדפדפן שלכם עד שמתנתקים. ביצירה שיוצר מוסיף: כותרת, תיאור, מחיר ותמונות.</p></div>
+  ${REAL.posts ? `<div class="field"><span class="lbl">ספירה בפיד</span><p>אנחנו סופרים כמה פעמים פתחו תמונה בפיד, כמה נכנסו ממנה לדף של היוצר וכמה לחצו אחר כך על כפתור פנייה. נשמר רק מספר לכל יום, בלי שם ובלי פרטים על מי שלחץ, והיוצר רואה את המספרים של התמונות שלו.</p></div>` : ''}
   <div class="field"><span class="lbl">למה</span><p>כדי שנוכל לבדוק כל הרשמה ויצירה, להעביר כל בקשה ליוצרים שמתאימים לה, ולתת ליוצרים מקום משלהם באתר. אנחנו לא מוכרים את הפרטים ולא משתמשים בהם לפרסום.</p></div>
   <div class="field"><span class="lbl">מי רואה</span><p>אחרי שאישרנו יוצר, אלה מופיעים באתר לכולם: שם, עיר, תחום, סיפור ותמונות. הטלפון והמייל של יוצר מופיעים באתר גם הם, אחרי האישור שלנו, כדי שקונים יוכלו לפנות אליו. מי שרואה מספר או מייל מוצגים יכול להעתיק אותם. אפשר לבקש מאיתנו בכל זמן להסתיר או להסיר אותם.</p></div>
   <div class="field"><span class="lbl">יצירות</span><p>כותרת, תיאור, מחיר ותמונות של יצירה מוצגים לכולם, יחד עם שם היוצר והעיר שלו, רק אחרי שאישרנו אותה. היוצר נשאר הבעלים של הזכויות ביצירה ובתמונות. פרטי מיקום ומצלמה שבקובצי התמונה מוסרים בהעלאה.</p></div>
@@ -5218,7 +5236,7 @@ body.dp-open{overflow:hidden}
 .dp .dopen{padding:0;background:var(--paper)}.dp .dbtns{display:flex;gap:2px;background:var(--paper)}.dp .dbtns .btn{flex:1 1 0;min-width:0;padding-inline:8px;clip-path:none;text-decoration:none}.dp .dinfo{margin:0;padding:10px 12px}
 .dp .dclose{position:absolute;inset-block-start:0;inset-inline-start:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:var(--ink);cursor:pointer}.dp .dclose svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
 .dtile .dcap{position:absolute;inset-inline:0;bottom:0;padding:20px 8px 5px;font-size:12px;line-height:1.25;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.6));pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.dtile .dcap b{font-weight:600}
+.dtile .dcap b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis}.dtile .dcap span{display:block;font-size:11px;opacity:.85;overflow:hidden;text-overflow:ellipsis}
 .dtile.dp-src .dcap{visibility:hidden}
 .dquote{border:0;text-align:start;cursor:pointer;padding:20px 18px 18px;background:var(--olive);color:var(--on-olive)}
 .dquote p{font-family:var(--display);font-size:var(--fs-3);line-height:1.15;margin:0 0 10px}
@@ -5232,7 +5250,7 @@ body.dp-open{overflow:hidden}
 .dp.full .viewer-track{display:flex;height:100%}.dp.full .viewer-slide{flex:0 0 100%;min-width:0;height:100%}
 .dp.full .viewer-slide img{display:block;width:100%;height:100%;object-fit:contain;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;pointer-events:none}
 .dp.full .dopen{flex:none;position:relative;z-index:2;background:none;width:min(440px,100%);margin:0 auto;padding:6px 12px 12px}
-.dp.full .dwho{margin:0 0 8px;font-size:var(--fs-1);text-align:center;color:#d7d9cc}
+.dp.full .dcaption{margin:0 0 2px;text-align:center;font-weight:700}.dp.full .dwho{margin:0 0 8px;font-size:var(--fs-1);text-align:center;color:#d7d9cc}
 .dp.full .dbtns{background:none;gap:6px}
 .dq-card{background:var(--paper);display:flex;flex-direction:column;max-height:calc(100dvh - 32px)}
 .dq-body{padding:16px 16px 8px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
@@ -5282,7 +5300,7 @@ async function plToggle(i) {
 const loveText = (m, p) => `היי ${firstName(m)}, ראיתי את העבודה שלך באתר בהזמנה ואהבתי.${p ? ' ' + photoURL(p) : ''}`;
 const loveHref = (m, p) => m.contact ? `${m.contact.wa}?text=${encodeURIComponent(loveText(m, p))}` : m.email ? `mailto:${m.email}?subject=${encodeURIComponent('אהבתי את העבודה שלך בבהזמנה')}&body=${encodeURIComponent(loveText(m, p))}` : '';
 const writeBtn = (m, p, cls = 'link') => loveHref(m, p) ? `<a class="${cls}" data-write href="${esc(loveHref(m, p))}" ${OUT}>לכתוב ליוצר</a>` : '';
-const photoTile = (x, i) => `<div class="dtile" id="dt-${i}" style="--i:${i % 12}"><button type="button" class="dimg" data-act="dphoto" data-v="${i}" aria-expanded="false" aria-label="${esc('הגדלת התמונה של ' + x.m.name)}"><img ${smAttrs(x.p)} alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"></button>${plBtn(x, i)}<span class="dcap"><b>${esc(x.m.name)}</b></span></div>`;
+const photoTile = (x, i) => `<div class="dtile" id="dt-${i}" style="--i:${i % 12}"><button type="button" class="dimg" data-act="dphoto" data-v="${i}" aria-expanded="false" aria-label="${esc('הגדלת התמונה של ' + x.m.name)}"><img ${smAttrs(x.p)} alt="${esc('עבודה של ' + x.m.name)}" loading="lazy" decoding="async" draggable="false"></button>${plBtn(x, i)}<span class="dcap">${capOf(x.m.id, x.p) ? `<b>${esc(capOf(x.m.id, x.p))}</b><span>${esc(x.m.name)}</span>` : `<b>${esc(x.m.name)}</b>`}</span></div>`;
 /* the photos this person hearted (their own photo_likes rows), from the makers' real data; photos that are gone are skipped */
 let LKI = [];
 function likedItems() { const out = []; REAL.list.forEach(m => m.photos.forEach(p => { if (plOn(m.id, p)) out.push({ k: 'p', p, m }); })); return out; }
@@ -5313,13 +5331,14 @@ function dpOpen(i) {
   el.innerHTML = `<div class="dp-back"></div><div class="dp-card" role="dialog" aria-modal="true" aria-label="${esc('עבודה של ' + x.m.name)}">
     <div class="dtop"><button type="button" class="dclose" data-act="dpclose" aria-label="סגירה">${svg(UI.close)}</button>${plBtn(x, i)}</div>
     <div class="dp-photo"><div class="viewer-track"><div class="viewer-slide"><img ${zoomAttrs(x.p)} alt="${esc('עבודה של ' + x.m.name)}" draggable="false"></div></div></div>
-    <div class="dopen"><p class="dwho">${esc(x.m.name)} · ${esc(craftsLine(x.m))}${x.m.city ? ' · ' + esc(x.m.city) : ''}</p><div class="dbtns"><button type="button" class="btn small" data-act="rmaker" data-v="${esc(x.m.id)}">לפרופיל</button>${writeBtn(x.m, x.p, "btn small ghost")}</div></div></div>`;
+    <div class="dopen">${capOf(x.m.id, x.p) ? `<p class="dcaption">${esc(capOf(x.m.id, x.p))}</p>` : ''}<p class="dwho">${esc(x.m.name)} · ${esc(craftsLine(x.m))}${x.m.city ? ' · ' + esc(x.m.city) : ''}</p><div class="dbtns"><button type="button" class="btn small" data-act="rmaker" data-v="${esc(x.m.id)}" data-post="${esc(x.p)}">לפרופיל</button>${writeBtn(x.m, x.p, "btn small ghost")}</div></div></div>`;
   DPO = { el, tile: t, i, y: window.scrollY, ret: document.activeElement };
   document.body.appendChild(el); document.body.classList.add('dp-open'); t.classList.add('dp-src');
   img0.closest('.dimg').setAttribute('aria-expanded', 'true');
   pushH({ dp: 1 });
   const ph = el.querySelector('.dp-photo'), big = ph.querySelector('img');
   DPO.view = viewerGestures(ph, ph.firstElementChild, 1, 0, () => {});
+  trackPost(x.m.id, x.p, 'open');
   sharpen(big);
   if (!dpCalm() && big.animate) {
     const o = { duration: DP_MS, easing: DP_EASE, fill: 'backwards' };
@@ -5541,24 +5560,78 @@ async function loadLikeCounts() {
   LKC.n = {}; r.data.forEach(x => { const k = String(x.photo); LKC.n[k] = (LKC.n[k] || 0) + 1; }); LKC.st = 'ready';
   if (cur().s === 'memaker' || cur().s === 'mine') render();
 }
-function likesHTML() {
-  const mk = AU.maker; if (!mk || !CFG_ON) return '';
-  if (LKC.st === 'idle' || LKC.mid !== mk.id) setTimeout(loadLikeCounts, 0);
-  if (LKC.st !== 'ready') return '';
-  const works = mk.portrait ? mk.photos : mk.photos.slice(1), total = Object.values(LKC.n).reduce((a, b) => a + b, 0);
-  if (!works.length) return '';
-  return `<section class="panel" aria-labelledby="h-likes"><h2 class="sec-title" id="h-likes">אהבו</h2><p class="small muted" style="margin:4px 0 8px">${total ? `${total} בסך הכול` : 'עוד אין לבבות'}</p><div class="strip" style="grid-template-columns:repeat(3,1fr)">${works.map((p, i) => `<div>${rImg(p, `עבודה ${i + 1}`)}<p class="small" style="margin-top:4px">${LKC.n[p] || 0} אהבו</p></div>`).join('')}</div></section>`;
+/* ---------- my posts: each photo in the feed, its short name, and what it led to ---------- */
+const CAP = new Map();   /* the short names, by maker and photo */
+const capOf = (mid, photo) => CAP.get(plKey(mid, photo)) || '';
+const postsOn = () => !!REAL.posts || PV !== 'admin';
+async function loadCaptions() {
+  const r = await dbq(x => x.from('public_photo_posts').select('maker_id,photo,caption').limit(5000));
+  REAL.posts = !r.error && Array.isArray(r.data);   /* the database update may not be there yet: then the names and counts stay hidden */
+  if (!REAL.posts) return;
+  r.data.forEach(x => { const c = cleanText(x.caption, 60); if (c) CAP.set(plKey(x.maker_id, x.photo), c); });
+  realChanged(); if (cur().s === 'liked') render();
 }
+const PST = { st: 'idle', mid: '', n: {} };
+async function loadPostStats() {
+  const mk = AU.maker; if (!SB || !mk) return;
+  PST.st = 'loading'; PST.mid = mk.id;
+  const r = await dbq(x => x.rpc('my_photo_stats'));
+  if (!AU.maker || AU.maker.id !== mk.id) return;
+  if (r.error || !Array.isArray(r.data)) PST.st = 'failed';
+  else { PST.n = {}; r.data.forEach(x => { const k = String(x.photo); (PST.n[k] || (PST.n[k] = {}))[String(x.kind)] = +x.n || 0; }); PST.st = 'ready'; }
+  if (cur().s === 'memaker') render();
+}
+/* counting, with no names: once per photo and kind in one visit. The maker's own taps, the owner's and a preview are not counted */
+const COUNTED = new Set();
+function trackPost(mid, photo, kind) {
+  if (!REAL.posts || !SB || PV !== 'admin' || isOwner() || !mid || !photo || (AU.maker && AU.maker.id === mid)) return;
+  const k = kind + plKey(mid, photo); if (COUNTED.has(k)) return; COUNTED.add(k);
+  try { SB.rpc('track_photo', { p_maker: mid, p_photo: photo, p_kind: kind }).then(() => {}, () => {}); } catch (e) { /* a count is never worth an error */ }
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+  if (DPO && !DPO.story && a.closest('.dp') && a.matches('[data-write]')) { const x = tileItems()[+DPO.i]; if (x) trackPost(x.m.id, x.p, 'contact'); return; }
+  const c = cur(); if (c.s === 'rmaker' && c.from && a.closest('#view') && a.matches('.pcontact .pc-row:not(.nets) a, a[data-write], a[href*="wa.me"]')) trackPost(c.id, c.from, 'contact');
+}, true);
+const myPosts = mk => mk.portrait ? mk.photos : mk.photos.slice(1);
+function postsHTML() {
+  const mk = AU.maker, works = myPosts(mk), on = postsOn();
+  if (!works.length) return '<div class="s-empty"><p class="say">עוד אין פוסטים.</p><p class="small muted">כל תמונה מהעבודות היא פוסט בפיד.</p><button type="button" class="btn" data-act="editprofile">להוסיף תמונות</button></div>';
+  if (CFG_ON && (LKC.st === 'idle' || LKC.mid !== mk.id)) setTimeout(loadLikeCounts, 0);
+  if (on && (PST.st === 'idle' || PST.mid !== mk.id)) setTimeout(loadPostStats, 0);
+  const likes = p => LKC.st === 'ready' && LKC.mid === mk.id ? LKC.n[p] || 0 : '-';
+  const got = (p, kind) => PST.st === 'ready' && PST.mid === mk.id ? (PST.n[p] || {})[kind] || 0 : '-';
+  const cols = [['לבבות', likes]].concat(on ? [['פתיחות', p => got(p, 'open')], ['לפרופיל', p => got(p, 'profile')], ['פניות', p => got(p, 'contact')]] : []);
+  const total = f => works.reduce((t, p) => { const v = f(p); return t === '-' || v === '-' ? '-' : t + v; }, 0);
+  const note = on ? '<p class="small muted"><b>לפרופיל:</b> כמה נכנסו לדף שלכם מהפוסט. <b>פניות:</b> כמה לחצו אחר כך על וואטסאפ, טלפון או מייל. הספירה היא בלי שמות.</p>' : '<p class="small muted">בקרוב: שם לכל פוסט, וכמה נכנסו ופנו אליכם ממנו.</p>';
+  return `<div class="pst-sum">${cols.map(([l, f]) => `<div><b>${total(f)}</b><span>${l}</span></div>`).join('')}</div>${note}${works.map((p, i) => { const c = capOf(mk.id, p);
+    return `<article class="pst">${rImg(p, `פוסט ${i + 1}`)}<div class="pst-body">${on ? `<p class="pst-name${c ? '' : ' none'}">${c ? esc(c) : 'עוד אין שם'}</p>` : ''}<div class="pst-nums">${cols.map(([l, f]) => `<div><b>${f(p)}</b><span>${l}</span></div>`).join('')}</div>${on ? `<button type="button" class="link sm" data-act="capedit" data-v="${i}" aria-label="${c ? 'שינוי' : 'הוספת'} שם לפוסט ${i + 1}">${c ? 'שינוי השם' : 'הוספת שם'}</button>` : ''}</div></article>`; }).join('')}`;
+}
+function capSheet(i) {
+  const mk = AU.maker, photo = mk && myPosts(mk)[i]; if (!photo) return;
+  openSheet(`<form class="sheet-body" data-form="caption" data-v="${i}" novalidate><h2 class="sec-title">שם לפוסט</h2><div class="field"><label for="cap-text">בכמה מילים, מה רואים בתמונה?</label><input class="input" id="cap-text" name="caption" maxlength="60" autocomplete="off" placeholder="למשל: ארנק עור בתפירת יד" value="${esc(capOf(mk.id, photo))}"><span class="hint">השם יופיע על התמונה בפיד. כדי להסיר אותו, השאירו ריק.</span></div><p class="form-err" id="cap-err" role="alert" hidden></p><div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="submit" class="btn block">שמירה</button></div></form>`, 'שם לפוסט');
+}
+async function saveCaption(f) {
+  const mk = AU.maker, photo = mk && myPosts(mk)[+f.dataset.v]; if (!photo) return;
+  const text = cleanText(f.querySelector('#cap-text').value, 60), err = f.querySelector('#cap-err'), btn = f.querySelector('button[type="submit"]');
+  if (PV === 'admin') {
+    if (!SB) { err.textContent = 'אין חיבור כרגע. נסו שוב.'; err.hidden = false; return; }
+    btn.disabled = true;
+    const r = await dbq(x => text ? x.from('photo_posts').upsert({ maker_id: mk.id, photo, caption: text, updated_at: new Date().toISOString() }, { onConflict: 'maker_id,photo' }) : x.from('photo_posts').delete().eq('maker_id', mk.id).eq('photo', photo));
+    if (r.error) { err.textContent = friendly(r.error) || 'השמירה לא הצליחה. נסו שוב.'; err.hidden = false; btn.disabled = false; return; }
+  }
+  if (text) CAP.set(plKey(mk.id, photo), text); else CAP.delete(plKey(mk.id, photo));
+  closeSheet(true); setTimeout(() => { render(); toast(PV === 'admin' ? 'נשמר' : 'תצוגה בלבד: נשמר רק על המסך שלך'); }, 60);
+}
+const TAG_ICON = '<path d="M4 4h8l8 8-8 8-8-8z"/><circle cx="8.5" cy="8.5" r="1.3"/>';
 function makerPageHTML() {
   const nNew = AU.inbox.list.filter(x => x.rs === 'sent' && x.rstatus !== 'closed').length;
-  const tabs = [['inbox', 'בקשות אליי', nNew], ['listings', 'היצירות שלי', 0], ['profile', 'הפרופיל', 0]];
-  const body = ME.tab === 'listings' ? myListingsHTML() : ME.tab === 'profile' ? profileHTML() : inboxHTML();
+  const tabs = [['inbox', 'בקשות', nNew, UI.mail], ['posts', 'פוסטים', 0, UI.grid], ['listings', 'יצירות', 0, TAG_ICON], ['profile', 'פרופיל', 0, UI.user]];
+  const body = ME.tab === 'listings' ? myListingsHTML() : ME.tab === 'profile' ? profileHTML() : ME.tab === 'posts' ? postsHTML() : inboxHTML();
   return `${head('אני כיוצר', gearBtn())}<div class="stack tight g">
       ${meEntry(UI.user, 'אני', 'הבקשות והמועדפים שלי', 'tab', 'mine')}
       <div class="row wrap" style="justify-content:space-between"><p><b>היי ${esc(firstOf(AU.maker.name))}</b> <span class="small muted">מחוברים כיוצרים</span></p>${signoutBtn()}</div>
-      <div class="bgrid"><button type="button" class="btn" data-act="rvkit" data-v="${esc(AU.maker.id)}">הקוד והדף להדפסה</button><button type="button" class="btn ghost" data-act="editprofile">עריכת הפרופיל</button></div>
-      ${likesHTML()}
-      <div class="mtabs" role="tablist" aria-label="האזור שלכם כיוצרים">${tabs.map(([k, l, n]) => `<button type="button" role="tab" id="mt-${k}" aria-selected="${ME.tab === k}" aria-controls="mp" tabindex="${ME.tab === k ? 0 : -1}" data-act="mtab" data-v="${k}">${l}${n ? ` <span class="cnt" aria-label="${n} חדשות">${n}</span>` : ''}</button>`).join('')}</div>
+      <div class="mtabs" role="tablist" aria-label="האזור שלכם כיוצרים">${tabs.map(([k, l, n, ic]) => `<button type="button" role="tab" id="mt-${k}" aria-selected="${ME.tab === k}" aria-controls="mp" data-act="mtab" data-v="${k}">${svg(ic)}<span>${l}</span>${n ? ` <span class="cnt" aria-label="${n} חדשות">${n}</span>` : ''}</button>`).join('')}</div>
       <div id="mp" role="tabpanel" aria-labelledby="mt-${ME.tab}" class="mp">${body}</div>
       ${isOwner() ? '<button type="button" class="link sm" data-act="toadmin">למסך הניהול</button>' : ''}
     </div>`;
@@ -5896,7 +5969,7 @@ const ACT = {
   pzoom: (v, t) => { const m = REAL.list.find(x => x.id === v), el = t || document.activeElement; if (m) openViewer(m, +(el && el.dataset.k) || 0); },
   vstep: v => viewerStep(+v),
   back, tab: v => tab(v),
-  rmaker: v => { if (DPO) { dpClose(true); setTimeout(() => go('rmaker', { id: v }), 80); } else go('rmaker', { id: v }); },
+  rmaker: (v, t) => { const from = (DPO && t && t.dataset.post) || '', to = from ? { id: v, from } : { id: v }; if (from) trackPost(v, from, 'profile'); if (DPO) { dpClose(true); setTimeout(() => go('rmaker', to), 80); } else go('rmaker', to); },
   share: v => { const m = REAL.list.find(x => x.id === v) || (AU.maker && AU.maker.id === v ? AU.maker : null); if (m) openSheet(shareSheet(m), 'שיתוף הפרופיל'); },
   invitecopy: () => { const t = inviteText(), done = () => toast('הקישור הועתק. אפשר להדביק ולשלוח'), fail = () => toast('ההעתקה לא הצליחה, נסו שוב'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fail); else { const i = document.createElement('textarea'); i.value = t; i.style.position = 'fixed'; i.style.opacity = '0'; document.body.appendChild(i); i.select(); try { document.execCommand('copy'); done(); } catch (e) { fail(); } i.remove(); } },
   invitesend: () => { try { navigator.share({ title: 'בהזמנה', text: INVITE_MSG, url: inviteLink() }); } catch (e) { /* the person closed the share sheet */ } },
@@ -6002,7 +6075,8 @@ Object.assign(ACT, {
   signout: async () => { try { if (SB) await SB.auth.signOut(); } catch (e) { /* the local session goes either way */ } AD.session = null; AD.loaded = false; resetMe(); if (cur().s === 'mebuyer' || cur().s === 'memaker') tab('mine'); else render(); toast('התנתקתם'); },
   meretry: () => loadMe(true),
   toadmin: () => { location.hash = '#admin'; },
-  mtab: v => { ME.tab = v; if (v === 'listings' && AU.my.st === 'idle') loadMyListings(); if (v === 'inbox' && AU.inbox.st === 'idle') loadInbox(); if (cur().s === 'lthanks') { S.stack = [{ s: 'home' }, { s: 'mine' }, { s: 'memaker' }]; replaceH(); } /* from the thank-you page the button goes to the list */ render();const b = document.getElementById('mt-' + v); if (b) b.focus({ preventScroll: true }); },
+  capedit: v => capSheet(+v),
+  mtab: v => { ME.tab = v; if (v === 'posts' && PV === 'admin') { LKC.st = 'idle'; PST.st = 'idle'; } if (v === 'listings' && AU.my.st === 'idle') loadMyListings(); if (v === 'inbox' && AU.inbox.st === 'idle') loadInbox(); if (cur().s === 'lthanks') { S.stack = [{ s: 'home' }, { s: 'mine' }, { s: 'memaker' }]; replaceH(); } /* from the thank-you page the button goes to the list */ render();const b = document.getElementById('mt-' + v); if (b) b.focus({ preventScroll: true }); },
   ibopen: v => { const ib = AU.inbox, it = ib.list.find(x => x.route === v); if (!it) return; ib.open = ib.open === v ? '' : v; it.err = '';
     if (ib.open && it.rs === 'sent' && it.rstatus !== 'closed' && !ib.seenSet.has(v)) { ib.seenSet.add(v); patchRoute(it, { status: 'seen' }, 'sent').then(r => { if (r.ok) meRedraw(); }); }
     meRedraw(); const b = document.querySelector(`.rq-head[data-v="${CSS.escape(v)}"]`); if (b) b.focus({ preventScroll: true }); },
@@ -6118,6 +6192,7 @@ document.addEventListener('submit', e => {
   if (kind === 'review') { submitReview(f, f.dataset.v); return; }
   if (kind === 'offer') { submitOffer(f, f.dataset.v); return; }
   if (kind === 'listing') { submitListing(f); return; }
+  if (kind === 'caption') { saveCaption(f); return; }
   if (kind === 'rroutes') { submitRoutes(f, f.dataset.v); return; }
   if (kind === 'lreject') { rejectListing(f, f.dataset.v); return; }
   if (kind === 'join') { submitJoin(f); return; }

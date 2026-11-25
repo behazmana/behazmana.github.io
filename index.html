@@ -599,7 +599,7 @@ body.sheet-open { overflow: hidden; }
 .l-price { font-weight: 700; font-size: var(--fs-3); }
 
 /* the maker's own space */
-.mtabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 4px; background: var(--paper); }
+.mtabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 4px; background: var(--paper); }
 .mtabs button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 64px; border: 0; background: none; color: var(--ink); padding: 8px 2px; font-weight: 700; font-size: var(--fs-1); line-height: 1.1; }
 .mtabs button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .mtabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
@@ -2961,7 +2961,8 @@ var qrcode = function() {
    Fill in the three values (see SETUP-HE.md) and makers can join, requests are saved, and #admin opens the owner's screen.
    Only the public "anon" key belongs here. Never paste a secret / service_role key into this file.
    Everything the site shows is real: makers appear only after the owner approved them by hand. There is no invented content. */
-const CONFIG = { SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: false, CODE_LOGIN: true };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
+/* SELLING: makers adding creations for sale. POSTS: the posts tab, a post's short name and the per-post counts. Both are hidden for now; change to true to bring one back */
+const CONFIG = { SELLING: false, POSTS: false, SUPABASE_URL: 'https://ierrrodoriperjrmfbun.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_Vdh0fFHScU2-vwiyqXCpPw_tVX00CJG', ADMIN_EMAIL: 'behazmana1@gmail.com', WAITLIST: false, CODE_LOGIN: true };   /* true: visitors see only the waiting page (sign-up for makers and buyers); the owner sees the whole site. Set false to open the site to everyone. */
 
 const CRAFTS = { wood: 'עץ', leather: 'עור', ceramic: 'קרמיקה', jewelry: 'תכשיטים', metal: 'מתכת', glass: 'זכוכית', textile: 'בדים', paper: 'נייר', art: 'ציור' };
 const UI = {
@@ -4057,7 +4058,7 @@ const termsSheet = () => `<div class="sheet-body">
     <li>היוצרים אחראים לעבודה שלהם, למחירים ולמסירה, ולכך שמותר להם להשתמש בתמונות שהם מעלים.</li>
     <li>בהרשמה אתם מרשים לנו להציג באתר, אחרי שנאשר אתכם, את השם, העיר, התחום, הסיפור והתמונות שלכם.</li>
     <li>את הטלפון והמייל שלכם נציג באתר, עם כפתורי וואטסאפ, שיחה ומייל, אחרי שאישרנו אתכם. אפשר לבקש בכל זמן להסתיר או להסיר אותם. מי שרואה אותם באתר יכול להעתיק אותם.</li>
-    <li>יוצר שאושר נכנס לאזור שלו באתר בקישור שנשלח למייל. הוא יכול לראות בקשות שהעברנו אליו, להשיב להן, ולהוסיף יצירות.</li>
+    <li>יוצר שאושר נכנס לאזור שלו באתר בקישור שנשלח למייל. הוא יכול לראות בקשות שהעברנו אליו, להשיב להן${CONFIG.SELLING ? ', ולהוסיף יצירות' : ''}.</li>
     <li>מי ששולח בקשה מסכים שנעביר אותה ואת פרטי הקשר שלו ליוצרים שמתאימים. יוצר שקיבל בקשה רשאי לפנות למי שכתב אותה. אפשר לערוך ולסגור בקשה בכל זמן.</li>
     <li>יצירה: חייבת להיות עבודה שלכם, עם תיאור ומחיר בשקלים כמו שהם באמת, בלי תוכן לא חוקי או מסוכן. אנחנו יכולים להסתיר או להסיר יצירה בכל זמן, גם אחרי שהיא פורסמה. הזכויות ביצירה ובתמונות נשארות אצלכם.</li>
     <li>דרך האתר לא קונים: המחיר והמסירה של יצירה מסכמים ישירות היוצר ומי שמעוניין בה.</li>
@@ -4469,6 +4470,7 @@ const lPhotosHTML = () => photosHTML(LP, MAX_LP, 'l', 'תמונה של היצי�
 const drawLP = () => { const b = document.getElementById('l-photos'); if (b) b.innerHTML = lPhotosHTML(); };
 const lForm = ({ id }) => {
   const ed = !!id, cur0 = ed ? AU.my.list.find(x => x.id === id) : null;
+  if (!CONFIG.SELLING) return `${head('יצירה')}<div class="stack g"><p class="empty">אי אפשר להעלות יצירה למכירה כרגע.</p></div>`;
   if (!AU.maker) return `${head('יצירה')}<div class="stack g"><div class="s-empty"><p>הדף הזה למי שנכנס כיוצר.</p><button type="button" class="btn" data-act="tab" data-v="mine">לאזור שלי</button></div></div>`;
   if (ed && !cur0) return `${head('עריכת יצירה')}<div class="stack g"><p class="empty">לא מצאנו את היצירה. חזרו לרשימה ונסו שוב.</p></div>`;
   const v = cur0 || { title: '', desc: '', price: null };
@@ -4506,6 +4508,7 @@ async function submitListing(f) {
   await saveListing(f, vals);
 }
 async function saveListing(f, vals) {
+  if (!CONFIG.SELLING) return;
   const id = f.dataset.v, err = f.querySelector('#l-err'), btn = f.querySelector('button[type="submit"]'), mk = AU.maker;
   if (PV !== 'admin') { pvSaveListing(id, vals); return; }
   if (!SB) { err.textContent = 'אין חיבור כרגע. נסו שוב.'; err.hidden = false; return; }
@@ -5528,7 +5531,7 @@ function buyerPageHTML(title) {
   const mail = AD.session && AD.session.user && AD.session.user.email ? String(AD.session.user.email) : '';
   const wrongMail = mode === 'nonmaker' && !isOwner() ? `<details class="wrongmail"><summary>יוצרים ולא רואים את הדף שלכם?</summary><p class="small muted">היכנסו עם המייל שאיתו נרשמתם כיוצרים${mail ? `. עכשיו אתם מחוברים עם <span dir="ltr">${esc(mail)}</span>` : ''}. הדף יופיע אחרי שנאשר את ההרשמה.</p></details>` : '';
   const nNew = mode === 'maker' ? AU.inbox.list.filter(x => x.rs === 'sent' && x.rstatus !== 'closed').length : 0;
-  const makerBtn = mode === 'maker' ? `<button type="button" class="mecta" data-act="go" data-v="memaker">${meIc(UI.pencil)}<span class="tx"><span class="t">אני כיוצר</span><span class="small">בקשות, יצירות ופרופיל</span></span>${nNew ? `<span class="cnt" aria-label="${nNew} חדשות">${nNew}</span>` : ''}<span class="fwd" aria-hidden="true">${svg(UI.back)}</span></button>` : '';
+  const makerBtn = mode === 'maker' ? `<button type="button" class="mecta" data-act="go" data-v="memaker">${meIc(UI.pencil)}<span class="tx"><span class="t">אני כיוצר</span><span class="small">${CONFIG.SELLING ? 'בקשות, יצירות ופרופיל' : 'בקשות ופרופיל'}</span></span>${nNew ? `<span class="cnt" aria-label="${nNew} חדשות">${nNew}</span>` : ''}<span class="fwd" aria-hidden="true">${svg(UI.back)}</span></button>` : '';
   const reqCard = meCard(UI.mail, 'הבקשות שלי', MYREQ.length, `${myReqsList()}${MYREQ.length ? '<button class="btn block" style="margin-top:12px" data-act="tab" data-v="post">לכתוב בקשה חדשה</button>' : ''}`, 'h-mine');
   const guest = !AD.session && signinOK() ? `<section class="mecard" aria-labelledby="h-guest"><div class="mecard-h">${meIc(UI.heart)}<h2 class="sec-title" id="h-guest">שומרים מה שאהבתם</h2></div><p class="muted">הרשמה קצרה בלי סיסמה, כדי לשמור יוצרים ותמונות.</p><div class="bgrid"><button type="button" class="btn" data-act="signup">הרשמה</button><button type="button" class="btn ghost" data-act="signin">כניסה</button></div></section>` : '';
   return `${head(title, gearBtn())}
@@ -5562,9 +5565,10 @@ async function loadLikeCounts() {
 }
 /* ---------- my posts: each photo in the feed, its short name, and what it led to ---------- */
 const CAP = new Map();   /* the short names, by maker and photo */
-const capOf = (mid, photo) => CAP.get(plKey(mid, photo)) || '';
+const capOf = (mid, photo) => (CONFIG.POSTS && CAP.get(plKey(mid, photo))) || '';
 const postsOn = () => !!REAL.posts || PV !== 'admin';
 async function loadCaptions() {
+  if (!CONFIG.POSTS) { REAL.posts = false; return; }   /* off: no names are read, and nothing is counted */
   const r = await dbq(x => x.from('public_photo_posts').select('maker_id,photo,caption').limit(5000));
   REAL.posts = !r.error && Array.isArray(r.data);   /* the database update may not be there yet: then the names and counts stay hidden */
   if (!REAL.posts) return;
@@ -5626,7 +5630,8 @@ async function saveCaption(f) {
 const TAG_ICON = '<path d="M4 4h8l8 8-8 8-8-8z"/><circle cx="8.5" cy="8.5" r="1.3"/>';
 function makerPageHTML() {
   const nNew = AU.inbox.list.filter(x => x.rs === 'sent' && x.rstatus !== 'closed').length;
-  const tabs = [['inbox', 'בקשות', nNew, UI.mail], ['posts', 'פוסטים', 0, UI.grid], ['listings', 'יצירות', 0, TAG_ICON], ['profile', 'פרופיל', 0, UI.user]];
+  const tabs = [['inbox', 'בקשות', nNew, UI.mail], ...(CONFIG.POSTS ? [['posts', 'פוסטים', 0, UI.grid]] : []), ...(CONFIG.SELLING ? [['listings', 'יצירות', 0, TAG_ICON]] : []), ['profile', 'פרופיל', 0, UI.user]];
+  if (!tabs.some(t => t[0] === ME.tab)) ME.tab = 'inbox';
   const body = ME.tab === 'listings' ? myListingsHTML() : ME.tab === 'profile' ? profileHTML() : ME.tab === 'posts' ? postsHTML() : inboxHTML();
   return `${head('אני כיוצר', gearBtn())}<div class="stack tight g">
       ${meEntry(UI.user, 'אני', 'הבקשות והמועדפים שלי', 'tab', 'mine')}

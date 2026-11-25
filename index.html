@@ -3088,142 +3088,483 @@ function reviewsHTML(m) {
     <button type="button" class="btn ghost block" data-act="rvwrite" data-v="${esc(m.id)}">לכתוב ביקורת</button></section>`;
 }
 const FLYER_CSS = `#flyer{display:none}
-#flyer.show{display:block;position:fixed;inset:0;z-index:9999;background:#cfc9ba;overflow:auto}
-#flyer .fl-bar{display:grid;gap:16px;padding:14px 14px 18px;background:#191c13;color:#fbfaf6}
-#flyer .fl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px}
-#flyer .fl-title{font:700 20px var(--body)}
-#flyer .fl-x{flex:none;width:44px;height:44px;padding:0;border:0;background:#2f3326;color:#fbfaf6;display:grid;place-items:center}
+/* the editor: a slim top bar, the sign always in view (scaled to fit), and a small control area that scrolls inside itself */
+#flyer.show{display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "stage" "panel";position:fixed;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:45;background:var(--ground);color:var(--ink);overflow:hidden}
+#flyer .fe-top{grid-area:top;display:flex;align-items:center;gap:10px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:var(--paper)}
+#flyer .fl-x{flex:none;width:44px;height:44px;padding:0;border:0;background:var(--ground);color:var(--ink);display:grid;place-items:center}
 #flyer .fl-x svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
-#flyer .fl-grp{display:grid;gap:8px}
-#flyer .fl-lbl{font-size:14px;color:#d3e1bd}
-#flyer .fl-seg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-#flyer .fl-seg.three{grid-template-columns:repeat(3,1fr)}
-#flyer .fl-chip{border:0;background:#2f3326;color:#fbfaf6;font:700 15px var(--body);padding:8px;min-height:44px;text-align:center}
-#flyer .fl-chip[aria-pressed="true"]{background:#fbfaf6;color:#191c13}
-#flyer .fl-in{width:100%;min-height:48px;border:0;background:#fbfaf6;color:#191c13;font:400 17px var(--body);padding:8px 12px}
-#flyer .fl-act{position:sticky;bottom:0;z-index:3;display:grid;gap:6px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:#191c13;color:#fbfaf6}
-#flyer .fl-go{min-height:54px;font-size:18px}
-#flyer .fl-tip{font-size:13px;color:#d3e1bd;margin:0;text-align:center}
-#flyer .fl-page{position:relative;width:794px;height:1122px;margin:14px auto;overflow:hidden;box-sizing:border-box;zoom:var(--z,1);background:#fbfaf6;color:#191c13;font-family:var(--body);box-shadow:0 10px 30px rgba(31,34,24,.25)}
+#flyer .fl-title{flex:1;min-width:0;margin:0;font:700 17px var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#flyer .fl-go{flex:none;min-height:44px;padding:8px 16px;font-size:15px;white-space:nowrap}
+#flyer .fe-stage{grid-area:stage;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 12px 4px;min-height:0;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#flyer .fe-fit{position:relative;flex:none;width:calc(794px * var(--z,.4));height:calc(1122px * var(--z,.4));direction:ltr}
+#flyer .fe-hint{flex:none;margin:0;min-height:20px;max-width:100%;font-size:12.5px;line-height:1.35;color:var(--muted);text-align:center;direction:rtl}
+#flyer .fe-hint.warn{color:var(--clay);font-weight:700}
+#flyer .fe-ov{position:absolute;inset:0;pointer-events:none}
+#flyer .fe-box{position:absolute;border:2px solid #1040c3;outline:2px solid #fff}
+#flyer .fe-box.bad{border-color:#b3261e;border-style:dashed;border-width:3px}
+#flyer .fe-handle{position:absolute;left:-22px;bottom:-22px;width:44px;height:44px;pointer-events:auto;cursor:nesw-resize;touch-action:none}
+#flyer .fe-handle::after{content:"";position:absolute;inset:13px;background:#1040c3;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+#flyer .fe-guide{position:absolute;background:#e0007a;pointer-events:none}
+#flyer .fe-guide.gx{top:0;bottom:0;width:1px}
+#flyer .fe-guide.gy{left:0;right:0;height:1px}
+#flyer .fe-panel{grid-area:panel;display:flex;flex-direction:column;height:clamp(204px,33vh,268px);height:clamp(204px,33dvh,268px);min-height:0;background:var(--paper);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -1px 0 var(--tone)}
+#flyer .fe-tabs{flex:none;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px 10px 0}
+#flyer .fl-tab{min-height:44px;border:0;border-bottom:3px solid var(--tone);background:none;color:var(--muted);font:700 15px var(--body);padding:4px}
+#flyer .fl-tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--stamp)}
+#flyer .fe-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:12px 12px 14px}
+#flyer .fl-grp{display:flex;flex-direction:column;gap:6px;border:0;margin:0;padding:0;min-width:0}
+#flyer .fl-lbl{font-size:13px;color:var(--muted);padding:0}
+#flyer .fl-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#flyer .fl-chip{border:0;min-height:44px;min-width:44px;padding:8px 14px;background:var(--ground);color:var(--ink);font:700 14px/1.2 var(--body);display:inline-flex;align-items:center;justify-content:center;gap:6px;text-align:center;clip-path:polygon(8px 0,100% 0,100% 100%,0 100%,0 8px)}
+#flyer .fl-chip:focus-visible,#flyer .fl-tab:focus-visible,#flyer .fl-x:focus-visible{clip-path:none;outline:3px solid var(--stamp);outline-offset:1px}
+#flyer .fl-chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+#flyer .fl-chip[data-tog]::before{content:"";flex:none;width:12px;height:12px;box-shadow:inset 0 0 0 1.5px currentColor}
+#flyer .fl-chip[data-tog][aria-pressed="true"]::before{content:"✓";box-shadow:none;line-height:12px;font-size:14px}
+#flyer .fl-chip:disabled{opacity:.4}
+#flyer .fl-chip.go{background:var(--stamp);color:var(--paper)}
+#flyer .fl-designs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#flyer .fl-designs .fl-chip{flex-direction:column;gap:5px;padding:7px 2px;font-size:12px}
+#flyer .fl-mini{width:26px;height:36px;box-shadow:0 0 0 1px rgba(125,125,110,.55)}
+#flyer .fl-mini.d1{background:linear-gradient(#1040c3,#1040c3) 50% 78%/18px 7px no-repeat,linear-gradient(#a98a66,#a98a66) 50% 42%/18px 10px no-repeat,#fbfaf6}
+#flyer .fl-mini.d2{background:linear-gradient(#a98a66,#a98a66) top/100% 56% no-repeat,linear-gradient(#1040c3,#1040c3) 50% 84%/12px 7px no-repeat,#fbfaf6}
+#flyer .fl-mini.d3{background:linear-gradient(#fbfaf6,#fbfaf6) 50% 40%/18px 8px no-repeat,linear-gradient(#fbfaf6,#fbfaf6) 50% 82%/10px 7px no-repeat,#1040c3}
+#flyer .fl-mini.d4{background:linear-gradient(90deg,transparent 12px,#fbfaf6 12px 14px,transparent 14px) top/100% 18px no-repeat,linear-gradient(#a98a66,#a98a66) top/100% 18px no-repeat,#d3e1bd}
+#flyer .fl-in{width:100%;min-height:44px;border:0;background:var(--ground);color:var(--ink);font:400 16px var(--body);padding:8px 12px;border-radius:0;-webkit-user-select:text;user-select:text}
+#flyer .fl-in:focus-visible{outline:3px solid var(--stamp);outline-offset:-1px}
+#flyer .fl-tip{font-size:12.5px;line-height:1.4;color:var(--muted);margin:0}
+#flyer .fe-selhead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px 0}
+#flyer .fe-selname{margin:0;font:700 16px var(--body)}
+#flyer .fl-step{display:inline-flex;align-items:center;gap:2px;background:var(--ground)}
+#flyer .fl-step .fl-chip{clip-path:none;font-size:22px;padding:0}
+#flyer .fl-step .fl-chip+.fl-chip{box-shadow:inset 2px 0 0 var(--paper)}
+#flyer .fe-selhead + .fe-body .fl-row{gap:6px}
+#flyer .fe-selhead + .fe-body .fl-chip{padding-inline:10px}
+#flyer .fe-selhead + .fe-body .fl-step .fl-chip{padding:0}
+/* a short phone: the group names step aside so both groups of the design tab are in view */
+@media (max-height:700px) and (max-width:859px){#flyer #fl-tp[aria-labelledby="flt-design"]{gap:8px;padding-block:8px}#flyer #fl-tp[aria-labelledby="flt-design"] .fl-lbl{display:none}#flyer .fl-designs .fl-chip{padding-block:5px;gap:3px}#flyer .fl-mini{width:22px;height:30px}}
+@media (min-width:860px){
+  #flyer.show{grid-template-columns:384px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"top top" "panel stage"}
+  #flyer .fe-top{padding-inline:16px}
+  #flyer .fe-panel{height:auto;box-shadow:none}
+  #flyer .fe-stage{padding:22px 22px 10px}
+}
+/* while typing with the phone keyboard open there is little height: the controls take less of it */
+#flyer.fe-kb .fe-panel{height:150px}
+#flyer.fe-kb .fe-tabs,#flyer.fe-kb .fe-selhead,#flyer.fe-kb .fe-hint{display:none}
+/* the sign itself: one A4 page of 794 x 1122 units. A5 is the same page, printed smaller */
+#flyer .fl-page{position:absolute;left:0;top:0;width:794px;height:1122px;overflow:hidden;box-sizing:border-box;transform-origin:0 0;transform:scale(var(--z,.4));background:#fbfaf6;color:#191c13;font-family:var(--body);box-shadow:0 10px 30px rgba(31,34,24,.25);direction:rtl;text-align:start;cursor:grab}
 #flyer .fl-page *{box-sizing:border-box}
-#flyer .fl-page img{display:block}
-#flyer .f-line{position:absolute;inset-inline:60px;z-index:2;text-align:center;font-family:var(--display);font-size:64px;line-height:1;font-weight:700;background:#fbfaf6;color:#191c13;padding:14px 20px;border:3px dashed #1040c3;overflow-wrap:anywhere}
-#flyer .f-line.s{font-size:44px}
-#flyer .f-line.p-top{top:56px}
-#flyer .f-line.p-mid{top:50%;transform:translateY(-50%)}
-#flyer .f-line.p-bot{bottom:60px}
-#flyer .f-nm{font-family:var(--display);line-height:.86;font-weight:700;letter-spacing:0}
-#flyer .f-wh{font-size:30px;line-height:1.2}
-#flyer .f-cta{font-family:var(--display);font-size:54px;line-height:.95;font-weight:700}
-#flyer .f-sub{font-size:24px;line-height:1.3;margin-top:12px}
+#flyer .fl-page img{display:block;pointer-events:none;-webkit-user-drag:none}
+#flyer .fl-page [data-el]:focus{outline:none}
+#flyer .fl-page [data-el]:not(.f-st){position:relative}
+#flyer .fl-page .f-qr{z-index:6}
+#flyer .f-line{flex:none;align-self:center;width:fit-content;max-width:100%;text-align:center;text-wrap:balance;font-family:var(--display);font-size:calc(64px * var(--k,1));line-height:1.02;font-weight:700;background:#fbfaf6;color:#191c13;padding:10px 24px 12px;border:3px dashed #1040c3;overflow-wrap:anywhere}
+#flyer .f-line.s{font-size:calc(46px * var(--k,1))}
+#flyer .f-nm{width:fit-content;max-width:100%;font-family:var(--display);font-size:calc(var(--fs) * var(--k,1));line-height:.86;font-weight:700;letter-spacing:0;overflow-wrap:anywhere}
+#flyer .f-wh{width:fit-content;max-width:100%;font-size:30px;line-height:1.2}
+#flyer .f-ctx{width:fit-content;max-width:100%}
+#flyer .f-cta{font-family:var(--display);font-size:calc(54px * var(--k,1));line-height:.95;font-weight:700;overflow-wrap:anywhere}
+#flyer .f-sub{font-size:calc(24px * var(--k,1));line-height:1.3;margin-top:12px;overflow-wrap:anywhere}
 #flyer .f-qr{background:#fff;padding:12px;flex:none}
 #flyer .f-qr svg{display:block;width:100%;height:auto}
-#flyer .f-ft{font-size:20px;letter-spacing:.02em}
+#flyer .f-ft{flex:none;width:fit-content;max-width:100%;font-size:20px;letter-spacing:.02em}
 /* 1: the order slip */
-#flyer .v1{padding:58px 58px 46px;display:flex;flex-direction:column;justify-content:space-between}
+#flyer .v1{padding:58px 58px 46px;display:flex;flex-direction:column;justify-content:space-between;gap:16px}
 #flyer .v1::before{content:"";position:absolute;inset:22px;border:3px dashed #1040c3;pointer-events:none}
-#flyer .v1 .f-top{display:flex;justify-content:space-between;align-items:flex-start}
-#flyer .v1 .f-top img{width:150px}
-#flyer .v1 .f-hero{display:flex;gap:30px;align-items:flex-end}
-#flyer .v1 .f-hero .f-ph{width:280px;height:280px;flex:none;background:#cec5b0;padding:10px}
+#flyer .v1 .f-top{flex:none;display:flex;justify-content:space-between;align-items:flex-start}
+#flyer .v1 .f-top img{width:150px;aspect-ratio:466/302;height:auto;object-fit:contain}
+#flyer .v1 .f-hero{flex:none;display:flex;gap:30px;align-items:flex-end}
+#flyer .v1 .f-hero .f-ph{width:calc(280px * var(--k,1));height:calc(280px * var(--k,1));flex:none;background:#cec5b0;padding:10px}
 #flyer .v1 .f-hero .f-ph img{width:100%;height:100%;object-fit:cover}
 #flyer .v1 .f-hero .f-tx{flex:1;min-width:0}
-#flyer .v1 .f-works{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-#flyer .v1 .f-works img{width:100%;height:165px;object-fit:cover}
-#flyer .v1 .f-bot{display:flex;gap:30px;align-items:center}
-#flyer .v1 .f-qr{width:290px;border:4px solid #1040c3}
+#flyer .v1 .f-works{flex:0 1 165px;min-height:90px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:minmax(0,1fr);gap:12px}
+#flyer .v1 .f-works img{width:100%;height:100%;min-height:0;object-fit:cover}
+#flyer .v1 .f-bot{flex:none;display:flex;gap:30px;align-items:center}
+#flyer .v1 .f-qr{width:calc(290px * var(--kq,1));border:4px solid #1040c3}
 /* 2: one large picture */
 #flyer .v2{display:flex;flex-direction:column}
-#flyer .v2 .f-big{height:590px;flex:none;background:#d3e1bd;position:relative}
-#flyer .v2 .f-big img.f-photo{width:100%;height:100%;object-fit:cover}
-#flyer .v2 .f-big .f-st{position:absolute;top:34px;inset-inline-start:34px;width:92px;transform:rotate(-4deg)}
-#flyer .v2 .f-big .f-init{position:absolute;inset:0;display:grid;place-items:center;font:700 420px/1 var(--display);color:rgba(31,34,24,.16)}
-#flyer .v2 .f-card{margin:-110px 48px 0;background:#fbfaf6;padding:26px 34px 22px;position:relative}
-#flyer .v2 .f-bot{flex:1;display:flex;gap:34px;align-items:center;padding:0 48px}
-#flyer .v2 .f-qr{width:270px}
-#flyer .v2 .f-ft{padding:0 48px 30px;color:#4e4e41}
+#flyer .v2 .f-big{flex:0 1 590px;min-height:300px;background:#d3e1bd}
+#flyer .v2 .f-big img.f-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#flyer .v2 .f-big .f-st{position:absolute;top:34px;inset-inline-start:34px;width:92px;aspect-ratio:4/5;object-fit:contain;transform:rotate(-4deg)}
+#flyer .v2 .f-big .f-init{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;font:700 420px/1 var(--display);color:rgba(31,34,24,.16)}
+#flyer .v2 .f-card{flex:none;margin:-110px 48px 0;background:#fbfaf6;padding:26px 34px 22px;z-index:1}
+#flyer .v2 .f-line{margin:16px 48px 0;max-width:calc(100% - 96px)}
+#flyer .v2 .f-line.p-top{margin:18px 48px}
+#flyer .v2 .f-line.p-top + .f-big + .f-card{position:relative}
+#flyer .v2 .f-line.p-bot{margin:0 48px 14px}
+#flyer .v2 .f-bot{flex:1 0 auto;display:flex;gap:34px;align-items:center;padding:12px 48px}
+#flyer .v2 .f-qr{width:calc(270px * var(--kq,1))}
+#flyer .v2 .f-ft{margin:0 48px 30px;align-self:flex-start;color:#4e4e41}
 /* 3: type only, in the stamp blue */
-#flyer .v3{background:#1040c3;color:#fbfaf6;padding:64px 64px 52px;display:flex;flex-direction:column;justify-content:space-between}
+#flyer .v3{background:#1040c3;color:#fbfaf6;padding:64px 64px 52px;display:flex;flex-direction:column;justify-content:space-between;gap:20px}
 #flyer .v3::before{content:"";position:absolute;inset:22px;border:3px dashed rgba(242,241,238,.85);pointer-events:none}
-#flyer .v3 .f-lg{width:190px;filter:brightness(0) invert(1)}
+#flyer .v3>*{flex:none}
+#flyer .v3 .f-lg{width:190px;aspect-ratio:466/302;height:auto;align-self:flex-start;object-fit:contain;filter:brightness(0) invert(1)}
 #flyer .v3 .f-nm{color:#fbfaf6}
 #flyer .v3 .f-wh{color:#d3e1bd;margin-top:18px;font-size:34px}
 #flyer .v3 .f-bot{display:flex;gap:34px;align-items:center}
-#flyer .v3 .f-qr{width:300px}
+#flyer .v3 .f-qr{width:calc(300px * var(--kq,1))}
 #flyer .v3 .f-sub{color:#dfe3ef}
-#flyer .v3 .f-ft{color:#d3e1bd}
+#flyer .v3 .f-ft{color:#d3e1bd;margin-top:26px}
 /* 4: a collage */
 #flyer .v4{display:flex;flex-direction:column;background:#d3e1bd}
-#flyer .v4 .f-mos{height:560px;flex:none;display:grid;gap:6px;background:#fbfaf6}
+#flyer .v4 .f-mos{flex:0 1 560px;min-height:280px;display:grid;grid-auto-rows:minmax(0,1fr);gap:6px;background:#fbfaf6}
 #flyer .v4 .f-mos img{width:100%;height:100%;object-fit:cover;min-height:0}
 #flyer .v4 .n1{grid-template-columns:1fr}
 #flyer .v4 .n2{grid-template-columns:1fr 1fr}
-#flyer .v4 .n3{grid-template-columns:1.25fr 1fr;grid-template-rows:1fr 1fr}
+#flyer .v4 .n3{grid-template-columns:1.25fr 1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
 #flyer .v4 .n3 img:first-child{grid-row:1/3}
-#flyer .v4 .n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
-#flyer .v4 .f-info{flex:1;padding:34px 48px 30px;display:flex;flex-direction:column;justify-content:space-between}
+#flyer .v4 .n4{grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
+#flyer .v4 .f-info{flex:1 0 auto;padding:34px 48px 30px;display:flex;flex-direction:column;justify-content:space-between;gap:16px}
+#flyer .v4 .f-info>*{flex:none}
+#flyer .v4 .f-line.p-top{margin:22px 48px;max-width:calc(100% - 96px)}
 #flyer .v4 .f-wh{color:#3d462f}
 #flyer .v4 .f-bot{display:flex;gap:30px;align-items:center}
-#flyer .v4 .f-qr{width:240px}
-#flyer .v4 .f-ft{color:#3d462f;display:flex;justify-content:space-between;align-items:center}
-#flyer .v4 .f-ft img{width:120px}
+#flyer .v4 .f-qr{width:calc(240px * var(--kq,1))}
+#flyer .v4 .f-ft{width:auto;color:#3d462f;display:flex;justify-content:space-between;align-items:center}
+#flyer .v4 .f-ft img{width:120px;aspect-ratio:466/220;height:auto;object-fit:contain}
 @media print{
   html.fl-printing body>*:not(#flyer){display:none!important}
-  html.fl-printing,html.fl-printing body{background:#fff!important}
-  #flyer.show{position:static;display:block;background:none;overflow:visible}
-  #flyer .fl-bar,#flyer .fl-act{display:none}
-  #flyer .fl-page{margin:0;zoom:1;box-shadow:none;height:1122px;page-break-after:avoid;break-after:avoid}
-  html.fl-a5 #flyer .fl-page{zoom:.7071}
+  html.fl-printing,html.fl-printing body{background:#fff!important;margin:0!important;padding:0!important;min-height:0!important;height:auto!important}
+  #flyer.show{position:static;display:block;height:auto!important;background:none;overflow:visible}
+  #flyer .fe-top,#flyer .fe-panel,#flyer .fe-ov,#flyer .fe-hint{display:none!important}
+  #flyer .fe-stage,#flyer .fe-fit{display:block;position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible}
+  #flyer .fl-page{position:relative;margin:0;transform:none;zoom:1;box-shadow:none;page-break-after:avoid;break-after:avoid;page-break-inside:avoid;break-inside:avoid}
+  html.fl-a5 #flyer .fl-page{zoom:.704}
   #flyer *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }`;
 const FL_VARS = [['1', 'שובר'], ['2', 'תמונה גדולה'], ['3', 'כחול'], ['4', 'קולאז׳']];
-const FL = { m: null, v: '1', size: 'a4', line: '', pos: 'bot', ph: true, cap: true, city: true, tel: false };
+const FL_PW = 794, FL_PH = 1122, FL_SAFE = 20, FL_KEY = 'behazmana.sign';
+const FL_CTA = 'סרקו כדי לראות את העבודות ולהזמין', FL_SUB = 'כתבו לנו מה תרצו שיכינו לכם.';
+/* every movable part of the sign, by the name the maker sees */
+const FL_NAMES = { logo: 'לוגו', mark: 'חותמת', photo: 'תמונה ראשית', works: 'עוד תמונות', name: 'שם', where: 'פרטים', card: 'שם ופרטים', qr: 'קוד', cta: 'כיתוב', host: 'כתובת אתר', line: 'שורה אישית' };
+const FL_EDITS = { name: 'name', card: 'name', cta: 'cta', line: 'line' };   /* the parts whose words are the maker's own */
+const flRange = k => k === 'qr' ? [.8, 1.4] : [.5, 1.8];
+const flFresh = () => ({ v: '1', size: 'a4', line: '', pos: 'bot', ph: true, cap: true, city: true, tel: false, txt: { name: '', cta: '', sub: '' }, lay: {} });
+const FL = { m: null, tab: 'design', sel: '', edit: false, base: {}, cur: {}, cover: [], note: '', ...flFresh() };
 const flSize = (name, base) => { const n = Array.from(String(name || '')).length; return Math.round(base * (n <= 8 ? 1 : n <= 12 ? .8 : n <= 18 ? .62 : .5)); };
-function flyerPage(m, v) {
-  const h = flyerBase(m, v), ln = String(FL.line || '').trim(); if (!ln) return h;
-  const pos = ['top', 'mid', 'bot'].includes(FL.pos) ? FL.pos : 'bot';
-  return h.replace(/^(<div class="fl-page[^>]*>)/, `$1<div class="f-line p-${pos}${Array.from(ln).length > 28 ? ' s' : ''}">${esc(ln)}</div>`);
+
+/* ----- what is remembered on this device: the choices, the texts and the arrangement of each design and page size ----- */
+const flStore = () => lsGet(FL_KEY, x => !!x && typeof x === 'object' && !Array.isArray(x), {});
+function flLoad(id) {
+  const o = flStore()[id] || {}, d = flFresh(), str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+  if (FL_VARS.some(x => x[0] === o.v)) d.v = o.v;
+  if (o.size === 'a5') d.size = 'a5';
+  d.line = str(o.line, 60); if (['top', 'mid', 'bot'].includes(o.pos)) d.pos = o.pos;
+  ['ph', 'cap', 'city', 'tel'].forEach(k => { if (typeof o[k] === 'boolean') d[k] = o[k]; });
+  if (o.txt) d.txt = { name: str(o.txt.name, 60), cta: str(o.txt.cta, 60), sub: str(o.txt.sub, 90) };
+  Object.entries(o.lay && typeof o.lay === 'object' ? o.lay : {}).forEach(([key, els]) => {
+    if (!/^[1-4]-a[45]$/.test(key) || !els || typeof els !== 'object') return;
+    d.lay[key] = {};
+    Object.entries(els).forEach(([k, e]) => { if (FL_NAMES[k] && e) d.lay[key][k] = { x: Number.isFinite(e.x) ? e.x : 0, y: Number.isFinite(e.y) ? e.y : 0, s: Number.isFinite(e.s) ? Math.min(1.8, Math.max(.5, e.s)) : 1, h: !!e.h && k !== 'qr' }; });
+  });
+  return d;
 }
-function flyerBase(m, v) {
+function flSave() {
+  if (!FL.m) return;
+  const all = flStore(); all[FL.m.id] = { v: FL.v, size: FL.size, line: FL.line, pos: FL.pos, ph: FL.ph, cap: FL.cap, city: FL.city, tel: FL.tel, txt: FL.txt, lay: FL.lay }; lsSet(FL_KEY, all);
+}
+const flKey = () => `${FL.v}-${FL.size}`;
+const flState = k => ({ x: 0, y: 0, s: 1, h: false, ...((FL.lay[flKey()] || {})[k] || {}) });
+function flPut(k, st) {
+  const L = FL.lay[flKey()] || (FL.lay[flKey()] = {});
+  if (!st.x && !st.y && st.s === 1 && !st.h) delete L[k]; else L[k] = { x: Math.round(st.x * 10) / 10, y: Math.round(st.y * 10) / 10, s: Math.round(st.s * 100) / 100, h: !!st.h };
+  if (!Object.keys(L).length) delete FL.lay[flKey()];
+}
+
+/* ----- the four designs. The personal line is part of the page's flow, so it always has its own room ----- */
+function flyerPage(m, v) {
   const url = makerLink(m.id), face = FL.ph ? (m.portrait || (m.photos || [])[0]) : '', works = FL.ph ? ((m.portrait ? m.photos : (m.photos || []).slice(1)) || []) : [], all = [face, ...works].filter(Boolean);
-  const u = p => esc(photoURL(p)), name = esc(m.name), where = `${esc(craftsLine(m))}${m.city && FL.city ? ` · ${esc(m.city)}` : ''}${m.phone && FL.tel ? ` · <span dir="ltr">${esc(m.phone)}</span>` : ''}`, qr = `<div class="f-qr">${qrSvg(url)}</div>`;
-  const cta = FL.cap ? '<div class="f-cta">סרקו כדי לראות את העבודות ולהזמין</div><div class="f-sub">כתבו לנו מה תרצו שיכינו לכם.</div>' : '';
+  const shownName = FL.txt.name.trim() || m.name, u = p => esc(photoURL(p)), el = k => `data-el="${k}"`;
+  const name = (base, tag = true) => `<div class="f-nm"${tag ? ' ' + el('name') : ''} style="--fs:${flSize(shownName, base)}px">${esc(shownName)}</div>`;
+  const whereText = `${esc(craftsLine(m))}${m.city && FL.city ? ` · ${esc(m.city)}` : ''}${m.phone && FL.tel ? ` · <span dir="ltr" style="white-space:nowrap">${esc(m.phone)}</span>` : ''}`;
+  const where = (tag = true, style = '') => `<div class="f-wh"${tag ? ' ' + el('where') : ''}${style ? ` style="${style}"` : ''}>${whereText}</div>`;
+  const qr = `<div class="f-qr" ${el('qr')}>${qrSvg(url)}</div>`;
+  const cta = FL.cap ? `<div class="f-ctx" ${el('cta')}><div class="f-cta">${esc(FL.txt.cta.trim() || FL_CTA)}</div><div class="f-sub">${esc(FL.txt.sub.trim() || FL_SUB)}</div></div>` : '';
+  const bot = `<div class="f-bot">${qr}<div>${cta}</div></div>`;
   const host = esc(location.host + location.pathname.replace(/\/$/, ''));
-  if (v === '2') return `<div class="fl-page v2"><div class="f-big">${face ? `<img class="f-photo" src="${u(face)}" alt="">` : `<div class="f-init">${esc(Array.from(m.name)[0] || '')}</div>`}<img class="f-st" src="logo/mark-slip.svg" alt=""></div>
-    <div class="f-card"><div class="f-nm" style="font-size:${flSize(m.name, 150)}px">${name}</div><div class="f-wh">${where}</div></div>
-    <div class="f-bot">${qr}<div>${cta}</div></div><div class="f-ft">${host}</div></div>`;
-  if (v === '3') return `<div class="fl-page v3"><img class="f-lg" src="logo/logo-primary-ink.svg" alt="בהזמנה">
-    <div><div class="f-nm" style="font-size:${flSize(m.name, 270)}px">${name}</div><div class="f-wh">${where}</div></div>
-    <div><div class="f-bot">${qr}<div>${cta}</div></div><div class="f-ft" style="margin-top:26px">${host}</div></div></div>`;
-  if (v === '4') { const imgs = all.slice(0, 4); return `<div class="fl-page v4">${imgs.length ? `<div class="f-mos n${imgs.length}">${imgs.map(p => `<img src="${u(p)}" alt="">`).join('')}</div>` : ''}
-    <div class="f-info"><div><div class="f-nm" style="font-size:${flSize(m.name, 130)}px">${name}</div><div class="f-wh">${where}</div></div>
-    <div class="f-bot">${qr}<div>${cta}</div></div><div class="f-ft"><span>${host}</span><img src="logo/logo-wordmark-ink.svg" alt="בהזמנה"></div></div></div>`; }
-  return `<div class="fl-page v1"><div class="f-top"><img src="logo/logo-primary-ink.svg" alt="בהזמנה"></div>
-    <div class="f-hero">${face ? `<div class="f-ph"><img src="${u(face)}" alt=""></div>` : ''}<div class="f-tx"><div class="f-nm" style="font-size:${flSize(m.name, face ? 118 : 160)}px">${name}</div><div class="f-wh" style="margin-top:12px">${where}</div></div></div>
-    ${works.length ? `<div class="f-works">${works.slice(0, 3).map(p => `<img src="${u(p)}" alt="">`).join('')}</div>` : ''}
-    <div class="f-bot">${qr}<div>${cta}</div></div><div class="f-ft" style="color:#4e4e41">${host}</div></div>`;
+  const ln = String(FL.line || '').trim(), line = at => ln && FL.pos === at ? `<div class="f-line p-${at}${Array.from(ln).length > 28 ? ' s' : ''}" ${el('line')}>${esc(ln)}</div>` : '';
+  if (v === '2') return `<div class="fl-page v2">${line('top')}<div class="f-big" ${el('photo')}>${face ? `<img class="f-photo" src="${u(face)}" alt="">` : `<div class="f-init">${esc(Array.from(shownName)[0] || '')}</div>`}<img class="f-st" ${el('mark')} src="logo/mark-slip.svg" alt=""></div>
+    <div class="f-card" ${el('card')}>${name(150, false)}${where(false)}</div>${line('mid')}${bot}${line('bot')}<div class="f-ft" ${el('host')}>${host}</div></div>`;
+  if (v === '3') return `<div class="fl-page v3"><img class="f-lg" ${el('logo')} src="logo/logo-primary-ink.svg" alt="בהזמנה">${line('top')}
+    <div>${name(270)}${where()}</div>${line('mid')}
+    <div>${bot}<div class="f-ft" ${el('host')}>${host}</div></div>${line('bot')}</div>`;
+  if (v === '4') { const imgs = all.slice(0, 4); return `<div class="fl-page v4">${line('top')}${imgs.length ? `<div class="f-mos n${imgs.length}" ${el('photo')}>${imgs.map(p => `<img src="${u(p)}" alt="">`).join('')}</div>` : ''}
+    <div class="f-info">${line('mid')}<div>${name(130)}${where()}</div>${bot}${line('bot')}<div class="f-ft"><span ${el('host')}>${host}</span><img ${el('logo')} src="logo/logo-wordmark-ink.svg" alt="בהזמנה"></div></div></div>`; }
+  return `<div class="fl-page v1"><div class="f-top"><img ${el('logo')} src="logo/logo-primary-ink.svg" alt="בהזמנה"></div>${line('top')}
+    <div class="f-hero">${face ? `<div class="f-ph" ${el('photo')}><img src="${u(face)}" alt=""></div>` : ''}<div class="f-tx">${name(face ? 118 : 160)}${where(true, 'margin-top:12px')}</div></div>${line('mid')}
+    ${works.length ? `<div class="f-works" ${el('works')}>${works.slice(0, 3).map(p => `<img src="${u(p)}" alt="">`).join('')}</div>` : ''}
+    ${bot}${line('bot')}<div class="f-ft" ${el('host')} style="color:#4e4e41">${host}</div></div>`;
+}
+
+/* ----- geometry, all in page units (794 x 1122) ----- */
+const flBox = () => document.getElementById('flyer');
+const flPageEl = () => { const b = flBox(); return b && b.querySelector('.fl-page'); };
+const flEls = () => { const pg = flPageEl(); return pg ? [...pg.querySelectorAll('[data-el]')] : []; };
+const flEl = k => flEls().find(e => e.dataset.el === k) || null;
+function flRect(e, pg) { const p = pg.getBoundingClientRect(), z = p.width / FL_PW || 1, r = e.getBoundingClientRect(); return { x: (r.left - p.left) / z, y: (r.top - p.top) / z, w: r.width / z, h: r.height / z }; }
+const flHits = (a, b, t = 1) => a.x < b.x + b.w - t && b.x < a.x + a.w - t && a.y < b.y + b.h - t && b.y < a.y + a.h - t;
+/* keeps a part inside the printable area (a part that bleeds to the edge by design may stay there) */
+function flClamp(k, st) {
+  const B = FL.base[k]; if (!B) return { ...st };
+  const x0 = Math.min(FL_SAFE, B.x), y0 = Math.min(FL_SAFE, B.y), x1 = Math.max(FL_PW - FL_SAFE, B.x + B.w), y1 = Math.max(FL_PH - FL_SAFE, B.y + B.h), [lo, hi] = flRange(k);
+  const s = Math.max(lo, Math.min(st.s, hi, Math.max(1, Math.min((x1 - x0) / B.w, (y1 - y0) / B.h)))), w = B.w * s, h = B.h * s;
+  const mid = (v, a, b) => a > b ? (a + b) / 2 : Math.min(b, Math.max(a, v));
+  return { ...st, s, x: mid(B.x + B.w / 2 + st.x, x0 + w / 2, x1 - w / 2) - (B.x + B.w / 2), y: mid(B.y + B.h / 2 + st.y, y0 + h / 2, y1 - h / 2) - (B.y + B.h / 2) };
+}
+const flAt = (k, st) => { const B = FL.base[k], w = B.w * st.s, h = B.h * st.s; return { x: B.x + B.w / 2 + st.x - w / 2, y: B.y + B.h / 2 + st.y - h / 2, w, h }; };
+/* the code (with the white quiet zone around it) may never be covered: nothing moves onto it, and it never moves onto anything */
+function flObstacles(k) {
+  const keys = k === 'qr' ? Object.keys(FL.base).filter(o => o !== 'qr') : FL.base.qr ? ['qr'] : [];
+  return keys.filter(o => FL.cur[o] && !FL.cur[o].h).map(o => flAt(o, FL.cur[o]));
+}
+const flFree = (k, st, obs) => { const r = flAt(k, st); return !obs.some(o => flHits(r, o)); };
+/* the nearest free place to where the finger asks for: the part slides along the code instead of going over it. null: there is none */
+function flResolve(k, want, prev) {
+  const obs = flObstacles(k), w1 = flClamp(k, want); if (flFree(k, w1, obs)) return w1;
+  const B = FL.base[k], w = B.w * w1.s, h = B.h * w1.s, cx = B.x + B.w / 2, cy = B.y + B.h / 2;
+  const xs = [w1.x], ys = [w1.y]; if (prev) { xs.push(prev.x); ys.push(prev.y); }
+  obs.forEach(o => { xs.push(o.x - w / 2 - cx, o.x + o.w + w / 2 - cx); ys.push(o.y - h / 2 - cy, o.y + o.h + h / 2 - cy); });
+  let best = null, bd = Infinity;
+  xs.forEach(x => ys.forEach(y => { const c = flClamp(k, { ...w1, x, y }), d = Math.hypot(c.x - w1.x, c.y - w1.y); if (d < bd && flFree(k, c, obs)) { best = c; bd = d; } }));
+  return best;
+}
+function flStyle(k) {
+  const e = flEl(k), c = FL.cur[k]; if (!e || !c) return;
+  e.style.translate = c.x || c.y ? `${c.x}px ${c.y}px` : ''; e.style.scale = c.s !== 1 ? String(c.s) : ''; e.style.visibility = c.h ? 'hidden' : '';
+}
+const flCovering = () => { const q = FL.base.qr && FL.cur.qr; if (!q) return []; const Q = flAt('qr', FL.cur.qr); return Object.keys(FL.cur).filter(k => k !== 'qr' && !FL.cur[k].h && flHits(flAt(k, FL.cur[k]), Q, 2)); };
+/* when the page is too full (a long name, a long line) the big letters, the photo and the code step down a little */
+function flFitText(pg) {
+  const over = () => {
+    const flow = [...pg.children].filter(e => getComputedStyle(e).position !== 'absolute'), last = flow[flow.length - 1]; if (!last) return false;
+    const limit = FL_PH - parseFloat(getComputedStyle(pg).paddingBottom), r = flRect(last, pg), info = pg.querySelector('.f-info');
+    return r.y + r.h + (parseFloat(getComputedStyle(last).marginBottom) || 0) > limit + 1 || (!!info && info.scrollHeight > info.clientHeight + 1);
+  };
+  let k = 1; const set = () => { pg.style.setProperty('--k', k.toFixed(2)); pg.style.setProperty('--kq', Math.max(.84, k).toFixed(2)); };
+  set(); while (k > .56 && over()) { k -= .04; set(); }
+}
+function flLayout() {
+  const box = flBox(), pg = flPageEl(); if (!box || !pg || !box.classList.contains('show') || !pg.getBoundingClientRect().width) return;
+  const els = flEls();
+  els.forEach(e => { e.style.translate = ''; e.style.scale = ''; e.style.visibility = ''; });
+  flFitText(pg);
+  FL.base = {}; FL.cur = {};
+  els.forEach(e => { FL.base[e.dataset.el] = flRect(e, pg); });
+  els.forEach(e => { const k = e.dataset.el; FL.cur[k] = flClamp(k, flState(k)); flStyle(k); });
+  FL.cover = flCovering(); flOverlay();
+}
+let FL_RAF = 0;
+const flLater = () => { cancelAnimationFrame(FL_RAF); FL_RAF = requestAnimationFrame(flLayout); };
+function flFit() {
+  const box = flBox(), st = box && box.querySelector('.fe-stage'); if (!st || !box.classList.contains('show')) return;
+  const cs = getComputedStyle(st), hint = box.querySelector('.fe-hint');
+  const w = st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), h = st.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - (hint && hint.offsetHeight ? hint.offsetHeight + 4 : 0);
+  box.style.setProperty('--z', String(Math.max(.1, Math.min(1, w / FL_PW, h / FL_PH)).toFixed(4)));
+  flOverlay();
+}
+function flOverlay(guides) {
+  const box = flBox(), ov = box && box.querySelector('.fe-ov'), pg = flPageEl(); if (!ov || !pg) return;
+  const z = pg.getBoundingClientRect().width / FL_PW, px = r => `left:${r.x * z}px;top:${r.y * z}px;width:${r.w * z}px;height:${r.h * z}px`;
+  let html = '';
+  (guides || []).forEach(g => { html += g[0] === 'x' ? `<i class="fe-guide gx" style="left:${g[1] * z}px"></i>` : `<i class="fe-guide gy" style="top:${g[1] * z}px"></i>`; });
+  if (FL.cover.length && FL.cur.qr) html += `<div class="fe-box bad" style="${px(flAt('qr', FL.cur.qr))}"></div>`;
+  if (FL.sel && FL.cur[FL.sel] && !FL.cur[FL.sel].h) html += `<div class="fe-box sel" style="${px(flAt(FL.sel, FL.cur[FL.sel]))}"><span class="fe-handle" aria-hidden="true"></span></div>`;
+  ov.innerHTML = html; flHint();
+}
+function flHint() {
+  const h = flBox() && flBox().querySelector('.fe-hint'); if (!h) return;
+  const warn = FL.cover.length ? `משהו מכסה את הקוד: ${FL.cover.map(k => FL_NAMES[k]).join(', ')}. הזיזו הצידה או אפסו את הסידור.` : FL.note;
+  const text = warn || (FL.sel ? 'גוררים כדי להזיז. העיגול משנה גודל.' : 'נוגעים בכל חלק בדף כדי להזיז או לשנות.');
+  if (h.textContent !== text) h.textContent = text;
+  h.classList.toggle('warn', !!warn);
+}
+let FL_NOTE_T = 0;
+function flNote(t) { FL.note = t; flHint(); clearTimeout(FL_NOTE_T); FL_NOTE_T = setTimeout(() => { FL.note = ''; flHint(); }, 3500); }
+
+/* ----- the controls ----- */
+const flChip = (act, v, l, on, extra = '') => `<button type="button" class="fl-chip" data-act="${act}" data-v="${v}"${on == null ? '' : ` aria-pressed="${on}"`} ${extra}>${l}</button>`;
+const flGroup = (label, body, cls = 'fl-row') => `<div class="fl-grp"><span class="fl-lbl">${label}</span><div class="${cls}" role="group" aria-label="${label}">${body}</div></div>`;
+const flField = (id, label, value, ph, max) => `<div class="fl-grp"><label class="fl-lbl" for="${id}">${label}</label><input class="fl-in" id="${id}" maxlength="${max}" autocomplete="off" enterkeyhint="done" placeholder="${esc(ph)}" value="${esc(value)}"></div>`;
+const flPosRow = () => flGroup('מקום השורה בדף', [['top', 'למעלה'], ['mid', 'באמצע'], ['bot', 'למטה']].map(([k, l]) => flChip('flpos', k, l, FL.pos === k)).join(''));
+const flLineField = () => flField('fl-line', 'השורה שלכם על הדף', FL.line, 'למשל: עבודת יד, בהזמנה אישית', 60);
+function flEditor(what) {
+  if (what === 'line') return flLineField() + flPosRow();
+  if (what === 'name') return flField('fl-name', 'שם על הדף', FL.txt.name, FL.m.name, 60);
+  return flField('fl-cta', 'כותרת ליד הקוד', FL.txt.cta, FL_CTA, 60) + flField('fl-sub', 'משפט קטן מתחתיה', FL.txt.sub, FL_SUB, 90);
+}
+function flTabBody() {
+  const m = FL.m, has = !!(m.portrait || (m.photos || []).length), vars = has ? FL_VARS : FL_VARS.filter(x => x[0] === '3');
+  if (FL.tab === 'text') return flLineField() + flPosRow() + flEditor('name') + (FL.cap ? flEditor('cta') : '') + '<p class="fl-tip">שדה ריק חוזר לנוסח הרגיל.</p>';
+  if (FL.tab === 'parts') {
+    const opts = [['ph', 'תמונות', has], ['cap', 'כיתוב לסריקה', true], ['city', 'עיר', !!m.city], ['tel', 'טלפון', !!m.phone]].filter(x => x[2]);
+    const parts = flEls().map(e => e.dataset.el).filter(k => k !== 'qr' && k !== 'cta');
+    const moved = !!FL.lay[flKey()];
+    return flGroup('מה להציג בדף', opts.map(([k, l]) => flChip('flopt', k, l, !!FL[k], 'data-tog')).join(''))
+      + flGroup('חלקים בדף', parts.map(k => flChip('flshow', k, FL_NAMES[k], !flState(k).h, 'data-tog')).join(''))
+      + `<div class="fl-row">${flChip('flreset', '1', 'חזרה לסידור המקורי', null, moved ? '' : 'disabled')}</div>`;
+  }
+  return flGroup('עיצוב', vars.map(([k, l]) => flChip('flvar', k, `<i class="fl-mini d${k}" aria-hidden="true"></i><span>${l}</span>`, FL.v === k)).join(''), 'fl-designs')
+    + flGroup('גודל הדף', [['a4', 'A4 לתלייה'], ['a5', 'A5 לשולחן']].map(([k, l]) => flChip('flsize', k, l, FL.size === k)).join(''))
+    + '<p class="fl-tip">לפני ההדפסה כדאי לבדוק את הקוד עם הטלפון. נייר מט, בלי ברק, נסרק הכי טוב.</p>';
+}
+function flPanel(keepScroll) {
+  const box = flBox(), p = box && box.querySelector('.fe-panel'); if (!p) return;
+  const old = p.querySelector('.fe-body'), top = keepScroll && old ? old.scrollTop : 0, a = document.activeElement, had = a && p.contains(a) ? [a.dataset.act, a.dataset.v, a.id] : null;
+  if (FL.sel) {
+    const k = FL.sel, st = FL.cur[k] || flState(k), edit = FL_EDITS[k], [lo, hi] = flRange(k);
+    p.innerHTML = `<div class="fe-selhead"><p class="fe-selname">${FL_NAMES[k]}</p>${flChip('fldone', '1', 'סיום', null, 'data-primary').replace('class="fl-chip"', 'class="fl-chip go"')}</div>
+      <div class="fe-body"><div class="fl-row"><span class="fl-step" role="group" aria-label="גודל">${flChip('flscale', '-1', '−', null, `aria-label="להקטין"${st.s <= lo + .001 ? ' disabled' : ''}`)}${flChip('flscale', '1', '+', null, `aria-label="להגדיל"${st.s >= hi - .001 ? ' disabled' : ''}`)}</span>
+        ${edit && !FL.edit ? flChip('fledit', '1', 'עריכת טקסט') : ''}${k === 'qr' ? '' : flChip('flhide', k, 'הסתרה')}${flChip('flback', k, 'איפוס', null, 'aria-label="איפוס המקום והגודל"')}</div>
+        ${edit && FL.edit ? flEditor(edit) : ''}${k === 'qr' ? '<p class="fl-tip">את הקוד אי אפשר להסתיר או לכסות, כדי שתמיד אפשר יהיה לסרוק.</p>' : ''}</div>`;
+  } else {
+    const tabs = [['design', 'עיצוב'], ['text', 'טקסט'], ['parts', 'מה בדף']];
+    p.innerHTML = `<div class="fe-tabs" role="tablist" aria-label="עריכת הדף">${tabs.map(([k, l]) => `<button type="button" role="tab" class="fl-tab" id="flt-${k}" aria-selected="${FL.tab === k}" aria-controls="fl-tp" data-act="fltab" data-v="${k}">${l}</button>`).join('')}</div>
+      <div class="fe-body" id="fl-tp" role="tabpanel" aria-labelledby="flt-${FL.tab}">${flTabBody()}</div>`;
+  }
+  const body = p.querySelector('.fe-body'); if (body) body.scrollTop = top;
+  if (had) { const el = had[2] ? p.querySelector('#' + had[2]) : p.querySelector(`[data-act="${had[0]}"][data-v="${had[1]}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
+}
+function flSelect(k) {
+  if (k === FL.sel) return;
+  FL.sel = k && FL.cur[k] && !FL.cur[k].h ? k : ''; FL.edit = false; FL.note = '';
+  flPanel(); flFit();
+}
+/* builds the page again (after a choice or while typing), then lays it out */
+function flRefresh() {
+  const box = flBox(), fit = box && box.querySelector('.fe-fit'); if (!fit || !FL.m) return;
+  const old = fit.querySelector('.fl-page'); if (old) old.outerHTML = flyerPage(FL.m, FL.v); else fit.insertAdjacentHTML('afterbegin', flyerPage(FL.m, FL.v));
+  flEls().forEach(e => { e.tabIndex = 0; e.setAttribute('role', 'button'); e.setAttribute('aria-label', `בחירת ${FL_NAMES[e.dataset.el]}`); });
+  flPageEl().querySelectorAll('img').forEach(i => { if (!i.complete) i.addEventListener('load', flLater, { once: true }); });
+  flLayout();
 }
 function drawFlyer() {
-  const box = document.getElementById('flyer'), m = FL.m; if (!box || !m) return;
-  const has = !!(m.portrait || (m.photos || []).length), vars = has ? FL_VARS : FL_VARS.filter(x => x[0] === '3'); if (!vars.some(x => x[0] === FL.v)) FL.v = vars[0][0];
-  box.style.setProperty('--z', String(Math.min(1, (window.innerWidth - 24) / 794)));
-  const chip = (act, v, l, on) => `<button type="button" class="fl-chip" data-act="${act}" data-v="${v}" aria-pressed="${on}">${l}</button>`;
-  const opts = [['ph', 'התמונות', has], ['cap', 'הכיתוב ליד הקוד', true], ['city', 'העיר', !!m.city], ['tel', 'הטלפון', !!m.phone]].filter(x => x[2]);
-  box.innerHTML = `<div class="fl-bar"><div class="fl-row"><span class="fl-title">הדף להדפסה</span><button type="button" class="fl-x" data-act="flclose" aria-label="סגירה">${svg(UI.close)}</button></div>
-    <div class="fl-grp"><span class="fl-lbl">עיצוב</span><div class="fl-seg" role="group" aria-label="עיצוב">${vars.map(([k, l]) => chip('flvar', k, l, FL.v === k)).join('')}</div></div>
-    <div class="fl-grp"><span class="fl-lbl">גודל הדף</span><div class="fl-seg" role="group" aria-label="גודל הדף">${[['a4', 'A4 לתלייה'], ['a5', 'A5 לשולחן']].map(([k, l]) => chip('flsize', k, l, FL.size === k)).join('')}</div></div>
-    <div class="fl-grp"><label class="fl-lbl" for="fl-line">השורה שלכם על הדף</label><input class="fl-in" id="fl-line" maxlength="60" autocomplete="off" placeholder="למשל: עבודת יד, בהזמנה אישית" value="${esc(FL.line)}">
-      <div class="fl-seg three" role="group" aria-label="מיקום השורה">${[['top', 'למעלה'], ['mid', 'באמצע'], ['bot', 'למטה']].map(([k, l]) => chip('flpos', k, l, FL.pos === k)).join('')}</div></div>
-    <div class="fl-grp"><span class="fl-lbl">מה להציג בדף</span><div class="fl-seg" role="group" aria-label="מה להציג בדף">${opts.map(([k, l]) => chip('flopt', k, l, !!FL[k])).join('')}</div></div></div>${flyerPage(m, FL.v)}
-    <div class="fl-act"><button type="button" class="btn block fl-go" data-act="flprint">הדפסה או שמירה כ־PDF</button><p class="fl-tip">כדאי לבדוק את הקוד עם הטלפון לפני ההדפסה, ולהדפיס על נייר מט, בלי ברק.</p></div>`;
+  const box = flBox(), m = FL.m; if (!box || !m) return;
+  const has = !!(m.portrait || (m.photos || []).length); if (!has) FL.v = '3';
+  flRefresh(); if (FL.sel && !FL.cur[FL.sel]) FL.sel = '';
+  flPanel(true); flFit();
 }
-function flRefresh() { const box = document.getElementById('flyer'), pg = box && box.querySelector('.fl-page'); if (pg && FL.m) pg.outerHTML = flyerPage(FL.m, FL.v); }
+function flInput(t) {
+  if (t.id === 'fl-line') { FL.line = t.value; if (flState('line').h) flPut('line', { ...flState('line'), h: false }); }
+  else if (t.id === 'fl-name') FL.txt.name = t.value; else if (t.id === 'fl-cta') FL.txt.cta = t.value; else if (t.id === 'fl-sub') FL.txt.sub = t.value; else return;
+  flRefresh(); flSave();
+}
+function flScale(k, s) {
+  if (!FL.cur[k]) return false;
+  const cur = FL.cur[k], want = flClamp(k, { ...cur, s }), next = flResolve(k, want, cur);
+  if (!next || Math.hypot(next.x - want.x, next.y - want.y) > 160) { flNote('אין מקום להגדיל כאן בלי לכסות את הקוד.'); return false; }
+  if (s > cur.s && next.s <= cur.s + .001) { flNote('זה הגודל הכי גדול שנכנס בדף.'); return false; }
+  FL.cur[k] = next; flPut(k, next); flStyle(k); FL.cover = flCovering(); flOverlay(); return true;
+}
+
+/* ----- fingers and mouse: tap to choose, drag to move (with gentle snapping to the centre and to the original place), pinch or the round handle to resize ----- */
+function flPick(cx, cy) {
+  const pg = flPageEl(), z = pg.getBoundingClientRect().width / FL_PW, p = pg.getBoundingClientRect(), x = (cx - p.left) / z, y = (cy - p.top) / z, near = 14 / z;
+  let best = null;
+  Object.keys(FL.cur).forEach(k => {
+    if (FL.cur[k].h) return;
+    const r = flAt(k, FL.cur[k]), dx = Math.max(r.x - x, 0, x - r.x - r.w), dy = Math.max(r.y - y, 0, y - r.y - r.h), d = Math.hypot(dx, dy); if (d > near) return;
+    const score = [d, r.w * r.h]; if (!best || score[0] < best.s[0] - .5 || (Math.abs(score[0] - best.s[0]) <= .5 && score[1] < best.s[1])) best = { k, s: score };
+  });
+  return best ? best.k : '';
+}
+function flSnap(k, st, z) {
+  const B = FL.base[k], t = 7 / z, guides = [], out = { ...st };
+  [['x', FL_PW / 2, B.x + B.w / 2], ['y', FL_PH / 2, B.y + B.h / 2]].forEach(([a, middle, home]) => {
+    const c = home + st[a], to = [middle, home].find(g => Math.abs(c - g) <= t);
+    if (to !== undefined) { out[a] = to - home; guides.push([a, to]); }
+  });
+  return { st: out, guides };
+}
+const FLP = { pts: new Map(), g: null };
+function flDown(e) {
+  const stage = e.target.closest && e.target.closest('#flyer .fe-stage'); if (!stage || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  e.preventDefault();
+  const a = document.activeElement; if (a && a.classList.contains('fl-in')) a.blur();
+  FLP.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { stage.setPointerCapture(e.pointerId); } catch (x) { /* a synthetic pointer */ }
+  if (FLP.pts.size === 2 && FL.sel) {   /* two fingers on a chosen part resize it */
+    const [p, q] = [...FLP.pts.values()]; FLP.g = { type: 'pinch', k: FL.sel, d: Math.hypot(p.x - q.x, p.y - q.y) || 1, s: FL.cur[FL.sel].s }; return;
+  }
+  if (FLP.pts.size > 1) return;
+  if (e.target.closest('.fe-handle') && FL.sel) {
+    const r = stage.querySelector('.fe-box.sel').getBoundingClientRect(), c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    FLP.g = { type: 'size', k: FL.sel, c, d: Math.hypot(e.clientX - c.x, e.clientY - c.y) || 1, s: FL.cur[FL.sel].s, id: e.pointerId }; return;
+  }
+  let k = flPick(e.clientX, e.clientY);
+  /* a chosen part stays in the finger even when something smaller lies on it */
+  if (FL.sel && k !== FL.sel) { const sb = stage.querySelector('.fe-box.sel'); if (sb) { const r = sb.getBoundingClientRect(); if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && (!k || k === 'photo')) k = FL.sel; } }
+  flSelect(k); if (!FL.sel) { FLP.g = null; return; }
+  FLP.g = { type: 'move', k: FL.sel, x: e.clientX, y: e.clientY, from: { ...FL.cur[FL.sel] }, moved: false, id: e.pointerId };
+}
+function flMove(e) {
+  if (!FLP.pts.has(e.pointerId)) return;
+  FLP.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const g = FLP.g, pg = flPageEl(); if (!g || !pg || !FL.cur[g.k]) return;
+  e.preventDefault();
+  if (g.type === 'pinch') { if (FLP.pts.size < 2) return; const [p, q] = [...FLP.pts.values()]; flScale(g.k, g.s * Math.hypot(p.x - q.x, p.y - q.y) / g.d); return; }
+  if (g.id !== e.pointerId) return;
+  if (g.type === 'size') { flScale(g.k, g.s * Math.hypot(e.clientX - g.c.x, e.clientY - g.c.y) / g.d); return; }
+  if (!g.moved && Math.hypot(e.clientX - g.x, e.clientY - g.y) < 5) return;
+  g.moved = true;
+  const z = pg.getBoundingClientRect().width / FL_PW, want = { ...g.from, x: g.from.x + (e.clientX - g.x) / z, y: g.from.y + (e.clientY - g.y) / z };
+  const snap = flSnap(g.k, flClamp(g.k, want), z), next = flResolve(g.k, snap.st, FL.cur[g.k]) || FL.cur[g.k];
+  const bumped = Math.hypot(next.x - snap.st.x, next.y - snap.st.y) > 1;
+  FL.cur[g.k] = next; flPut(g.k, next); flStyle(g.k); FL.cover = flCovering(); flOverlay(bumped ? [] : snap.guides);
+  const note = bumped ? 'הקוד נשאר פנוי, כדי שאפשר יהיה לסרוק.' : ''; if (note !== FL.note) { FL.note = note; flHint(); }
+}
+function flUp(e) {
+  if (!FLP.pts.delete(e.pointerId)) return;
+  const g = FLP.g; if (!g) return;
+  if (g.type !== 'pinch' || FLP.pts.size < 2) { FLP.g = null; FL.note = ''; flSave(); flOverlay(); if (g.type !== 'move' || g.moved) flPanel(true); }
+}
+document.addEventListener('pointerdown', flDown);
+document.addEventListener('pointermove', flMove, { passive: false });
+document.addEventListener('pointerup', flUp);
+document.addEventListener('pointercancel', flUp);
+/* keyboard: Tab reaches every part; arrows move it, plus and minus resize, Escape lets go and then closes */
+document.addEventListener('focusin', e => { const t = e.target; if (t.closest && t.closest('#flyer .fl-page') && t.dataset.el && t.matches(':focus-visible')) flSelect(t.dataset.el); });
+document.addEventListener('keydown', e => {
+  const box = flBox(); if (!box || !box.classList.contains('show')) return;
+  const typing = e.target.classList && e.target.classList.contains('fl-in');
+  if (e.key === 'Escape') { e.preventDefault(); if (typing) e.target.blur(); else if (FL.sel) flSelect(''); else ACT.flclose(); return; }
+  if (typing) { if (e.key === 'Enter') e.target.blur(); return; }
+  if (e.target.dataset && e.target.dataset.el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); flSelect(e.target.dataset.el); return; }
+  const k = FL.sel; if (!k || !FL.cur[k]) return;
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (d) { e.preventDefault(); const n = e.shiftKey ? 20 : 3, next = flResolve(k, { ...FL.cur[k], x: FL.cur[k].x + d[0] * n, y: FL.cur[k].y + d[1] * n }, FL.cur[k]); if (next) { FL.cur[k] = next; flPut(k, next); flStyle(k); FL.cover = flCovering(); flOverlay(); flSave(); } }
+  else if (e.key === '+' || e.key === '=' || e.key === '-') { e.preventDefault(); if (flScale(k, FL.cur[k].s + (e.key === '-' ? -.08 : .08))) flSave(); }
+});
+/* the phone keyboard covers the bottom of the screen: the editor shrinks to what is visible, so the sign stays in view while typing */
+function flViewport() {
+  const b = flBox(); if (!b || !b.classList.contains('show')) return;
+  const vv = window.visualViewport;
+  if (vv && vv.scale === 1) { b.style.height = vv.height + 'px'; b.style.top = vv.offsetTop + 'px'; } else { b.style.height = ''; b.style.top = ''; }
+  const a = document.activeElement, typing = !!(a && a.classList.contains('fl-in'));
+  b.classList.toggle('fe-kb', typing && b.offsetHeight < 520);
+  flFit(); if (typing) a.scrollIntoView({ block: 'nearest' });
+}
+if (window.visualViewport) { window.visualViewport.addEventListener('resize', flViewport); window.visualViewport.addEventListener('scroll', flViewport); }
 window.addEventListener('afterprint', () => { document.documentElement.classList.remove('fl-printing'); document.documentElement.classList.remove('fl-a5'); });
-window.addEventListener('resize', () => { const b = document.getElementById('flyer'); if (b && b.classList.contains('show')) b.style.setProperty('--z', String(Math.min(1, (window.innerWidth - 24) / 794))); });
+window.addEventListener('resize', flViewport);
+if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => { if (FL.m) flLater(); });
+let FL_RO = null;
 function showFlyer(m) {
   if (!document.getElementById('flyer-css')) { const st = document.createElement('style'); st.id = 'flyer-css'; st.textContent = FLYER_CSS; document.head.appendChild(st); }
   let box = document.getElementById('flyer'); if (!box) { box = document.createElement('div'); box.id = 'flyer'; document.body.appendChild(box); }
-  FL.m = m; FL.v = '1'; FL.line = ''; FL.pos = 'bot'; FL.ph = true; FL.cap = true; FL.city = true; FL.tel = false; drawFlyer(); closeSheet(true); box.classList.add('show'); box.scrollTop = 0;
+  Object.assign(FL, flLoad(m.id), { m, tab: 'design', sel: '', edit: false, base: {}, cur: {}, cover: [], note: '' });
+  box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'הדף להדפסה');
+  box.innerHTML = `<header class="fe-top"><button type="button" class="fl-x" data-act="flclose" aria-label="סגירה">${svg(UI.close)}</button><h2 class="fl-title">הדף להדפסה</h2><button type="button" class="btn fl-go" data-act="flprint" aria-label="הדפסה או שמירה כ־PDF">הדפסה / PDF</button></header>
+    <div class="fe-stage"><div class="fe-fit"><div class="fe-ov" aria-hidden="true"></div></div><p class="fe-hint" role="status" aria-live="polite"></p></div><div class="fe-panel"></div>`;
+  closeSheet(true); box.classList.add('show'); flViewport(); drawFlyer();
+  if (FL_RO) FL_RO.disconnect(); if (window.ResizeObserver) { FL_RO = new ResizeObserver(() => flFit()); FL_RO.observe(box.querySelector('.fe-stage')); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(flLater);
+  box.querySelector('.fl-x').focus({ preventScroll: true });
+}
+function flClose() {
+  const b = flBox(); if (b) { flSave(); b.classList.remove('show'); b.innerHTML = ''; b.style.height = ''; b.style.top = ''; }
+  if (FL_RO) FL_RO.disconnect(); FL.sel = ''; FLP.pts.clear(); FLP.g = null;
+  document.documentElement.classList.remove('fl-printing');
 }
 async function cardDownload(url, name) {
   const W = 900, H = 1200, size = 640, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
@@ -6110,11 +6451,19 @@ Object.assign(ACT, {
   rvcopy: v => { const u = makerLink(v), done = () => toast('הקישור הועתק'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, () => { const i = document.getElementById('rv-url'); if (i) i.select(); toast('סמנו והעתיקו את הקישור'); }); else { const i = document.getElementById('rv-url'); if (i) { i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('סמנו והעתיקו את הקישור'); } } } },
   rvcard: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); cardDownload(makerLink(v), m ? m.name : ''); },
   rvflyer: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) showFlyer(m); },
-  flclose: () => { const b = document.getElementById('flyer'); if (b) { b.classList.remove('show'); b.innerHTML = ''; } document.documentElement.classList.remove('fl-printing'); },
-  flvar: v => { FL.v = v; drawFlyer(); },
-  flpos: v => { FL.pos = ['top', 'mid'].includes(v) ? v : 'bot'; drawFlyer(); },
-  flopt: v => { if (['ph', 'cap', 'city', 'tel'].includes(v)) FL[v] = !FL[v]; drawFlyer(); },
-  flsize: v => { FL.size = v === 'a5' ? 'a5' : 'a4'; drawFlyer(); },
+  flclose: () => flClose(),
+  fltab: v => { FL.tab = ['text', 'parts'].includes(v) ? v : 'design'; flPanel(); flFit(); },
+  flvar: v => { FL.v = v; flSave(); drawFlyer(); },
+  flsize: v => { FL.size = v === 'a5' ? 'a5' : 'a4'; flSave(); drawFlyer(); },
+  flpos: v => { FL.pos = ['top', 'mid'].includes(v) ? v : 'bot'; if (FL.cur.line) flPut('line', { ...flState('line'), x: 0, y: 0 }); flSave(); drawFlyer(); },
+  flopt: v => { if (['ph', 'cap', 'city', 'tel'].includes(v)) FL[v] = !FL[v]; flSave(); drawFlyer(); },
+  flshow: v => { if (!FL_NAMES[v] || v === 'qr') return; flPut(v, { ...flState(v), h: !flState(v).h }); flSave(); drawFlyer(); },
+  flreset: () => { delete FL.lay[flKey()]; flSave(); drawFlyer(); flNote('הדף חזר לסידור המקורי.'); },
+  fldone: () => { flSelect(''); const t = document.querySelector('#flyer .fl-tab[aria-selected="true"]'); if (t) t.focus({ preventScroll: true }); },
+  flscale: v => { if (FL.sel && flScale(FL.sel, Math.round((FL.cur[FL.sel].s + (v === '-1' ? -.08 : .08)) * 100) / 100)) { flSave(); flPanel(true); } },
+  fledit: () => { FL.edit = true; flPanel(); flFit(); const i = document.querySelector('#flyer .fl-in'); if (i) i.focus({ preventScroll: true }); },
+  flhide: v => { if (v === 'qr') return; flPut(v, { ...flState(v), h: true }); flSave(); FL.sel = ''; FL.tab = 'parts'; drawFlyer(); flNote('הוסתר. אפשר להחזיר כאן למטה.'); },
+  flback: v => { flPut(v, { x: 0, y: 0, s: 1, h: false }); flSave(); drawFlyer(); },
   flprint: () => { const st = document.getElementById('fl-page-size') || Object.assign(document.createElement('style'), { id: 'fl-page-size' }); st.textContent = `@page{size:${FL.size === 'a5' ? 'A5' : 'A4'};margin:0}`; document.head.appendChild(st); document.documentElement.classList.toggle('fl-a5', FL.size === 'a5'); document.documentElement.classList.add('fl-printing'); setTimeout(() => window.print(), 100); },
   rvwrite: v => { const m = REAL.list.find(x => x.id === v); if (m) openSheet(reviewSheet(m), 'ביקורת'); },
   radrvok: v => rvSet(v, 'approved'),
@@ -6211,7 +6560,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('input', e => {
   if (e.target.id === 'j-story' || e.target.id === 'ep-story') { const c = document.getElementById(e.target.id + '-c'); if (c) c.textContent = storyCue(e.target.value); return; }
-  if (e.target.id === 'fl-line') { FL.line = e.target.value; flRefresh(); return; }
+  if (e.target.classList && e.target.classList.contains('fl-in')) { flInput(e.target); return; }
   if (e.target.id === 'l-desc') { const c = document.getElementById('l-count'); if (c) c.textContent = `${Array.from(e.target.value).length} מתוך 1500`; return; }
   if (e.target.id === 'sq') { const c = document.querySelector('.sq-clear'); if (c) c.hidden = !e.target.value; clearTimeout(sqT); const val = e.target.value; sqT = setTimeout(() => { S.sq = val; runSearch(); }, 120); }
 });

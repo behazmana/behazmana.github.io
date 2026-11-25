@@ -446,7 +446,17 @@ body.sheet-open { overflow: hidden; }
 .contact { display: flex; flex-wrap: wrap; gap: 12px; }
 .banner + .stack.g { padding-top: 0; }
 .contact .cbtn2 { flex: 0 0 64px; }
-.contact + .contact.socials { margin-top: -20px; }
+/* the maker's page: round buttons on their own, clear of the name block. Ways to reach first, then the networks, smaller */
+.pcontact { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 22px; }
+.pc-row { display: flex; justify-content: center; gap: 18px; }
+.pc-row.nets { gap: 12px; }
+.pc-btn { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--paper); color: var(--ink); text-decoration: none; transition: background-color .15s, transform .1s var(--ease); }
+.pc-btn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pc-btn.main { background: var(--stamp); color: var(--paper); }
+.pc-row.nets .pc-btn { width: 46px; height: 46px; }
+.pc-row.nets .pc-btn svg { width: 21px; height: 21px; }
+.pc-btn:active { transform: translateY(1px); }
+@media (forced-colors: active) { .pc-btn { border: 2px solid ButtonText; } }
 .wsfields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .wsfields:not(:has(input[type=checkbox]:checked)) .wsmore { display: none; }
 .wsmore { display: grid; gap: 4px; }
@@ -3437,7 +3447,12 @@ function socFields(pre, list, show) {
   const val = {}; (list || []).forEach(u => { const k = socKind(u), slot = !val[k] ? k : !val.web ? 'web' : SOC_FIELDS.map(f => f[0]).find(x => !val[x]); if (slot) val[slot] = u; });
   return `<fieldset class="field socfields" ${show ? '' : 'hidden'}><legend class="lbl">הרשתות שלכם <span class="m">(לא חובה)</span></legend><span class="hint">כדי שלקוחות יוכלו לראות עוד מהעבודות שלכם. הקישורים יופיעו בדף שלכם.</span>${SOC_FIELDS.map(([k, label, ph]) => `<label class="socrow" for="${pre}-soc-${k}"><span>${label}</span><input class="input" id="${pre}-soc-${k}" name="soc_${k}" type="text" dir="auto" maxlength="280" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="${ph}" value="${esc(val[k] || '')}"></label>`).join('')}</fieldset>`;
 }
-const socialRow = m => (m.socials || []).length ? `<div class="contact socials">${m.socials.map(u => { const k = socKind(u); return `<a class="cbtn2" href="${esc(u)}" ${OUT} aria-label="${esc(`${socName(k)} של ${m.name}`)}">${svg(UI['s_' + k])}</a>`; }).join('')}</div>` : '';
+const profileButtons = m => {
+  const btn = (href, label, icon, cls = '', out = true) => `<a class="pc-btn ${cls}" href="${esc(href)}" ${out ? OUT : ''} aria-label="${esc(label)}">${svg(icon)}</a>`;
+  const reach = [m.contact ? btn(waHref(m), 'שליחת הודעה בוואטסאפ', UI.wa, 'main') + btn(m.contact.tel, 'התקשרות בטלפון', UI.phone, '', false) : '', m.email ? btn(mailHref(m), 'שליחת מייל', UI.mail, '', false) : ''].join('');
+  const nets = (m.socials || []).map(u => { const k = socKind(u); return btn(u, `${socName(k)} של ${m.name}`, UI['s_' + k]); }).join('');
+  return reach || nets ? `<div class="pcontact">${reach ? `<div class="pc-row">${reach}</div>` : ''}${nets ? `<div class="pc-row nets">${nets}</div>` : ''}</div>` : '';
+};
 /* workshops: a maker may say they give them, with a few words about them */
 const WS_WORDS = 'סדנה סדנאות סדנת חוג שיעור לימוד קורס workshop';
 function wsFields(pre, m, show) {
@@ -4411,9 +4426,8 @@ const SCREENS = {
     return `${head(`<span class="sr">פרופיל של ${esc(m.name)}</span>`)}<section class="banner" style="${themeVars(m)}">${face ? rImg(face, `${m.name}`) : ''}
       <div class="copy g"><h2>${esc(m.name)}</h2><span class="where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></div></section>
     <div class="stack g">
-      ${m.contact || m.email ? `<div class="contact">${m.contact ? `<a class="cbtn2 wa" href="${esc(waHref(m))}" ${OUT} aria-label="שליחת הודעה בוואטסאפ">${svg(UI.wa)}</a><a class="cbtn2" href="${esc(m.contact.tel)}" aria-label="התקשרות בטלפון">${svg(UI.phone)}</a>` : ''}${m.email ? `<a class="cbtn2" href="${esc(mailHref(m))}" aria-label="שליחת מייל">${svg(UI.mail)}</a>` : ''}</div>`
-        : `<div class="askline"><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
-      ${socialRow(m)}
+      ${profileButtons(m)}
+      ${m.contact || m.email ? '' : `<div class="askline"><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
       ${workshopSection(m)}
       ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהעבודות</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}

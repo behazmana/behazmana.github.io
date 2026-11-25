@@ -2280,3 +2280,164 @@ create trigger reviews_throttle before insert on public.reviews
   for each row execute function public.throttle_reviews();
 
 commit;
+
+-- =====================================================================
+-- 29. A small copy beside each photo, and an early warning before the photo storage fills up.
+--     The site uploads two files for a new photo: <name>-2v.jpg (full) and <name>-sm.jpg (small, for lists and grids).
+--     Only the full path is saved in the tables, so photo limits (30 on a profile, 10 on a listing) are not affected.
+--     The free plan holds 1 GB of files. The owner gets one phone notification at 70% and one at 90%.
+--     Safe to run more than once. Everything is inside one transaction: if any line fails, nothing changes.
+-- =====================================================================
+begin;
+
+-- 29.1 Listing photos: also allow the two new endings. The folder and the rest of the name stay as strict as before.
+create or replace function public.valid_listing_photos(p text[], mid uuid)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(array_ndims(p) = 1 and cardinality(p) between 1 and 10, false)
+     and not exists (
+       select 1 from unnest(p) as x
+       where x is null
+          or char_length(x) > 200
+          or x !~ ('^' || mid::text || '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[0-9](-2v)?\.(jpg|jpeg|png|webp)$')
+     )
+$$;
+
+drop policy if exists "maker uploads listing photos" on storage.objects;
+create policy "maker uploads listing photos" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'listing-photos'
+    and public.my_maker_id() is not null
+    and name ~ ('^' || public.my_maker_id()::text
+                || '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[0-9](-2v|-sm)?\.(jpg|jpeg|png|webp)$')
+  );
+
+-- 29.2 How much file storage is in use (all buckets together). Not callable from the site.
+create or replace function public.storage_used_bytes()
+returns bigint
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(sum((o.metadata ->> 'size')::bigint), 0)::bigint from storage.objects o
+$$;
+revoke all on function public.storage_used_bytes() from public, anon, authenticated;
+
+-- 29.3 The one line on the admin screen. Only the owner gets an answer.
+--      1 GB is counted as 1,000,000,000 bytes, on the careful side.
+create or replace function public.storage_usage()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if public.is_owner() is not true then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  return jsonb_build_object(
+    'used_bytes', public.storage_used_bytes(),
+    'limit_bytes', 1000000000,
+    'files', (select count(*) from storage.objects));
+end
+$$;
+revoke all on function public.storage_usage() from public, anon;
+grant execute on function public.storage_usage() to authenticated;
+
+-- 29.4 Which warnings were already sent. No one reads or writes this from the site.
+create table if not exists public.storage_alerts (
+  level      int primary key check (level in (70, 90)),
+  sent_at    timestamptz not null default now(),
+  used_bytes bigint not null
+);
+alter table public.storage_alerts enable row level security;
+revoke all on public.storage_alerts from public, anon, authenticated;
+
+-- 29.5 The check. Each warning is sent once. A warning can be sent again only after the usage went clearly down
+--      (below 65% for the first one, below 85% for the second) and then came back up.
+create or replace function public.check_storage_alert()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  lim constant numeric := 1000000000;
+  used bigint;
+  pct numeric;
+  mb text;
+  added int;
+begin
+  perform pg_advisory_xact_lock(hashtext('behazmana.storage_alert'));
+  used := public.storage_used_bytes();
+  pct := used * 100 / lim;
+  mb := round(used / 1000000.0)::text;
+  if pct < 85 then delete from public.storage_alerts where level = 90; end if;
+  if pct < 65 then delete from public.storage_alerts where level = 70; end if;
+
+  if pct >= 90 then
+    insert into public.storage_alerts (level, used_bytes) values (90, used) on conflict (level) do nothing;
+    get diagnostics added = row_count;
+    insert into public.storage_alerts (level, used_bytes) values (70, used) on conflict (level) do nothing;   -- no late 70% message after the 90% one
+    if added > 0 then
+      perform public.notify_owner('המקום לתמונות כמעט מלא',
+        'בשימוש ' || mb || ' מתוך 1000 מגה. כדאי לטפל בזה עכשיו, לפני שהשירות יגביל את האתר. כתבו למי שבנה את האתר.',
+        'https://behazmana.github.io/#admin');
+    end if;
+  elsif pct >= 70 then
+    insert into public.storage_alerts (level, used_bytes) values (70, used) on conflict (level) do nothing;
+    get diagnostics added = row_count;
+    if added > 0 then
+      perform public.notify_owner('המקום לתמונות מתמלא',
+        'בשימוש ' || mb || ' מתוך 1000 מגה. עדיין יש זמן להתארגן. כתבו למי שבנה את האתר.',
+        'https://behazmana.github.io/#admin');
+    end if;
+  end if;
+end
+$$;
+revoke all on function public.check_storage_alert() from public, anon, authenticated;
+
+-- 29.6 Also check when new data is saved. A problem here never stops the save itself.
+create or replace function public.storage_alert_on_save()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  begin
+    perform public.check_storage_alert();
+  exception when others then
+    null;
+  end;
+  return null;
+end
+$$;
+revoke all on function public.storage_alert_on_save() from public, anon, authenticated;
+
+drop trigger if exists makers_storage_check on public.makers;
+create trigger makers_storage_check after insert or update of photos, portrait on public.makers
+  for each statement execute function public.storage_alert_on_save();
+drop trigger if exists listings_storage_check on public.listings;
+create trigger listings_storage_check after insert or update of photos on public.listings
+  for each statement execute function public.storage_alert_on_save();
+
+commit;
+
+-- 29.7 And once a day (08:00 or 09:00 in Israel), for uploads that were never saved. pg_cron is part of Supabase.
+--      Scheduling again with the same name replaces the old job.
+create extension if not exists pg_cron;
+select cron.schedule('behazmana-storage-check', '0 6 * * *', 'select public.check_storage_alert()');
+
+-- 29.8 First check now, and a summary to read: used MB, files, the daily job, and the warnings already sent.
+select public.check_storage_alert();
+select round(public.storage_used_bytes() / 1000000.0, 1) as used_mb,
+       (select count(*) from storage.objects) as files,
+       (select count(*) from cron.job where jobname = 'behazmana-storage-check' and active) as daily_job,
+       (select coalesce(string_agg(level::text, ','), 'none') from public.storage_alerts) as warnings_sent;

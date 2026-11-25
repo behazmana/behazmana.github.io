@@ -14,6 +14,13 @@ alter table public.makers add constraint makers_socials_ck check (
 );
 grant insert (socials) on public.makers to anon, authenticated;
 
+-- 26. Workshops: whether the maker gives them, and a few words about them.
+alter table public.makers add column if not exists gives_workshops boolean not null default false;
+alter table public.makers add column if not exists workshop_info text not null default '';
+alter table public.makers drop constraint if exists makers_workshop_ck;
+alter table public.makers add constraint makers_workshop_ck check (char_length(workshop_info) <= 600);
+grant insert (gives_workshops, workshop_info) on public.makers to anon, authenticated;
+
 create or replace view public.public_makers
   with (security_invoker = false)
 as
@@ -24,14 +31,16 @@ as
          crafts,
          reviews_url,
          theme,
-         socials
+         socials,
+         gives_workshops,
+         workshop_info
   from public.makers
   where status = 'approved' and public.can_see_maker(id, is_test);
 
 create or replace view public.my_maker
   with (security_invoker = false)
 as
-  select id, name, city, craft, craft_other, story, photos, portrait, phone_public, email_public, status, created_at, crafts, phone, reviews_url, theme, socials
+  select id, name, city, craft, craft_other, story, photos, portrait, phone_public, email_public, status, created_at, crafts, phone, reviews_url, theme, socials, gives_workshops, workshop_info
   from public.makers
   where email is not null
     and lower(btrim(email)) = lower(btrim(coalesce(auth.jwt() ->> 'email', '')));

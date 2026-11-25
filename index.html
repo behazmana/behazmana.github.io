@@ -447,6 +447,10 @@ body.sheet-open { overflow: hidden; }
 .banner + .stack.g { padding-top: 0; }
 .contact .cbtn2 { flex: 0 0 64px; }
 .contact + .contact.socials { margin-top: -20px; }
+.wsfields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.wsfields:not(:has(input[type=checkbox]:checked)) .wsmore { display: none; }
+.wsmore { display: grid; gap: 4px; }
+.wstag { align-self: flex-start; background: var(--olive); color: var(--on-olive); font-size: var(--fs-1); font-weight: 700; padding: 1px 8px; }
 .socfields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .socrow { display: grid; gap: 4px; margin-top: 8px; font-size: var(--fs-1); font-weight: 700; }
 .socrow .input { font-weight: 400; }
@@ -3299,7 +3303,7 @@ function hl(text, terms) {
 function searchMakers(q) {
   const terms = parseQuery(q);
   if (!terms.length) return { terms, list: [], partial: [] };
-  const scored = REAL.list.map(m => ({ m, ts: termScores(terms, [[m.name, 3], [m.city, 2], [craftsLine(m) + ' ' + mcrafts(m).map(c => CRAFT_WORDS[c] || '').join(' '), 2], [m.story, 1]]) }));
+  const scored = REAL.list.map(m => ({ m, ts: termScores(terms, [[m.name, 3], [m.city, 2], [craftsLine(m) + ' ' + mcrafts(m).map(c => CRAFT_WORDS[c] || '').join(' '), 2], [m.story, 1], [m.workshops ? WS_WORDS + ' ' + (m.workshopInfo || '') : '', 2]]) }));
   const sum = x => x.ts.reduce((a, b) => a + b, 0);
   const list = scored.filter(x => x.ts.every(Boolean)).sort((a, b) => sum(b) - sum(a)).map(x => x.m);
   /* "שולחן אוכל": nobody wrote both words, but the carpenter who makes tables is still the closest answer */
@@ -3368,7 +3372,7 @@ async function loadReal() {
   try {
     /* the view may be missing its newer columns (the database update not applied yet): ask for all, then without contact_email, then without craft_other, then without contact_phone */
     const BASE = 'id,name,city,craft,story,photos,portrait', q = cols => SB.from('public_makers').select(cols);
-    const ladder = [',contact_phone,craft_other,contact_email,crafts,reviews_url,theme,socials', ',contact_phone,craft_other,contact_email,crafts,reviews_url,theme', ',contact_phone,craft_other,contact_email,crafts,reviews_url', ',contact_phone,craft_other,contact_email,crafts', ',contact_phone,craft_other,contact_email', ',contact_phone,craft_other', ',contact_phone', ''];
+    const ladder = [',contact_phone,craft_other,contact_email,crafts,reviews_url,theme,socials,gives_workshops,workshop_info', ',contact_phone,craft_other,contact_email,crafts,reviews_url,theme,socials', ',contact_phone,craft_other,contact_email,crafts,reviews_url,theme', ',contact_phone,craft_other,contact_email,crafts,reviews_url', ',contact_phone,craft_other,contact_email,crafts', ',contact_phone,craft_other,contact_email', ',contact_phone,craft_other', ',contact_phone', ''];
     let data = null, error = null;
     for (const extra of ladder) {
       ({ data, error } = await q(BASE + extra));
@@ -3378,7 +3382,10 @@ async function loadReal() {
     REAL.socials = !!data.length && 'socials' in data[0];
     if (!data.length) REAL.socials = !(await q('socials').limit(1)).error;
     if (REAL.socials) document.querySelectorAll('.socfields[hidden]').forEach(x => { x.hidden = false; });   /* a form that is already open gets the fields without losing what was typed */
-    REAL.list = data.filter(m => m && m.id && m.name).map(m => ({ id: String(m.id), name: String(m.name), city: String(m.city || ''), craft: String(m.craft || ''), story: String(m.story || ''), portrait: okPath(m.portrait) ? String(m.portrait) : '', photos: Array.isArray(m.photos) ? m.photos.map(String).filter(okPath) : [], contact: contactPhone(m.contact_phone), email: contactEmail(m.contact_email), socials: cleanSocials(m.socials), theme: THEMES[m.theme] ? m.theme : 'stone', craftOther: cleanOther(m.craft_other), crafts: (Array.isArray(m.crafts) ? m.crafts.map(String).filter(c => hasCraft(c) || c === 'other') : []).slice(0, 6) }))
+    REAL.workshops = !!data.length && 'gives_workshops' in data[0];
+    if (!data.length) REAL.workshops = !(await q('gives_workshops').limit(1)).error;
+    if (REAL.workshops) document.querySelectorAll('.wsfields[hidden]').forEach(x => { x.hidden = false; });
+    REAL.list = data.filter(m => m && m.id && m.name).map(m => ({ id: String(m.id), name: String(m.name), city: String(m.city || ''), craft: String(m.craft || ''), story: String(m.story || ''), portrait: okPath(m.portrait) ? String(m.portrait) : '', photos: Array.isArray(m.photos) ? m.photos.map(String).filter(okPath) : [], contact: contactPhone(m.contact_phone), email: contactEmail(m.contact_email), socials: cleanSocials(m.socials), workshops: !!m.gives_workshops, workshopInfo: cleanBlock(m.workshop_info, 600), theme: THEMES[m.theme] ? m.theme : 'stone', craftOther: cleanOther(m.craft_other), crafts: (Array.isArray(m.crafts) ? m.crafts.map(String).filter(c => hasCraft(c) || c === 'other') : []).slice(0, 6) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'he'));
     REAL.loaded = true;
   } catch (e) { REAL.failed = true; }
@@ -3431,6 +3438,13 @@ function socFields(pre, list, show) {
   return `<fieldset class="field socfields" ${show ? '' : 'hidden'}><legend class="lbl">הרשתות שלכם <span class="m">(לא חובה)</span></legend><span class="hint">כדי שלקוחות יוכלו לראות עוד מהעבודות שלכם. הקישורים יופיעו בדף שלכם.</span>${SOC_FIELDS.map(([k, label, ph]) => `<label class="socrow" for="${pre}-soc-${k}"><span>${label}</span><input class="input" id="${pre}-soc-${k}" name="soc_${k}" type="text" dir="auto" maxlength="280" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="${ph}" value="${esc(val[k] || '')}"></label>`).join('')}</fieldset>`;
 }
 const socialRow = m => (m.socials || []).length ? `<div class="contact socials">${m.socials.map(u => { const k = socKind(u); return `<a class="cbtn2" href="${esc(u)}" ${OUT} aria-label="${esc(`${socName(k)} של ${m.name}`)}">${svg(UI['s_' + k])}</a>`; }).join('')}</div>` : '';
+/* workshops: a maker may say they give them, with a few words about them */
+const WS_WORDS = 'סדנה סדנאות סדנת חוג שיעור לימוד קורס workshop';
+function wsFields(pre, m, show) {
+  return `<fieldset class="field wsfields" ${show ? '' : 'hidden'}><legend class="lbl">סדנאות <span class="m">(לא חובה)</span></legend><label class="opt"><input type="checkbox" name="gives_workshops" ${m.workshops ? 'checked' : ''}><span class="grow">יש לי סדנאות</span></label><div class="wsmore"><label class="sr" for="${pre}-ws">פרטים על הסדנאות</label><textarea class="input" id="${pre}-ws" name="workshop_info" rows="4" maxlength="600" aria-describedby="${pre}-ws-h">${esc(m.workshopInfo || '')}</textarea><span class="hint" id="${pre}-ws-h">כמה מילים: מה לומדים, למי זה מתאים, איפה, כמה זמן זה לוקח ומה המחיר.</span></div></fieldset>`;
+}
+const readWorkshops = fd => { const on = !!fd.get('gives_workshops'); return { gives_workshops: on, workshop_info: on ? String(fd.get('workshop_info') || '').replace(/\r\n?/g, '\n').trim().slice(0, 600) : '' }; };
+const workshopSection = m => !m.workshops ? '' : `<section aria-labelledby="h-ws"><div class="sec-head"><h2 class="sec-title" id="h-ws">סדנאות</h2></div>${m.workshopInfo ? `<p class="rstory">${esc(m.workshopInfo)}</p>` : `<p class="muted">${esc(m.name)}: יש סדנאות. אפשר לשאול על הפרטים.</p>`}${m.contact ? `<a class="btn ghost block" style="margin-top:12px" href="${esc(`${m.contact.wa}?text=${encodeURIComponent(`היי ${firstName(m)}, ראיתי בבהזמנה שיש לך סדנאות. אשמח לשמוע פרטים.`)}`)}" ${OUT}>לשאול על סדנה</a>` : ''}</section>`;
 const okUrl = u => { u = String(u || '').trim(); if (!/^https:\/\/[^\s]{4,280}$/.test(u)) return ''; try { return new URL(u).protocol === 'https:' ? u : ''; } catch (e) { return ''; } };
 const contactActs = m => m.contact || m.email ? `<span class="macts">${m.contact ? `<a class="cbtn wa" href="${esc(waHref(m))}" ${OUT} aria-label="${esc(`שליחת וואטסאפ ל${firstName(m)}`)}">${svg(UI.wa)}</a><a class="cbtn" href="${esc(m.contact.tel)}" aria-label="${esc(`התקשרות אל ${firstName(m)}`)}">${svg(UI.phone)}</a>` : ''}${m.email ? `<a class="cbtn" href="${esc(mailHref(m))}" aria-label="${esc(`שליחת מייל ל${firstName(m)}`)}">${svg(UI.mail)}</a>` : ''}</span>` : '';
 /* favourite makers: a signed-in buyer marks makers with a heart; a signed-out tap opens the buyer sign-up sheet */
@@ -3440,7 +3454,7 @@ const favBtn = m => `<button type="button" class="cbtn fav" data-act="fav" data-
 const favLink = m => `<button type="button" class="link fav" data-act="fav" data-v="${esc(m.id)}" aria-pressed="${favOn(m.id)}">${svg(UI.heart)}<span>${favOn(m.id) ? 'במועדפים' : 'להוסיף למועדפים'}</span></button>`;
 const cardActs = m => `<span class="macts">${favBtn(m)}${contactActs(m).replace(/^<span class="macts">|<\/span>$/g, '')}</span>`;
 const realAv = m => `<span class="av">${m.portrait || m.photos[0] ? rImg(m.portrait || m.photos[0]) : `<span class="ini">${esc(initials(m.name))}</span>`}</span>`;
-const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftsLine(m))}${m.city ? ` · ${h(m.city)}` : ''}</span>${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
+const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftsLine(m))}${m.city ? ` · ${h(m.city)}` : ''}</span>${m.workshops ? '<span class="wstag">יש סדנאות</span>' : ''}${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
 const emptyMakers = () => `<div class="s-empty"><p class="say">עוד אין כאן יוצרים, האתר חדש.</p>${AU.maker ? '' : JOINED ? '<p class="small muted">אחרי האישור הפרופיל יופיע כאן.</p>'
   : `<p class="small muted">יוצרים? ספרו לנו על העבודה. אחרי האישור הפרופיל יופיע כאן.</p>
   <button type="button" class="btn" data-act="join">להצטרף כיוצרים</button>`}</div>`;
@@ -3639,7 +3653,7 @@ async function submitJoin(f) {
       if (error) throw error; jobs[i].path = path;
     }
     stage = ''; btn.textContent = 'שומרים את ההרשמה...';
-    const { error } = await SB.from('makers').insert({ name, city, craft, crafts: picked, ...(picked.includes('other') ? { craft_other: other } : {}), story, email, phone, ...(soc.links.length ? { socials: soc.links } : {}), phone_public: true, email_public: true, portrait: JP.portrait.path, photos: JP.map(p => p.path), status: 'pending' });
+    const { error } = await SB.from('makers').insert({ name, city, craft, crafts: picked, ...(picked.includes('other') ? { craft_other: other } : {}), story, email, phone, ...(soc.links.length ? { socials: soc.links } : {}), ...(REAL.workshops && d.gives_workshops ? readWorkshops(new FormData(f)) : {}), phone_public: true, email_public: true, portrait: JP.portrait.path, photos: JP.map(p => p.path), status: 'pending' });
     if (error) throw error;
   } catch (e) {
     console.error('join failed', errCode(e), e);
@@ -3978,14 +3992,15 @@ async function loadMe(force) {
   if (!force && AU.uid === uid && (AU.st === 'loading' || AU.st === 'ready')) return;
   if (AU.uid !== uid) AU = freshAU();
   AU.uid = uid; AU.st = 'loading'; meRedraw(); loadAccountRequests(); loadFavs(); loadPhotoLikes();
-  let r = await dbq(s => s.from('my_maker').select(MCOLS + ',phone,reviews_url,theme,socials').order('created_at', { ascending: false }));
+  let r = await dbq(s => s.from('my_maker').select(MCOLS + ',phone,reviews_url,theme,socials,gives_workshops,workshop_info').order('created_at', { ascending: false }));
+  if (r.error && !r.off) r = await dbq(s => s.from('my_maker').select(MCOLS + ',phone,reviews_url,theme,socials').order('created_at', { ascending: false }));
   if (r.error && !r.off) r = await dbq(s => s.from('my_maker').select(MCOLS + ',phone,reviews_url,theme').order('created_at', { ascending: false }));
   if (r.error && !r.off) r = await dbq(s => s.from('my_maker').select(MCOLS).order('created_at', { ascending: false }));
   if (!AD.session || String(AD.session.user.id) !== uid) return;
   if (r.gone) { AU.st = 'gone'; AU.probe = 'gone'; }
   else if (r.error || !Array.isArray(r.data)) AU.st = 'failed';
   else {
-    AU.rows = r.data.filter(x => x && x.id).map(x => ({ id: String(x.id), name: cleanText(x.name, 80), city: cleanText(x.city, 60), craft: String(x.craft || ''), crafts: Array.isArray(x.crafts) ? x.crafts.map(String).slice(0, 6) : [], other: cleanOther(x.craft_other), story: cleanBlock(x.story, 1000), photos: Array.isArray(x.photos) ? x.photos.map(String).filter(okPath) : [], portrait: okPath(x.portrait) ? String(x.portrait) : '', phonePublic: !!x.phone_public, emailPublic: !!x.email_public, phone: String(x.phone || ''), hasSocials: 'socials' in x, socials: cleanSocials(x.socials), theme: THEMES[x.theme] ? x.theme : 'stone', status: String(x.status || '') }));
+    AU.rows = r.data.filter(x => x && x.id).map(x => ({ id: String(x.id), name: cleanText(x.name, 80), city: cleanText(x.city, 60), craft: String(x.craft || ''), crafts: Array.isArray(x.crafts) ? x.crafts.map(String).slice(0, 6) : [], other: cleanOther(x.craft_other), story: cleanBlock(x.story, 1000), photos: Array.isArray(x.photos) ? x.photos.map(String).filter(okPath) : [], portrait: okPath(x.portrait) ? String(x.portrait) : '', phonePublic: !!x.phone_public, emailPublic: !!x.email_public, phone: String(x.phone || ''), hasSocials: 'socials' in x, socials: cleanSocials(x.socials), hasWorkshops: 'gives_workshops' in x, workshops: !!x.gives_workshops, workshopInfo: cleanBlock(x.workshop_info, 600), theme: THEMES[x.theme] ? x.theme : 'stone', status: String(x.status || '') }));
     AU.maker = AU.rows.find(x => x.status === 'approved') || null; AU.st = 'ready';
     if (AU.maker) { if (ME_SCREENS.includes(cur().s)) { S.stack = S.stack.map(x => ({ ...x })); } loadInbox(); }
   }
@@ -4339,7 +4354,7 @@ const FLOW_SVG = `<svg class="flow-svg" viewBox="0 0 360 170" role="img" aria-la
 /* the hero photo settles once (scale 1.04 to 1, 1.2 s). A re-render inside that window carries on from where it was instead of starting over. */
 let DRIFT_T0 = 0;
 function driftAttr() { const now = performance.now(); if (!DRIFT_T0) DRIFT_T0 = now; const t = now - DRIFT_T0; return t < 1150 ? ` data-drift style="animation-delay:-${Math.round(t)}ms"` : ''; }
-const fitCraft = m => S.mcraft === 'all' || mcrafts(m).includes(S.mcraft);
+const fitCraft = m => S.mcraft === 'all' || (S.mcraft === 'workshops' ? !!m.workshops : mcrafts(m).includes(S.mcraft));
 
 const SCREENS = {
   home: () => `<header class="top g on-dark"><img class="corner-mark" src="logo/mark-slip.svg" width="22" height="28" alt="בהזמנה"><span class="grow"></span>
@@ -4384,8 +4399,8 @@ const SCREENS = {
     return `${head('היוצרים', REAL.list.length ? findBtn() : '')}
     <div class="stack tight g">
       <p class="muted">כולם אושרו אצלנו אישית.</p>
-      ${REAL.list.length > 1 && crafts.size > 1 ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button data-act="mcraft" data-v="${k}" aria-pressed="${S.mcraft === k}">${v}</button>`).join('')}</div>` : ''}
-      ${REAL.list.length && !list.length ? `<p class="empty">עוד אין יוצרים ב${CRAFTS[S.mcraft] || 'תחום הזה'}.</p>` : makersBlock(list)}
+      ${(REAL.list.length > 1 && crafts.size > 1) || REAL.list.some(m => m.workshops) ? `<div class="filters bleed" role="group" aria-label="סינון לפי תחום">${[['all', 'הכל'], ...(REAL.list.some(m => m.workshops) ? [['workshops', 'סדנאות']] : []), ...Object.entries(CRAFTS).filter(([k]) => crafts.has(k)), ...(crafts.has('other') ? [['other', 'אחר']] : [])].map(([k, v]) => `<button data-act="mcraft" data-v="${k}" aria-pressed="${S.mcraft === k}">${v}</button>`).join('')}</div>` : ''}
+      ${REAL.list.length && !list.length ? `<p class="empty">עוד אין יוצרים ב${CRAFTS[S.mcraft] || (S.mcraft === 'workshops' ? 'סדנאות' : 'תחום הזה')}.</p>` : makersBlock(list)}
       ${REAL.list.length ? '<button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>' : ''}
     </div>`; },
 
@@ -4400,7 +4415,8 @@ const SCREENS = {
         : `<div class="askline"><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
       ${socialRow(m)}
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
-      ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהסדנה</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}
+      ${workshopSection(m)}
+      ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהעבודות</h2></div><div class="strip">${works.map((p, i) => rImg(p, `עבודה של ${m.name}, ${i + 1}`)).join('')}</div></section>` : ''}
       ${reviewsHTML(m)}
       ${m.contact || m.email ? `<button class="btn block" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>` : ''}
       <div class="row wrap">${favLink(m)}${writeBtn(m)}${shareBtn(m)}</div>
@@ -4434,6 +4450,7 @@ const SCREENS = {
           <input type="file" id="j-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות של העבודות">
           <span class="hint">עבודות שהכנתם בעצמכם: אחת לפחות ועד ${MAX_PHOTOS}. צלמו ליד חלון, על רקע פשוט. אנחנו מקטינים אותן ומסירים מהן מיקום ופרטי מצלמה. עד 60MB (JPG, PNG או WebP).</span><span class="hint" id="j-pmsg" role="status" aria-live="polite">${JP.length ? photoCount() : ''}</span></div>
         ${socFields('j', [], REAL.socials)}
+        ${wsFields('j', {}, REAL.workshops)}
         <div class="field"><label for="j-story">הסיפור שלכם <span class="m">(לא חובה)</span></label><textarea class="input" id="j-story" name="story" rows="3" maxlength="1000" aria-describedby="j-story-c"></textarea>${storyHint('j-story-c', '')}</div>
         <div class="field"><label class="opt"><input type="checkbox" id="j-consent" name="consent" aria-required="true"><span class="grow">מסכימים לתנאי השימוש ולמדיניות הפרטיות ${STAR}</span></label>
           ${legalLinks()}</div>
@@ -4734,6 +4751,7 @@ SCREENS.editprofile = () => {
       <label class="opt"><input type="checkbox" name="phone_public" ${m.phonePublic ? 'checked' : ''}><span class="grow">להציג את הטלפון באתר (וואטסאפ והתקשרות)</span></label>
       <label class="opt"><input type="checkbox" name="email_public" ${m.emailPublic ? 'checked' : ''}><span class="grow">להציג את המייל באתר</span></label>
       ${socFields('ep', m.socials, m.hasSocials)}
+      ${wsFields('ep', m, m.hasWorkshops)}
       <fieldset class="field"><legend class="lbl">צבע הדף שלכם</legend><div class="swatches">${Object.entries(THEMES).map(([k, t]) => `<label class="swatch"><input type="radio" name="theme" value="${k}" ${themeKey(m.theme) === k ? 'checked' : ''}><span class="sw" style="background:${t.b};color:${t.t}"><b>${esc(m.name || 'אב')}</b><span class="sr">${t.l}</span></span><span class="swl">${t.l}</span></label>`).join('')}</div><span class="hint">הצבע מופיע בכותרת הדף שלכם וברשימת היוצרים. בחרו את זה שהכי מתאים לכם.</span></fieldset>
       <div class="field"><span class="lbl">התמונה שלכם</span><div class="pt-row"><div class="photos" id="ep-portrait">${epPortraitHTML()}</div></div><input type="file" id="ep-pfile" accept="image/jpeg,image/png,image/webp" hidden aria-label="בחירת תמונה שלכם"></div>
       <div class="field"><span class="lbl">תמונות מהעבודות</span><span class="hint">התמונה הראשית היא התמונה שמוצגת ראשונה: בכרטיס שלכם ברשימת היוצרים ובראש הדף שלכם. כדי להחליף, לחצו על ״להציג ראשונה״ מתחת לתמונה אחרת.</span><div class="photos" id="ep-works">${epWorksHTML()}</div><input type="file" id="ep-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות"><span class="hint" id="ep-count">${EP.works.length} מתוך ${MAX_PHOTOS} תמונות</span><span class="hint" id="ep-msg" role="status" aria-live="polite"></span></div>
@@ -4758,6 +4776,7 @@ async function saveProfile(f) {
   const theme = themeKey(fd.get('theme'));
   const payload = { theme, name, city, crafts: picked, craft_other: picked.includes('other') ? other : null, story, phone: phone || null, phone_public: !!phone && !!fd.get('phone_public'), email_public: !!fd.get('email_public'), portrait: EP.portrait, photos: EP.works.map(x => x.path) };
   if (AU.maker.hasSocials) payload.socials = soc.links;
+  if (AU.maker.hasWorkshops) Object.assign(payload, readWorkshops(fd));
   let r = await dbq(s => s.from('makers').update(payload).eq('id', AU.maker.id));
   if (r.error && /theme/i.test(String(r.error.message || ''))) { delete payload.theme; r = await dbq(s => s.from('makers').update(payload).eq('id', AU.maker.id)); }   /* the colour column is not there yet: save the rest */
   if (r.error) { err.textContent = errCode(r.error) === '23505' ? 'הטלפון הזה כבר רשום אצל יוצר אחר.' : (friendly(r.error) || 'השמירה לא הצליחה. נסו שוב.'); err.hidden = false; btn.disabled = false; btn.textContent = 'שמירת השינויים'; return; }
@@ -5193,6 +5212,7 @@ function adminBody() {
           <div class="face-row">${m.portrait ? `<a class="av" href="${esc(photoURL(m.portrait))}" target="_blank" rel="noopener" aria-label="התמונה של ${esc(m.name)}, בגודל מלא">${rImg(m.portrait)}</a>` : `<span class="av"><span class="ini">${esc(initials(m.name))}</span></span>`}<div><b>${esc(m.name)}</b><div class="small muted">${esc(craftsLine(m))} · ${esc(m.city)} · ${esc(dateHe(m.created_at))}</div>${m.portrait ? '' : '<div class="small muted">בלי תמונה אישית</div>'}</div></div>
           <dl class="specs">${m.email ? `<div><dt>מייל</dt><dd dir="ltr">${esc(m.email)}</dd></div>` : ''}${m.phone ? `<div><dt>טלפון</dt><dd dir="ltr">${esc(m.phone)}</dd></div><div><dt>הטלפון באתר</dt><dd>${m.phone_public ? 'יוצג' : 'לא יוצג'}</dd></div>` : ''}${m.email ? `<div><dt>המייל באתר</dt><dd>${m.email_public ? 'יוצג' : 'לא יוצג'}</dd></div>` : ''}</dl>
           ${m.story ? `<p class="small rstory">${esc(m.story)}</p>` : ''}
+          ${m.gives_workshops ? `<p class="small rstory"><b>סדנאות:</b> ${esc(cleanBlock(m.workshop_info, 600)) || 'בלי פרטים'}</p>` : ''}
           ${cleanSocials(m.socials).map(u => `<p class="small"><a class="link" href="${esc(u)}" ${OUT}>${socName(socKind(u))}: <bdi dir="ltr">${esc(u.replace('https://', ''))}</bdi></a></p>`).join('')}
           ${(m.photos || []).length ? `<div class="strip" style="grid-template-columns:repeat(3,1fr)">${m.photos.map((p, i) => `<a href="${esc(photoURL(p))}" target="_blank" rel="noopener" aria-label="עבודה ${i + 1} של ${esc(m.name)}, בגודל מלא">${rImg(p, `עבודה של ${m.name}`)}</a>`).join('')}</div>` : '<p class="small muted">לא הועלו תמונות.</p>'}
           <div class="row"><button class="btn small" data-act="radapprove" data-v="${esc(m.id)}">אישור</button><button class="btn small danger" data-act="radreject" data-v="${esc(m.id)}">דחייה</button></div></article>`).join('') || '<p class="empty">אין הרשמות שמחכות.</p>'}
@@ -5335,7 +5355,7 @@ let sqT;
 function searchHTML() {
   const q = S.sq.trim(), { terms, list, partial } = searchMakers(q), h = t => hl(t, terms), lst = searchListings(q);
   if (realState() === 'loading') return '<p class="muted" role="status">טוענים את היוצרים</p>';
-  if (!terms.length) return !REAL.list.length ? emptyMakers() : '<p class="small muted">אפשר לחפש שם, עיר או חפץ: ארנק, ספל, טבעת.</p>';
+  if (!terms.length) return !REAL.list.length ? emptyMakers() : '<p class="small muted">אפשר לחפש שם, עיר, חפץ או סדנה: ארנק, ספל, טבעת, סדנת קרמיקה.</p>';
   if (!REAL.list.length && !lst.length && searchSweeping()) return '<p class="muted" role="status">מחפשים</p>';
   if (!REAL.list.length && !lst.length && shopOf('all').list.length) return `<div class="s-empty"><p class="say">לא מצאנו התאמה.</p>
       <p class="small muted">כתבו בקשה ונעביר אותה.</p>

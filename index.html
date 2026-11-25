@@ -486,6 +486,7 @@ body.sheet-open { overflow: hidden; }
 .wsfields:not(:has(input[type=checkbox]:checked)) .wsmore { display: none; }
 .wsmore { display: grid; gap: 10px; }
 .wsrow { display: grid; gap: 4px; }
+.wrongmail summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: var(--fs-1); color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .wsrow > span { font-size: var(--fs-1); font-weight: 700; }
 .wsname { font-weight: 700; font-size: var(--fs-3); margin: 0 0 8px; }
 .wsabout { margin-top: 10px; }
@@ -5369,9 +5370,11 @@ function buyerPageHTML(title) {
   if (mode === 'loading') return `${head(title, gearBtn())}<div class="stack g">${meHead(mode)}<p class="muted" role="status">טוענים</p></div>`;
   const note = mode === 'pending' ? meNote('ההרשמה בבדיקה. אחרי האישור כאן יופיעו הבקשות.')
     : mode === 'rejected' ? meNote('ההרשמה הקודמת לא אושרה. אפשר לכתוב לנו.')
-    : mode === 'nonmaker' && !isOwner() ? meNote(`המייל הזה לא מקושר ליוצר מאושר. היכנסו עם מייל ההרשמה${AD.session && AD.session.user && AD.session.user.email ? ` (נכנסתם עם <span dir="ltr">${esc(AD.session.user.email)}</span>)` : ''}.`)
     : mode === 'failed' ? '<div class="note" role="note">לא הצלחנו לבדוק את הכניסה. <button type="button" class="link sm" data-act="meretry">לנסות שוב</button></div>' : '';
   const showJoin = mode !== 'pending' && mode !== 'maker';
+  /* a signed-in buyer sees no warning. A maker who signed in with another email finds the explanation behind this small line */
+  const mail = AD.session && AD.session.user && AD.session.user.email ? String(AD.session.user.email) : '';
+  const wrongMail = mode === 'nonmaker' && !isOwner() ? `<details class="wrongmail"><summary>יוצרים ולא רואים את הדף שלכם?</summary><p class="small muted">היכנסו עם המייל שאיתו נרשמתם כיוצרים${mail ? `. עכשיו אתם מחוברים עם <span dir="ltr">${esc(mail)}</span>` : ''}. הדף יופיע אחרי שנאשר את ההרשמה.</p></details>` : '';
   const nNew = mode === 'maker' ? AU.inbox.list.filter(x => x.rs === 'sent' && x.rstatus !== 'closed').length : 0;
   const makerBtn = mode === 'maker' ? `<button type="button" class="mecta" data-act="go" data-v="memaker">${meIc(UI.pencil)}<span class="tx"><span class="t">אני כיוצר</span><span class="small">בקשות, יצירות ופרופיל</span></span>${nNew ? `<span class="cnt" aria-label="${nNew} חדשות">${nNew}</span>` : ''}<span class="fwd" aria-hidden="true">${svg(UI.back)}</span></button>` : '';
   const reqCard = meCard(UI.mail, 'הבקשות שלי', MYREQ.length, `${myReqsList()}${MYREQ.length ? '<button class="btn block" style="margin-top:12px" data-act="tab" data-v="post">לכתוב בקשה חדשה</button>' : ''}`, 'h-mine');
@@ -5387,6 +5390,7 @@ function buyerPageHTML(title) {
       ${likedSpot()}
       ${guest}
       ${showJoin ? joined : ''}
+      ${wrongMail}
       ${adminHint}
       ${aboutTail()}
     </div>`;

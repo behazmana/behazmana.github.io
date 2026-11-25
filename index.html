@@ -105,6 +105,14 @@ body.pv-admin .app { padding-bottom: 40px; }
 
 .stack { display: flex; flex-direction: column; gap: 56px; padding-block: 28px 8px; }
 .stack.tight { gap: 22px; }
+/* the works feed and the liked photos: a dark gallery wall */
+body.gallery::before, body.gallery .app, body.gallery .top { background: #14150f; }
+body.gallery .app { color: #fbfaf6; }
+body.gallery #view :is(.muted, .empty) { color: #b4b7a6; }
+body.gallery #view :is(.note, .s-empty) { color: var(--ink); }
+body.gallery #view :is(.note, .s-empty) .muted { color: var(--muted); }
+body.gallery #view :is(.round, .chip, .filters button) { background: #2c2f23; color: #fbfaf6; }
+body.gallery #view .filters button[aria-pressed="true"] { background: #fbfaf6; color: #14150f; }
 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .sec-title { font-family: var(--display); font-size: var(--fs-4); line-height: 1.05; }
 .sec-title.small { font-size: var(--fs-3); margin: 28px 0 12px; }
@@ -3874,8 +3882,8 @@ function viewerGestures(box, track, n, first, onIndex) {
   return { step: d => go(i + d, true), resize: () => { unzoom(); go(i, false); } };
 }
 /* iPhone also zooms the whole page from a pinch that begins outside the photo: not while the viewer is open */
-['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => { if (VIEW && document.getElementById('sheet').classList.contains('viewer')) e.preventDefault(); }, { passive: false }));
-window.addEventListener('resize', () => { if (VIEW && document.getElementById('sheet').classList.contains('viewer')) VIEW.resize(); });
+['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => { if ((VIEW && document.getElementById('sheet').classList.contains('viewer')) || document.querySelector('.dp.full')) e.preventDefault(); }, { passive: false }));
+window.addEventListener('resize', () => { if (VIEW && document.getElementById('sheet').classList.contains('viewer')) VIEW.resize(); if (DPO && DPO.view) DPO.view.resize(); });
 function openViewer(m, k) {
   const all = viewPhotos(m); if (!all.length) return;
   const many = all.length > 1;
@@ -4922,7 +4930,7 @@ SCREENS.post = ({ title = '', hint } = {}) => `${head('בקשה חדשה')}
 /* ---------- editing my own profile ---------- */
 const EP = { m: null, works: [], portrait: '', portraitUrl: '', busy: false };
 const epImg = (x, alt) => `<img src="${esc(x.url || photoURL(x.path))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
-const storyHint = (id, v) => `<ul class="sthint" aria-label="מה כדאי לכתוב"><li><b>חומרים:</b> באילו חומרים אתם עובדים</li><li><b>כמה זמן:</b> כמה שנים אתם עושים את זה</li><li><b>ידע וניסיון:</b> מה למדתם ומה אתם יודעים לעשות</li></ul><span class="hint">החיפוש באתר קורא את הסיפור, ולכן ככל שתכתבו יותר פרטים, קל יותר למצוא אתכם.</span><span class="hint sthint-c" id="${id}" data-story-count>${storyCue(v)}</span>`;
+const storyHint = (id, v) => `<ul class="sthint" aria-label="מה כדאי לכתוב"><li><b>חומרים:</b> עם אילו חומרים אתם עובדים</li><li><b>התמחות:</b> במה אתם מתמחים</li><li><b>עבודות:</b> אילו עבודות אתם עושים בדרך כלל</li><li><b>מה אתם מציעים:</b> למשל הזמנה אישית, מתנות, תיקונים</li><li><b>ניסיון:</b> כמה שנים אתם בתחום ומה למדתם</li></ul><span class="hint"><b>כדאי לפרט:</b> ככה ימצאו אתכם בקלות בחיפוש, ויהיה קל יותר לחבר אתכם לקונים שמתאימים לכם.</span><span class="hint sthint-c" id="${id}" data-story-count>${storyCue(v)}</span>`;
 const storyCue = v => { const n = Array.from(String(v || '').trim()).length; return n >= 200 ? `${n} מתוך 1000. זה כבר סיפור מלא.` : n ? `${n} מתוך 1000. עוד קצת ויהיה לכם סיפור מלא.` : 'עוד לא כתבתם כלום. התחילו ממה שאתם מכינים.'; };
 const epWorksHTML = () => EP.works.map((x, i) => `<div class="art" data-i="${i}">${epImg(x, 'עבודה ' + (i + 1))}<button type="button" class="rm" data-act="epwrm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button>${i === 0 ? '<span class="mk1 on">מוצגת ראשונה</span>' : `<button type="button" class="mk1" data-act="epfirst" data-v="${i}" aria-label="להציג את תמונה ${i + 1} ראשונה">להציג ראשונה</button>`}</div>`).join('') + (EP.works.length < MAX_PHOTOS ? '<button type="button" class="add-photo" data-act="epwpick" aria-label="הוספת תמונה">+</button>' : '');
 const epPortraitHTML = () => EP.portrait ? `<div class="art">${epImg({ url: EP.portraitUrl, path: EP.portrait }, 'התמונה שלכם')}<button type="button" class="rm" data-act="epprm" aria-label="הסרת התמונה שלכם">${svg(UI.close)}</button></div><button type="button" class="chip" data-act="eppick">החלפת תמונה</button>` : '<button type="button" class="add-photo" data-act="eppick" aria-label="הוספת תמונה שלכם">+</button>';
@@ -5085,10 +5093,10 @@ SCREENS.settings = () => {
 };
 
 /* ---------- the creations tab: a page to wander in (real photos and stories of the makers who joined) ---------- */
-const DISC_CSS = `.disc{column-count:2;column-gap:12px}
+const DISC_CSS = `.disc{column-count:2;column-gap:4px;margin-inline:calc(6px - var(--gr)) calc(6px - var(--gl))}
 @media (min-width:700px){.disc{column-count:3}}
-.disc>*{break-inside:avoid;margin:0 0 12px;display:block;width:100%}
-.dtile{position:relative;background:var(--paper);text-align:start;color:var(--ink)}
+.disc>*{break-inside:avoid;margin:0 0 4px;display:block;width:100%}
+.dtile{position:relative;background:#23251b;text-align:start}
 .dtile .dimg{display:block;width:100%;border:0;padding:0;background:none;cursor:zoom-in}
 .dtile img{display:block;width:100%;height:auto;min-height:110px;object-fit:cover;background:var(--tone)}
 .dtile.dp-src img{visibility:hidden}
@@ -5106,11 +5114,23 @@ const DISC_CSS = `.disc{column-count:2;column-gap:12px}
 body.dp-open{overflow:hidden}
 .dp .dopen{padding:0;background:var(--paper)}.dp .dbtns{display:flex;gap:2px;background:var(--paper)}.dp .dbtns .btn{flex:1 1 0;min-width:0;padding-inline:8px;clip-path:none;text-decoration:none}.dp .dinfo{margin:0;padding:10px 12px}
 .dp .dclose{position:absolute;inset-block-start:0;inset-inline-start:0;width:44px;height:44px;border:0;padding:0;display:grid;place-items:center;background:none;color:var(--ink);cursor:pointer}.dp .dclose svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
-.dtile .dcap{display:block;padding:9px 11px 11px;font-size:var(--fs-1);color:var(--muted);line-height:1.3}
-.dtile .dcap b{display:block;font-family:var(--display);font-size:var(--fs-3);line-height:1;color:var(--ink);font-weight:700;margin-bottom:2px}
+.dtile .dcap{position:absolute;inset-inline:0;bottom:0;padding:20px 8px 5px;font-size:12px;line-height:1.25;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.6));pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.dtile .dcap b{font-weight:600}
+.dtile.dp-src .dcap{visibility:hidden}
 .dquote{border:0;text-align:start;cursor:pointer;padding:20px 18px 18px;background:var(--olive);color:var(--on-olive)}
 .dquote p{font-family:var(--display);font-size:var(--fs-3);line-height:1.15;margin:0 0 10px}
 .dquote .by{font-size:var(--fs-1);color:var(--olive-soft);display:block}
+.dp.full{padding:0;display:block}.dp.full .dp-back{background:#0f100c}
+.dp.full .dp-card{width:100%;max-width:none;height:100%;margin:0 auto;display:flex;flex-direction:column;overflow:visible;color:#fbfaf6;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.dp.full .dtop{flex:none;display:flex;justify-content:space-between;padding:4px 8px;position:relative;z-index:2}
+.dp.full .dtop button{position:static;width:48px;height:48px;color:#fbfaf6}
+.dp.full .dp-photo{flex:1;min-height:0;background:none;overflow:hidden;direction:rtl;touch-action:none}
+.dp.full .dp-photo.moving{overflow:visible}
+.dp.full .viewer-track{display:flex;height:100%}.dp.full .viewer-slide{flex:0 0 100%;min-width:0;height:100%}
+.dp.full .viewer-slide img{display:block;width:100%;height:100%;object-fit:contain;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;pointer-events:none}
+.dp.full .dopen{flex:none;position:relative;z-index:2;background:none;width:min(440px,100%);margin:0 auto;padding:6px 12px 12px}
+.dp.full .dwho{margin:0 0 8px;font-size:var(--fs-1);text-align:center;color:#d7d9cc}
+.dp.full .dbtns{background:none;gap:6px}
 .dq-card{background:var(--paper);display:flex;flex-direction:column;max-height:calc(100dvh - 32px)}
 .dq-body{padding:16px 16px 8px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
 .dq-card .face-row{gap:12px;align-items:flex-start}.dq-card .face-row .av{width:56px;height:68px}.dq-who{flex:1;min-width:0}.dq-who b{display:block;font-family:var(--display);font-size:var(--fs-3);line-height:1.1}
@@ -5178,22 +5198,29 @@ const DP_MS = 280, DP_EASE = 'cubic-bezier(.2,.7,.2,1)';
 const dpCalm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
 const dpFrom = (r0, r1) => { const s = Math.max(r0.width / r1.width, r0.height / r1.height), cx = r0.left + r0.width / 2 - (r1.left + r1.width / 2), cy = r0.top + r0.height / 2 - (r1.top + r1.height / 2), ix = (r1.width - r0.width / s) / 2, iy = (r1.height - r0.height / s) / 2;
   return { transform: `translate(${cx}px,${cy}px) scale(${s})`, clipPath: `inset(${iy}px ${ix}px ${iy}px ${ix}px)` }; };
+/* where the large photo (shown whole inside its box) has to move and shrink to sit exactly on the small one in the feed */
+const dpFit = (r0, box, img) => { const nw = img.naturalWidth || r0.width, nh = img.naturalHeight || r0.height, w = nw * Math.min(box.width / nw, box.height / nh);
+  return `translate(${r0.left + r0.width / 2 - (box.left + box.width / 2)}px,${r0.top + r0.height / 2 - (box.top + box.height / 2)}px) scale(${r0.width / (w || 1)})`; };
 function dpOpen(i) {
   if (DPO) return;
   const t = document.getElementById('dt-' + i), x = tileItems()[+i]; if (!t || !x || x.k !== 'p') return;
   const img0 = t.querySelector('img'), r0 = img0.getBoundingClientRect();
   const el = document.createElement('div'); el.className = 'dp'; el.id = 'dp';
-  el.innerHTML = `<div class="dp-back" data-act="dpclose"></div><div class="dp-card" role="dialog" aria-modal="true" aria-label="${esc('עבודה של ' + x.m.name)}">
-    <div class="dp-photo"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" draggable="false">${plBtn(x, i)}<button type="button" class="dclose" data-act="dpclose" aria-label="סגירה">${svg(UI.close)}</button></div>
-    <div class="dopen"><div class="dbtns"><button type="button" class="btn small" data-act="rmaker" data-v="${esc(x.m.id)}">לפרופיל</button><button type="button" class="btn small ghost" data-act="dpinfo" data-v="${i}" aria-expanded="false">פרטים</button>${writeBtn(x.m, x.p, "btn small ghost")}</div><p class="small dinfo" hidden>${esc(x.m.name)} · ${esc(craftsLine(x.m))}${x.m.city ? ' · ' + esc(x.m.city) : ''}</p></div></div>`;
+  el.classList.add('full');
+  el.innerHTML = `<div class="dp-back"></div><div class="dp-card" role="dialog" aria-modal="true" aria-label="${esc('עבודה של ' + x.m.name)}">
+    <div class="dtop"><button type="button" class="dclose" data-act="dpclose" aria-label="סגירה">${svg(UI.close)}</button>${plBtn(x, i)}</div>
+    <div class="dp-photo"><div class="viewer-track"><div class="viewer-slide"><img src="${esc(photoURL(x.p))}" alt="${esc('עבודה של ' + x.m.name)}" draggable="false"></div></div></div>
+    <div class="dopen"><p class="dwho">${esc(x.m.name)} · ${esc(craftsLine(x.m))}${x.m.city ? ' · ' + esc(x.m.city) : ''}</p><div class="dbtns"><button type="button" class="btn small" data-act="rmaker" data-v="${esc(x.m.id)}">לפרופיל</button>${writeBtn(x.m, x.p, "btn small ghost")}</div></div></div>`;
   DPO = { el, tile: t, i, y: window.scrollY, ret: document.activeElement };
   document.body.appendChild(el); document.body.classList.add('dp-open'); t.classList.add('dp-src');
   img0.closest('.dimg').setAttribute('aria-expanded', 'true');
   pushH({ dp: 1 });
-  const ph = el.querySelector('.dp-photo'), r1 = ph.getBoundingClientRect();
-  if (!dpCalm() && ph.animate) {
+  const ph = el.querySelector('.dp-photo'), big = ph.querySelector('img');
+  DPO.view = viewerGestures(ph, ph.firstElementChild, 1, 0, () => {});
+  if (!dpCalm() && big.animate) {
     const o = { duration: DP_MS, easing: DP_EASE, fill: 'backwards' };
-    ph.animate([dpFrom(r0, r1), { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }], o);
+    ph.classList.add('moving'); setTimeout(() => ph.classList.remove('moving'), DP_MS + 40);
+    big.animate([{ transform: dpFit(r0, ph.getBoundingClientRect(), img0) }, { transform: 'none' }], o);
     el.querySelector('.dp-back').animate([{ opacity: 0 }, { opacity: 1 }], o);
     el.querySelector('.dopen').animate([{ opacity: 0 }, { opacity: 1 }], { ...o, duration: DP_MS * 0.8 });
   }
@@ -5214,7 +5241,9 @@ function dpHide(now) {
   tile.classList.remove('dp-src');   /* the tile is back underneath at once: nothing blank is left behind the shrinking card */
   const r0 = img0.getBoundingClientRect(), r1 = ph.getBoundingClientRect(), opt = { duration: DP_MS, easing: DP_EASE, fill: 'forwards' };
   el.inert = true; el.querySelector('.dp-card').style.pointerEvents = 'none';
-  const a = ph.animate([{ transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }, dpFrom(r0, r1)], opt);
+  const big = o.story ? null : ph.querySelector('img');
+  if (big) { big.style.transition = 'none'; ph.classList.add('moving'); el.querySelector('.dtop').animate([{ opacity: 1 }, { opacity: 0 }], { ...opt, duration: DP_MS * 0.5 }); }
+  const a = big ? big.animate([{ transform: big.style.transform || 'none' }, { transform: dpFit(r0, r1, big) }], opt) : ph.animate([{ transform: 'none', clipPath: 'inset(0px 0px 0px 0px)' }, dpFrom(r0, r1)], opt);
   el.querySelector('.dp-back').animate([{ opacity: 1 }, { opacity: 0 }], opt);
   const dop = el.querySelector('.dopen'); if (dop) dop.animate([{ opacity: 1 }, { opacity: 0 }], { ...opt, duration: DP_MS * 0.5 });
   a.onfinish = done; setTimeout(done, DP_MS + 120);
@@ -5703,6 +5732,7 @@ function paint(scroll, top) {
   screenHooks(c);
   const noNav = c.s === 'join' || c.s === 'joined' || WAITING() || (c.s === 'radmin' && pvAllowed());
   document.body.classList.toggle('no-nav', noNav);
+  document.body.classList.toggle('gallery', c.s === 'shop' || c.s === 'liked');
   drawNav(noNav, navOn());
   if (scroll) { window.scrollTo(0, top || 0); if (BOOTED && !(c.s === 'search' && c.focus)) view.focus({ preventScroll: true }); }
   if (c.s === 'search' && c.focus) { delete c.focus; const i = document.getElementById('sq'); if (i) { i.focus({ preventScroll: true }); i.setSelectionRange(i.value.length, i.value.length); } }

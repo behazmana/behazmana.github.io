@@ -5553,6 +5553,12 @@ async function saveProfile(f) {
 .bgrid .btn{width:100%;min-height:54px;padding:10px 12px;line-height:1.2;text-align:center}
 .bgrid .wide{grid-column:1/-1}
 .ep-see{align-self:flex-start}
+.likeline{background:var(--paper);padding:0 16px}
+.likeline summary{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;font-weight:700}
+.likeline summary::after{content:"+";font-size:22px;font-weight:400}
+.likeline summary::-webkit-details-marker{display:none}
+.likeline[open] summary::after{content:"−"}
+.likeline .strip{padding-bottom:14px}
 .mt-btn{align-self:flex-start;min-width:112px}
 .mt-btn .cnt{background:var(--stamp);color:var(--paper);min-width:22px;padding:0 6px;display:inline-block;line-height:22px}
 .mt-panel{display:flex;flex-direction:column;gap:18px;padding:0 0 6px}
@@ -5874,13 +5880,23 @@ function reviewsPanel(m) {
   const rv = RV[m.id], n = rv && rv.st === 'ready' ? rv.list.length : -1;
   return `<p class="small muted" style="margin:8px 0">${n === 0 ? 'עוד אין ביקורות. שלחו ללקוחות את הקישור או הקוד.' : n > 0 ? `יש לכם ${plural(n, 'ביקורת אחת', 'ביקורות')}. אפשר לבקש עוד.` : 'לקוחות יכולים להשאיר לכם ביקורת בדף שלכם.'}</p>`;
 }
+/* hearts on the maker's photos: one line that opens on tap (while the posts tab, which shows them too, is switched off) */
+function likesLine(mk) {
+  if (CONFIG.POSTS || !CFG_ON) return '';
+  if (LKC.st === 'idle' || LKC.mid !== mk.id) setTimeout(loadLikeCounts, 0);
+  const works = mk.portrait ? mk.photos : mk.photos.slice(1);
+  if (LKC.st !== 'ready' || LKC.mid !== mk.id || !works.length) return '';
+  const total = works.reduce((t, p) => t + (LKC.n[p] || 0), 0);
+  if (!total) return '<p class="small muted">עוד אין לבבות על התמונות שלכם.</p>';
+  return `<details class="likeline"><summary>${plural(total, 'לב אחד על התמונות שלכם', 'לבבות על התמונות שלכם')}</summary><div class="strip" style="grid-template-columns:repeat(3,1fr)">${works.map((p, i) => `<div>${rImg(p, `עבודה ${i + 1}`)}<p class="small" style="margin-top:4px">${LKC.n[p] || 0} אהבו</p></div>`).join('')}</div></details>`;
+}
 const profileHTML = () => { const m = AU.maker, face = m.portrait || m.photos[0], ok = m.status === 'approved';
   return `<div class="panel"><div class="face-row">${face ? `<span class="av">${rImg(face, '')}</span>` : `<span class="av"><span class="ini">${esc(initials(m.name))}</span></span>`}<div><b>${esc(m.name)}</b><div class="small muted">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</div></div></div>
     <dl class="specs"><div><dt>הטלפון באתר</dt><dd>${m.phonePublic ? 'מוצג' : 'לא מוצג'}</dd></div><div><dt>המייל באתר</dt><dd>${m.emailPublic ? 'מוצג' : 'לא מוצג'}</dd></div></dl>
     ${m.story ? `<p class="small rstory">${esc(m.story)}</p>` : ''}
     ${ok ? reviewsPanel(m) : ''}
     <div class="bgrid"><button type="button" class="btn${ok ? '' : ' wide'}" data-act="editprofile">עריכת הפרופיל</button>${ok ? `<button type="button" class="btn ghost" data-act="rvkit" data-v="${esc(m.id)}">קוד ודף להדפסה</button>` : ''}</div>
-    <p class="small muted">לעזרה כתבו לנו.</p><div class="links-col">${mailLink('שינוי פרטים בפרופיל בבהזמנה')}</div></div>`; };
+    <p class="small muted">לעזרה כתבו לנו.</p><div class="links-col">${mailLink('שינוי פרטים בפרופיל בבהזמנה')}</div></div>${likesLine(m)}`; };
 /* the 'אני' tab: a choice page (buyer / maker) for an approved maker; everyone else has only the buyer page, so it opens directly.
    The two pages never share buttons. favoritesHTML() (favourite makers) is added by another change; it is called from the buyer page if it exists. */
 const aboutTail = () => `<section class="panel" aria-labelledby="h-about"><h2 class="sec-title" id="h-about">כתבו לנו</h2><div class="links-col">${mailLink('שלום מבהזמנה')}</div>${legalLinks()}</section>`;

@@ -87,6 +87,12 @@ b, strong { font-weight: 700; }
 .bleed { margin-left: calc(-1 * var(--gl)); margin-right: calc(-1 * var(--gr)); }
 
 /* top bar */
+#pvbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 25; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px var(--gr) 8px var(--gl); background: #191c13; }
+#pvbar button { flex: 1; min-height: 44px; border: 0; background: #34392a; color: #fbfaf6; font-weight: 700; }
+#pvbar button[aria-pressed="true"] { background: #fbfaf6; color: #191c13; }
+#pvbar .pvnote { flex-basis: 100%; text-align: center; color: #d3e1bd; font-size: var(--fs-1); line-height: 1.2; }
+body.pv .top { top: calc(env(safe-area-inset-top, 0px) + var(--pv-h, 60px)); }
+body.pv-admin .app { padding-bottom: 40px; }
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--ground); display: flex; align-items: center; gap: 12px; min-height: var(--top-h); padding-block: 8px; }
 .top.on-dark { background: var(--olive); color: var(--on-olive); }
 .top h1 { font-family: var(--display); font-size: var(--fs-4); line-height: 1; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -3355,6 +3361,57 @@ const redrawAdmin = () => { if (cur().s === 'radmin') render(); };
 const REAL_SCREENS = new Set(['home', 'makers', 'rmaker', 'wait', 'match']);
 function realChanged() { const s = cur().s; if (REAL_SCREENS.has(s)) render(); else if (s === 'search') runSearch(); }
 
+/* ---------- the owner's app: three buttons that are always on top (admin, maker, buyer) ----------
+   Maker and buyer show the screens the way those people see them. It is a preview only: nothing can be saved, sent or signed out while it is on.
+   The maker is a made-up example, so no real maker's details are opened for editing. Only the owner, in the installed app, gets the buttons. */
+let PV = 'admin', PVS = null;
+const PV_ID = '00000000-0000-4000-8000-000000000001', PV_NOTE = 'זו תצוגה בלבד. שום דבר לא נשמר';
+const pvAllowed = () => PV !== 'admin' || (isOwner() && isStandalone());
+/* every request the site sends goes through here: in a preview only reading is let through (and the login renewing itself) */
+const pvFetch = (u, o = {}) => {
+  const method = String(o.method || (u && u.method) || 'GET').toUpperCase(), url = String((u && u.url) || u);
+  if (PV !== 'admin' && method !== 'GET' && method !== 'HEAD' && !/\/auth\/v1\/token/.test(url)) { toast(PV_NOTE); return Promise.resolve(new Response(JSON.stringify({ message: 'preview only', error: 'preview only' }), { status: 403, headers: { 'content-type': 'application/json' } })); }
+  return fetch(u, o);
+};
+const PV_BLOCKED = ['signin', 'signup', 'signout', 'radlogin', 'radlogout'];
+function pvSample() {
+  const real = REAL.list.find(m => m.id !== PV_ID && m.portrait && m.photos.length) || {};   /* real public photos stand in for the example's pictures */
+  const base = { id: PV_ID, name: 'יוצר לדוגמה', city: 'קריית שמונה', craft: 'leather', crafts: ['leather'], story: 'זה דף לדוגמה, כדי לראות איך נראה אזור היוצר.', photos: real.photos || [], portrait: real.portrait || '', socials: ['https://instagram.com/example'], workshops: true, workshopInfo: 'סדנה לדוגמה: מה לומדים, איפה, כמה זמן ומה המחיר.', theme: 'stone' };
+  return { mine: { ...base, other: '', phonePublic: true, emailPublic: false, phone: '0500000000', hasSocials: true, hasWorkshops: true, status: 'approved' }, shown: { ...base, craftOther: '', contact: contactPhone('0500000000'), email: null } };
+}
+function pvRestore() {
+  if (PV === 'admin') return;
+  PV = 'admin'; if (PVS) { AD.session = PVS.session; AU = PVS.au; PVS = null; }
+  REAL.list = REAL.list.filter(m => m.id !== PV_ID);
+}
+function pvSwitch(to) {
+  if (!pvAllowed() || !['admin', 'maker', 'buyer'].includes(to)) return;
+  if (!document.getElementById('sheet').hidden) hideSheet();
+  pvRestore();
+  const clean = location.pathname + location.search;
+  if (to === 'admin') { S.stack = [{ s: 'radmin' }]; BH = 0; replaceH(clean + '#admin'); render(true); window.scrollTo(0, 0); if (isOwner() && !AD.loaded) adminLoad(); return; }
+  PVS = { session: AD.session, au: AU }; PV = to; AU = freshAU();
+  if (to === 'buyer') { AD.session = null; S.stack = [{ s: 'home' }]; BH = 1; }
+  else {
+    const x = pvSample(); REAL.list = REAL.list.concat([x.shown]);
+    AD.session = { user: { id: 'preview', email: 'maker@example.com' } };
+    Object.assign(AU, { uid: 'preview', st: 'ready', probe: 'ok', rows: [x.mine], maker: x.mine });
+    AU.inbox.st = 'ready'; AU.inbox.list = [normIb({ route_id: 'preview-route', request_id: 'preview-request', route_status: 'sent', title: 'בקשה לדוגמה: ארנק מעור', crafts: ['leather'], text: 'ככה נראית בקשה שמגיעה ליוצר.', contact: 'buyer@example.com', routed_at: new Date().toISOString(), created_at: new Date().toISOString(), request_status: 'new' })];
+    AU.my.st = 'ready';
+    S.stack = [{ s: 'home' }, { s: 'mine' }, { s: 'memaker' }]; BH = 1;
+  }
+  replaceH(clean); render(true); window.scrollTo(0, 0);
+}
+function pvBar() {
+  const on = pvAllowed(); let bar = document.getElementById('pvbar');
+  document.body.classList.toggle('pv', on);
+  document.body.classList.toggle('pv-admin', on && PV === 'admin' && cur().s === 'radmin');
+  if (!on) { if (bar) bar.remove(); return; }
+  if (!bar) { bar = document.createElement('div'); bar.id = 'pvbar'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'איך להציג את האפליקציה'); const view = document.getElementById('view'); view.parentNode.insertBefore(bar, view); }
+  bar.innerHTML = [['admin', 'ניהול'], ['maker', 'יוצר'], ['buyer', 'קונה']].map(([k, l]) => `<button type="button" data-act="pvmode" data-v="${k}" aria-pressed="${PV === k}">${l}</button>`).join('') + (PV === 'admin' ? '' : '<span class="pvnote">תצוגה בלבד</span>');
+  document.documentElement.style.setProperty('--pv-h', bar.offsetHeight + 'px');
+}
+
 /* the login link brings tokens in the address bar: when the library cannot read them, they must not stay there */
 const stripTokens = () => { if (/(^|[#&])(access_token|refresh_token)=/.test(location.hash)) replaceH(location.pathname + location.search); };
 function loadBackend() {
@@ -3364,9 +3421,10 @@ function loadBackend() {
   const fail = () => { stripTokens(); SB = null; AD.failed = true; REAL.failed = true; redrawAdmin(); realChanged(); shopChanged(); };
   s.onerror = fail;
   s.onload = () => {
-    try { SB = window.supabase.createClient(CONFIG.SUPABASE_URL.trim(), CONFIG.SUPABASE_ANON_KEY.trim()); } catch (e) { return fail(); }
+    try { SB = window.supabase.createClient(CONFIG.SUPABASE_URL.trim(), CONFIG.SUPABASE_ANON_KEY.trim(), { global: { fetch: pvFetch } }); } catch (e) { return fail(); }
     if (PENDING_LOGIN) setTimeout(runLogin, 0);
     SB.auth.onAuthStateChange((ev, session) => setTimeout(() => {
+      if (PV !== 'admin') { if (session && PVS) { PVS.session = session; return; } pvRestore(); }
       const was = AD.session; AD.session = session; ownerIn(); if (!session) { AD.loaded = false; resetMe(); try { localStorage.removeItem('behazmana.owner'); } catch (e) { /* ignore */ } } else if (!was || !was.user || was.user.id !== session.user.id) loadMe();
       if (ev === 'SIGNED_IN' && session && wantsMe() && cur().s !== 'radmin') { clearWantsMe(); showMe(); }
       if (cur().s === 'radmin') { if (isOwner() && !AD.loaded) adminLoad(); else render(); } else meRedraw();
@@ -5517,7 +5575,7 @@ function paint(scroll, top) {
   const c = cur(), view = document.getElementById('view');
   view.innerHTML = SCREENS[c.s](c);
   screenHooks(c);
-  const noNav = c.s === 'join' || c.s === 'joined' || WAITING();
+  const noNav = c.s === 'join' || c.s === 'joined' || WAITING() || (c.s === 'radmin' && pvAllowed());
   document.body.classList.toggle('no-nav', noNav);
   drawNav(noNav, navOn());
   if (scroll) { window.scrollTo(0, top || 0); if (BOOTED && !(c.s === 'search' && c.focus)) view.focus({ preventScroll: true }); }
@@ -5527,6 +5585,8 @@ function paint(scroll, top) {
 }
 /* fwd / back: fade plus a small slide in the reading direction; fade: gated join, thank-you, replaced screens; tab: switching tabs */
 function render(scroll) {
+  if (PV !== 'admin' && cur().s === 'radmin') pvRestore();
+  pvBar();
   const key = JSON.stringify(S.stack), c = cur(), on = navOn();
   const changed = !!scroll && BOOTED && !!RENDERED && key !== RENDERED;
   let dir = '';
@@ -5571,6 +5631,7 @@ function revealCards(view) {
 }
 
 const ACT = {
+  pvmode: v => pvSwitch(v),
   pzoom: (v, t) => { const m = REAL.list.find(x => x.id === v), el = t || document.activeElement; if (m) openViewer(m, +(el && el.dataset.k) || 0); },
   vstep: v => viewerStep(+v),
   back, tab: v => tab(v),
@@ -5744,7 +5805,8 @@ ACT.radapprove = async v => { const m = AD.makers.find(x => x.id === v); if (!m)
 
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t || !ACT[t.dataset.act]) return;
-  e.preventDefault(); ACT[t.dataset.act](t.dataset.v, t);
+  e.preventDefault(); if (PV !== 'admin' && PV_BLOCKED.includes(t.dataset.act)) { toast(PV_NOTE); return; }
+  ACT[t.dataset.act](t.dataset.v, t);
 });
 document.addEventListener('input', e => {
   if (e.target.id === 'j-story' || e.target.id === 'ep-story') { const c = document.getElementById(e.target.id + '-c'); if (c) c.textContent = storyCue(e.target.value); return; }

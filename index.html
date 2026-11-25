@@ -5146,7 +5146,9 @@ document.addEventListener('change', e => {
 SCREENS.editprofile = () => {
   const m = EP.m || AU.maker; if (!m) return `${head('עריכת הפרופיל')}<div class="stack g"><p class="empty">אין פרופיל לערוך.</p></div>`;
   const set = new Set(m.crafts && m.crafts.length ? m.crafts : [m.craft]), tile = (k, v) => `<label class="tile"><input type="checkbox" name="crafts" value="${k}" id="ep-c-${k}" ${set.has(k) ? 'checked' : ''}><span class="face">${svg(UI['c_' + k])}<span class="tl">${v}</span>${svg(UI.tick).replace('<svg ', '<svg class="tick" ')}</span></label>`;
+  const seeIt = AU.maker && AU.maker.status === 'approved' ? `<button type="button" class="btn small ghost ep-see" data-act="epsee" data-v="${esc(AU.maker.id)}">איך הפרופיל נראה באתר</button>` : '';
   return `${head('עריכת הפרופיל')}<div class="stack tight g">
+    ${seeIt}
     <form class="f" data-form="editprofile" novalidate>
       <div class="field"><label for="ep-name">שם</label><input class="input" id="ep-name" name="name" maxlength="80" value="${esc(m.name)}" aria-required="true"></div>
       <div class="field"><label for="ep-city">עיר מגורים</label><input class="input" id="ep-city" name="city" data-city maxlength="60" value="${esc(m.city)}" aria-required="true"></div>
@@ -5165,6 +5167,16 @@ SCREENS.editprofile = () => {
       <button class="btn block" type="submit">שמירת השינויים</button>
     </form></div>`;
 };
+const epFields = f => [...f.elements].filter(x => x.name && x.type !== 'file');
+const epTick = x => x.type === 'checkbox' || x.type === 'radio';
+function epKeep() { const f = document.querySelector('form[data-form="editprofile"]'); EP.draft = f ? epFields(f).map(x => [x.name, x.value, epTick(x) ? x.checked : null]) : null; }
+function epRestore() {
+  const f = document.querySelector('form[data-form="editprofile"]'), d = EP.draft; if (!f || !d) return;
+  const all = epFields(f);
+  d.forEach(([n, v, on]) => { const x = all.find(e => e.name === n && (on === null || e.value === v)); if (!x) return; if (on === null) x.value = v; else x.checked = on; });
+  const sw = f.querySelector('input[name="theme"]:checked'), now = f.querySelector('#ep-cursw'), t = sw && THEMES[sw.value];
+  if (t && now) { now.style.background = t.b; now.style.color = t.t; f.querySelector('#ep-curname').textContent = t.l; }
+}
 async function saveProfile(f) {
   const fd = new FormData(f), err = f.querySelector('#ep-err'), btn = f.querySelector('button[type="submit"]'), v = k => String(fd.get(k) || '').trim();
   const name = v('name'), city = v('city'), story = String(fd.get('story') || '').replace(/\r\n?/g, '\n').trim(), phone = v('phone');
@@ -5193,6 +5205,7 @@ async function saveProfile(f) {
 (function () { const st = document.createElement('style'); st.id = 'bgrid-css'; st.textContent = `.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0}
 .bgrid .btn{width:100%;min-height:54px;padding:10px 12px;line-height:1.2;text-align:center}
 .bgrid .wide{grid-column:1/-1}
+.ep-see{align-self:flex-start}
 .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px 8px}
 .swatches[hidden]{display:none}
 .colorrow{display:flex;align-items:center;gap:10px}
@@ -5214,8 +5227,8 @@ SCREENS.settings = () => {
   return `${head('הגדרות')}<div class="stack g">
     <section class="panel"><h2 class="sec-title">החשבון</h2>
       ${em ? `<p style="margin-top:6px">מחוברים כ־<span dir="ltr">${esc(em)}</span></p><p class="small muted">${mk ? 'חשבון של יוצר מאושר.' : ''}</p><button type="button" class="btn ghost" data-act="signout">התנתקות</button>` : `<p class="muted" style="margin-top:6px">עוד לא נכנסתם.</p>${signinOK() ? '<button type="button" class="btn" data-act="signin">כניסה</button>' : ''}`}</section>
-    ${mk ? `<section class="panel"><h2 class="sec-title">הפרופיל שלי</h2><div class="bgrid" style="margin-top:8px"><button type="button" class="btn wide" data-act="editprofile">עריכת הפרופיל</button><button type="button" class="btn ghost" data-act="rvkit" data-v="${esc(AU.maker.id)}">הקוד והדף להדפסה</button><button type="button" class="btn ghost" data-act="rmaker" data-v="${esc(AU.maker.id)}">איך הפרופיל נראה באתר</button></div></section>` : ''}
-    <section class="panel"><h2 class="sec-title">במכשיר הזה</h2><p class="small muted" style="margin:6px 0 8px">${MYREQ.length ? plural(MYREQ.length, 'בקשה אחת שמורה', 'בקשות שמורות') : 'אין בקשות שמורות'} במכשיר.</p>${MYREQ.length ? '<button type="button" class="btn small ghost" data-act="clearreqs">ניקוי הרשימה במכשיר</button>' : ''}</section>
+    ${mk ? `<section class="panel"><h2 class="sec-title">הפרופיל שלי</h2><div class="bgrid" style="margin-top:8px"><button type="button" class="btn${AU.maker.status === 'approved' ? '' : ' wide'}" data-act="editprofile">עריכת הפרופיל</button>${AU.maker.status === 'approved' ? `<button type="button" class="btn ghost" data-act="rvkit" data-v="${esc(AU.maker.id)}">קוד ודף להדפסה</button>` : ''}</div></section>` : ''}
+    ${MYREQ.length || MINE.length ? `<section class="panel"><h2 class="sec-title">בקשות ששלחתם מכאן</h2><p class="small muted" style="margin:6px 0 10px">רשימת הבקשות נשמרת בדפדפן הזה. בטלפון או במחשב משותף אפשר למחוק אותה. הבקשות עצמן נשארות אצלנו.</p><button type="button" class="btn small ghost" data-act="clearreqs">מחיקת הרשימה מכאן</button></section>` : ''}
     <section class="panel"><h2 class="sec-title">פרטיות</h2>${legalLinks()}<p class="small muted" style="margin:8px 0">למחיקת פרטים כתבו לנו.</p><div class="links-col">${mailLink('בקשה למחיקת פרטים מבהזמנה')}</div></section>
     <section class="panel"><h2 class="sec-title">עוד</h2><div class="links-col">${mailLink('שלום מבהזמנה')}</div></section>
   </div>`;
@@ -5508,7 +5521,7 @@ const profileHTML = () => { const m = AU.maker, face = m.portrait || m.photos[0]
     <dl class="specs"><div><dt>הטלפון באתר</dt><dd>${m.phonePublic ? 'מוצג' : 'לא מוצג'}</dd></div><div><dt>המייל באתר</dt><dd>${m.emailPublic ? 'מוצג' : 'לא מוצג'}</dd></div></dl>
     ${m.story ? `<p class="small rstory">${esc(m.story)}</p>` : ''}
     ${ok ? reviewsPanel(m) : ''}
-    <div class="bgrid"><button type="button" class="btn wide" data-act="editprofile">עריכת הפרופיל</button>${ok ? `<button type="button" class="btn ghost" data-act="rvkit" data-v="${esc(m.id)}">הקוד והדף להדפסה</button><button type="button" class="btn ghost" data-act="share" data-v="${esc(m.id)}">שיתוף הפרופיל</button>` : ''}<button type="button" class="btn ghost wide" data-act="rmaker" data-v="${esc(m.id)}">איך הפרופיל נראה באתר</button></div>
+    <div class="bgrid"><button type="button" class="btn${ok ? '' : ' wide'}" data-act="editprofile">עריכת הפרופיל</button>${ok ? `<button type="button" class="btn ghost" data-act="rvkit" data-v="${esc(m.id)}">קוד ודף להדפסה</button>` : ''}</div>
     <p class="small muted">לעזרה כתבו לנו.</p><div class="links-col">${mailLink('שינוי פרטים בפרופיל בבהזמנה')}</div></div>`; };
 /* the 'אני' tab: a choice page (buyer / maker) for an approved maker; everyone else has only the buyer page, so it opens directly.
    The two pages never share buttons. favoritesHTML() (favourite makers) is added by another change; it is called from the buyer page if it exists. */
@@ -5643,11 +5656,12 @@ function makerPageHTML() {
   const tabs = [['inbox', 'בקשות', nNew, UI.mail], ...(CONFIG.POSTS ? [['posts', 'פוסטים', 0, UI.grid]] : []), ...(CONFIG.SELLING ? [['listings', 'יצירות', 0, TAG_ICON]] : []), ['profile', 'פרופיל', 0, UI.user]];
   if (!tabs.some(t => t[0] === ME.tab)) ME.tab = 'inbox';
   const body = ME.tab === 'listings' ? myListingsHTML() : ME.tab === 'profile' ? profileHTML() : ME.tab === 'posts' ? postsHTML() : inboxHTML();
+  /* the greeting, and right under it the tabs and the requests: nothing else comes between them */
   return `${head('אני כיוצר', gearBtn())}<div class="stack tight g">
-      ${meEntry(UI.user, 'אני', 'הבקשות והמועדפים שלי', 'tab', 'mine')}
-      <div class="row wrap" style="justify-content:space-between"><p><b>היי ${esc(firstOf(AU.maker.name))}</b> <span class="small muted">מחוברים כיוצרים</span></p>${signoutBtn()}</div>
+      <div class="row wrap mk-hi" style="justify-content:space-between"><p><b>היי ${esc(firstOf(AU.maker.name))}</b> <span class="small muted">מחוברים כיוצרים</span></p>${signoutBtn()}</div>
       <div class="mtabs" role="tablist" aria-label="האזור שלכם כיוצרים">${tabs.map(([k, l, n, ic]) => `<button type="button" role="tab" id="mt-${k}" aria-selected="${ME.tab === k}" aria-controls="mp" data-act="mtab" data-v="${k}">${svg(ic)}<span>${l}</span>${n ? ` <span class="cnt" aria-label="${n} חדשות">${n}</span>` : ''}</button>`).join('')}</div>
       <div id="mp" role="tabpanel" aria-labelledby="mt-${ME.tab}" class="mp">${body}</div>
+      ${meEntry(UI.user, 'אני', 'הבקשות והמועדפים שלי', 'tab', 'mine')}
       ${isOwner() ? '<button type="button" class="link sm" data-act="toadmin">למסך הניהול</button>' : ''}
     </div>`;
 }
@@ -5916,6 +5930,7 @@ function screenHooks(c) {
   if (c.s === 'listing' && !LST.has(c.id) && !LFETCH[c.id]) fetchListing(c.id);
   if (c.s === 'shop' && shopOf(S.scraft).st === 'idle') loadShop(S.scraft);
   if (c.s === 'myreq' && !RQ[c.token] && MYREQ.some(x => x.token === c.token)) loadReq(c.token);
+  if (c.s === 'editprofile') epRestore();
   if (ME_SCREENS.includes(c.s)) { probeMe(); if (AD.session && AU.st === 'none') loadMe(); }
 }
 function paint(scroll, top) {
@@ -6051,10 +6066,11 @@ Object.assign(ACT, {
   matchsent: () => { MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
   settings: () => go('settings'),
   installadmin: () => { const d = DEFER_INSTALL; if (d && d.prompt) { d.prompt(); DEFER_INSTALL = null; } },
-  clearreqs: () => openSheet(confirmSheet('לנקות את הרשימה?', 'הבקשות נשארות אצלנו, רק לא יוצגו כאן.', 'clearreqsyes', '1', 'כן, לנקות'), 'ניקוי הרשימה'),
-  clearreqsyes: () => { MYREQ = []; saveMyReq(); closeSheet(true); render(); toast('הרשימה נוקתה'); },
+  clearreqs: () => openSheet(confirmSheet('למחוק את הרשימה?', 'הבקשות נשארות אצלנו, אבל כאן כבר לא תוכלו לראות מה קרה איתן.', 'clearreqsyes', '1', 'כן, למחוק'), 'מחיקת הרשימה'),
+  clearreqsyes: () => { MYREQ = []; saveMyReq(); MINE = []; if (PV === 'admin') lsSet(MINE_KEY, MINE); closeSheet(true); render(); toast('הרשימה נמחקה'); },
   discshuffle: () => { DISC = null; render(); },
-  editprofile: () => { const m = AU.maker; if (!m) return; EP.m = m; EP.works = m.photos.map(p => ({ path: p })); EP.portrait = m.portrait || ''; EP.portraitUrl = ''; go('editprofile'); },
+  epsee: v => { epKeep(); go('rmaker', { id: v }); },
+  editprofile: () => { const m = AU.maker; if (!m) return; EP.draft = null; EP.m = m; EP.works = m.photos.map(p => ({ path: p })); EP.portrait = m.portrait || ''; EP.portraitUrl = ''; go('editprofile'); },
   eppick: () => { const i = document.getElementById('ep-pfile'); if (i) i.click(); },
   epwpick: () => { const i = document.getElementById('ep-file'); if (i) i.click(); },
   epprm: () => { EP.portrait = ''; EP.portraitUrl = ''; drawEP(); },

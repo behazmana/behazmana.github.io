@@ -87,10 +87,11 @@ b, strong { font-weight: 700; }
 .bleed { margin-left: calc(-1 * var(--gl)); margin-right: calc(-1 * var(--gr)); }
 
 /* top bar */
-#pvbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 25; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px var(--gr) 8px var(--gl); background: #191c13; }
-#pvbar button { flex: 1; min-height: 44px; border: 0; background: #34392a; color: #fbfaf6; font-weight: 700; }
+#pvbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 25; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 8px var(--gr) 8px var(--gl); background: #191c13; }
+#pvbar button { min-height: 44px; border: 0; background: #34392a; color: #fbfaf6; font-weight: 700; }
 #pvbar button[aria-pressed="true"] { background: #fbfaf6; color: #191c13; }
-#pvbar .pvnote { flex-basis: 100%; text-align: center; color: #d3e1bd; font-size: var(--fs-1); line-height: 1.2; }
+#pvbar button.pvsub { grid-column: 3; grid-row: 2; min-height: 34px; padding: 2px 4px; font-size: var(--fs-1); line-height: 1.15; }
+#pvbar .pvnote { grid-column: 1 / 3; grid-row: 2; align-self: center; text-align: center; color: #d3e1bd; font-size: var(--fs-1); line-height: 1.2; }
 body.pv .top { top: calc(env(safe-area-inset-top, 0px) + var(--pv-h, 60px)); }
 body.pv-admin .app { padding-bottom: 40px; }
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--ground); display: flex; align-items: center; gap: 12px; min-height: var(--top-h); padding-block: 8px; }
@@ -326,9 +327,14 @@ select.input { appearance: auto; }
 .photos { display: flex; gap: 8px; flex-wrap: wrap; }
 .photos .art { width: 84px; height: 84px; }
 .add-photo { width: 84px; height: 84px; border: 0; background: var(--tone); color: var(--ink); font-size: var(--fs-4); }
-.photos .art .rm { position: absolute; top: 0; inset-inline-end: 0; z-index: 2; width: 44px; height: 44px; border: 0; padding: 0; display: grid; place-items: center; background: var(--paper); color: var(--ink); }
-.photos .art .rm::before { content: ""; position: absolute; inset: -6px; }
-.photos .art .rm svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+:is(.photos, .epfeed) .art .rm { position: absolute; top: 4px; inset-inline-end: 4px; z-index: 2; width: 28px; height: 28px; border: 0; padding: 0; display: grid; place-items: center; background: var(--paper); color: var(--ink); }
+:is(.photos, .epfeed) .art .rm::before { content: ""; position: absolute; inset: -8px; }
+:is(.photos, .epfeed) .art .rm svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; }
+.epfeed { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.epfeed .art { aspect-ratio: 4 / 5; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.epfeed .art img { pointer-events: none; }
+.epfeed .art.dragging { z-index: 5; cursor: grabbing; opacity: .92; box-shadow: 0 10px 28px rgba(0, 0, 0, .35); }
+.epfeed .add-photo { width: 100%; height: auto; aspect-ratio: 4 / 5; }
 .photos .chip { align-self: center; }
 .pt-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .hp { position: absolute; inset-inline-start: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; } /* honeypot: off-screen, not display:none, so bots still fill it */
@@ -478,7 +484,11 @@ body.sheet-open { overflow: hidden; }
 @media (forced-colors: active) { .pc-btn { border: 2px solid ButtonText; } }
 .wsfields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .wsfields:not(:has(input[type=checkbox]:checked)) .wsmore { display: none; }
-.wsmore { display: grid; gap: 4px; }
+.wsmore { display: grid; gap: 10px; }
+.wsrow { display: grid; gap: 4px; }
+.wsrow > span { font-size: var(--fs-1); font-weight: 700; }
+.wsname { font-weight: 700; font-size: var(--fs-3); margin: 0 0 8px; }
+.wsabout { margin-top: 10px; }
 .wstag { align-self: flex-start; background: var(--olive); color: var(--on-olive); font-size: var(--fs-1); font-weight: 700; padding: 1px 8px; }
 .socfields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .socrow { display: grid; gap: 4px; margin-top: 8px; font-size: var(--fs-1); font-weight: 700; }
@@ -2992,6 +3002,7 @@ function back() {
   S.stack = S.stack.length > 1 ? S.stack.slice(0, -1) : [{ s: 'home' }]; replaceH(); render(true);
 }
 function tab(s) {
+  if (s === 'home' || s === 'makers') remix();
   if (s === 'home') {
     if (HN > 0 && BH && history.state && history.state.bz) { history.go(-HN); return; }
     S.stack = [{ s: 'home' }]; BH = 1; replaceH(location.pathname + location.search); render(true); return;
@@ -3332,7 +3343,7 @@ function hl(text, terms) {
 function searchMakers(q) {
   const terms = parseQuery(q);
   if (!terms.length) return { terms, list: [], partial: [] };
-  const scored = REAL.list.map(m => ({ m, ts: termScores(terms, [[m.name, 3], [m.city, 2], [craftsLine(m) + ' ' + mcrafts(m).map(c => CRAFT_WORDS[c] || '').join(' '), 2], [m.story, 1], [m.workshops ? WS_WORDS + ' ' + (m.workshopInfo || '') : '', 2]]) }));
+  const scored = REAL.list.map(m => ({ m, ts: termScores(terms, [[m.name, 3], [m.city, 2], [craftsLine(m) + ' ' + mcrafts(m).map(c => CRAFT_WORDS[c] || '').join(' '), 2], [m.story, 1], [m.workshops ? WS_WORDS + ' ' + wsPlain(m.workshopInfo) : '', 2]]) }));
   const sum = x => x.ts.reduce((a, b) => a + b, 0);
   const list = scored.filter(x => x.ts.every(Boolean)).sort((a, b) => sum(b) - sum(a)).map(x => x.m);
   /* "שולחן אוכל": nobody wrote both words, but the carpenter who makes tables is still the closest answer */
@@ -3376,22 +3387,36 @@ const pvFetch = (u, o = {}) => {
 const PV_BLOCKED = ['signin', 'signup', 'signout', 'radlogin', 'radlogout'];
 function pvSample() {
   const real = REAL.list.find(m => m.id !== PV_ID && m.portrait && m.photos.length) || {};   /* real public photos stand in for the example's pictures */
-  const base = { id: PV_ID, name: 'יוצר לדוגמה', city: 'קריית שמונה', craft: 'leather', crafts: ['leather'], story: 'זה דף לדוגמה, כדי לראות איך נראה אזור היוצר.', photos: real.photos || [], portrait: real.portrait || '', socials: ['https://instagram.com/example'], workshops: true, workshopInfo: 'סדנה לדוגמה: מה לומדים, איפה, כמה זמן ומה המחיר.', theme: 'stone' };
+  const base = { id: PV_ID, name: 'יוצר לדוגמה', city: 'קריית שמונה', craft: 'leather', crafts: ['leather'], story: 'זה דף לדוגמה, כדי לראות איך נראה אזור היוצר.', photos: real.photos || [], portrait: real.portrait || '', socials: ['https://instagram.com/example'], workshops: true, workshopInfo: packWS({ n: 'סדנת עור למתחילים', w: 'קריית שמונה', p: '250 ₪ לאדם', l: 'שלוש שעות', g: 'עד 6', a: 'למתחילים', m: 'זו סדנה לדוגמה.' }), theme: 'stone' };
   return { mine: { ...base, other: '', phonePublic: true, emailPublic: false, phone: '0500000000', hasSocials: true, hasWorkshops: true, status: 'approved' }, shown: { ...base, craftOther: '', contact: contactPhone('0500000000'), email: null } };
+}
+const PV_TOKEN = '00000000-0000-4000-8000-000000000002';
+/* the signed-in example buyer: one request that already got an offer, two favourite makers and two liked photos. All of it lives in memory only */
+function pvBuyer() {
+  AD.session = { user: { id: 'preview-buyer', email: 'buyer@example.com' } };
+  Object.assign(AU, { uid: 'preview-buyer', st: 'ready', probe: 'ok' }); AU.my.st = 'ready';
+  const now = new Date().toISOString(), some = REAL.list.filter(m => m.photos.length).slice(0, 2);
+  MYREQ = [{ token: PV_TOKEN, title: 'בקשה לדוגמה: ארנק מעור', createdAt: now }];
+  RQ[PV_TOKEN] = { st: 'ok', at: Date.now(), data: normReq({ title: 'בקשה לדוגמה: ארנק מעור', text: 'ככה נראית בקשה של קונה.', crafts: ['leather'], status: 'routed', created_at: now, routes: [{ maker_id: PV_ID, maker_name: 'יוצר לדוגמה', maker_city: 'קריית שמונה', maker_craft: 'leather', route_status: 'offered', offer_note: 'הצעה לדוגמה: ארנק בתפירת יד, מוכן תוך שבועיים.', offer_price_ils: 220 }] }) };
+  Object.assign(FAV, { uid: 'preview-buyer', st: 'ready', ids: new Set(some.map(m => m.id)) });
+  Object.assign(LKS, { uid: 'preview-buyer', st: 'ready', set: new Set(some.map(m => plKey(m.id, m.photos[0]))) });
 }
 function pvRestore() {
   if (PV === 'admin') return;
-  PV = 'admin'; if (PVS) { AD.session = PVS.session; AU = PVS.au; PVS = null; }
+  PV = 'admin';
+  if (PVS) { AD.session = PVS.session; AU = PVS.au; MYREQ = PVS.myreq; Object.assign(FAV, PVS.fav); Object.assign(LKS, PVS.lks); delete RQ[PV_TOKEN]; PVS = null; }
   REAL.list = REAL.list.filter(m => m.id !== PV_ID);
 }
 function pvSwitch(to) {
-  if (!pvAllowed() || !['admin', 'maker', 'buyer'].includes(to)) return;
+  if (!pvAllowed() || !['admin', 'maker', 'buyer', 'guest'].includes(to)) return;
   if (!document.getElementById('sheet').hidden) hideSheet();
   pvRestore();
   const clean = location.pathname + location.search;
   if (to === 'admin') { S.stack = [{ s: 'radmin' }]; BH = 0; replaceH(clean + '#admin'); render(true); window.scrollTo(0, 0); if (isOwner() && !AD.loaded) adminLoad(); return; }
-  PVS = { session: AD.session, au: AU }; PV = to; AU = freshAU();
-  if (to === 'buyer') { AD.session = null; S.stack = [{ s: 'home' }]; BH = 1; }
+  PVS = { session: AD.session, au: AU, myreq: MYREQ, fav: { uid: FAV.uid, st: FAV.st, ids: FAV.ids }, lks: { uid: LKS.uid, st: LKS.st, set: LKS.set } }; PV = to; AU = freshAU();
+  MYREQ = [];   /* the owner's own requests on this phone are not part of any preview */
+  if (to === 'guest') { AD.session = null; Object.assign(FAV, { uid: '', st: 'idle', ids: new Set() }); Object.assign(LKS, { uid: '', st: 'idle', set: new Set() }); S.stack = [{ s: 'home' }]; BH = 1; }
+  else if (to === 'buyer') { pvBuyer(); S.stack = [{ s: 'home' }]; BH = 1; }
   else {
     const x = pvSample(); REAL.list = REAL.list.concat([x.shown]);
     AD.session = { user: { id: 'preview', email: 'maker@example.com' } };
@@ -3408,7 +3433,8 @@ function pvBar() {
   document.body.classList.toggle('pv-admin', on && PV === 'admin' && cur().s === 'radmin');
   if (!on) { if (bar) bar.remove(); return; }
   if (!bar) { bar = document.createElement('div'); bar.id = 'pvbar'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'איך להציג את האפליקציה'); const view = document.getElementById('view'); view.parentNode.insertBefore(bar, view); }
-  bar.innerHTML = [['admin', 'ניהול'], ['maker', 'יוצר'], ['buyer', 'קונה']].map(([k, l]) => `<button type="button" data-act="pvmode" data-v="${k}" aria-pressed="${PV === k}">${l}</button>`).join('') + (PV === 'admin' ? '' : '<span class="pvnote">תצוגה בלבד</span>');
+  const pvBtn = (k, l, cls = '') => `<button type="button" ${cls ? `class="${cls}"` : ''} data-act="pvmode" data-v="${k}" aria-pressed="${PV === k}">${l}</button>`;
+  bar.innerHTML = pvBtn('admin', 'ניהול') + pvBtn('maker', 'יוצר') + pvBtn('buyer', 'קונה') + (PV === 'admin' ? '' : '<span class="pvnote">תצוגה בלבד</span>') + pvBtn('guest', 'קונה לא רשום', 'pvsub');
   document.documentElement.style.setProperty('--pv-h', bar.offsetHeight + 'px');
 }
 
@@ -3467,7 +3493,7 @@ async function loadReal() {
     if (!data.length) REAL.workshops = !(await q('gives_workshops').limit(1)).error;
     if (REAL.workshops) document.querySelectorAll('.wsfields[hidden]').forEach(x => { x.hidden = false; });
     REAL.list = data.filter(m => m && m.id && m.name).map(m => ({ id: String(m.id), name: String(m.name), city: String(m.city || ''), craft: String(m.craft || ''), story: String(m.story || ''), portrait: okPath(m.portrait) ? String(m.portrait) : '', photos: Array.isArray(m.photos) ? m.photos.map(String).filter(okPath) : [], contact: contactPhone(m.contact_phone), email: contactEmail(m.contact_email), socials: cleanSocials(m.socials), workshops: !!m.gives_workshops, workshopInfo: cleanBlock(m.workshop_info, 600), theme: THEMES[m.theme] ? m.theme : 'stone', craftOther: cleanOther(m.craft_other), crafts: (Array.isArray(m.crafts) ? m.crafts.map(String).filter(c => hasCraft(c) || c === 'other') : []).slice(0, 6) }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'he'));
+      .sort(byMix);
     REAL.loaded = true;
   } catch (e) { REAL.failed = true; }
   realChanged(); if (REAL.loaded) loadLatestReviews();
@@ -3526,11 +3552,31 @@ const profileButtons = m => {
 };
 /* workshops: a maker may say they give them, with a few words about them */
 const WS_WORDS = 'סדנה סדנאות סדנת חוג שיעור לימוד קורס workshop';
-function wsFields(pre, m, show) {
-  return `<fieldset class="field wsfields" ${show ? '' : 'hidden'}><legend class="lbl">סדנאות <span class="m">(לא חובה)</span></legend><label class="opt"><input type="checkbox" name="gives_workshops" ${m.workshops ? 'checked' : ''}><span class="grow">יש לי סדנאות</span></label><div class="wsmore"><label class="sr" for="${pre}-ws">פרטים על הסדנאות</label><textarea class="input" id="${pre}-ws" name="workshop_info" rows="4" maxlength="600" aria-describedby="${pre}-ws-h">${esc(m.workshopInfo || '')}</textarea><span class="hint" id="${pre}-ws-h">כמה מילים: מה לומדים, למי זה מתאים, איפה, כמה זמן זה לוקח ומה המחיר.</span></div></fieldset>`;
+/* each detail has its own field. They are saved together in the one workshop_info column; text written before the fields existed shows as "more details" */
+const WS_PARTS = [['n', 'מה לומדים בסדנה', 'למשל: קדרות למתחילים', 60], ['w', 'איפה', 'כתובת, עיר או אזור', 80], ['p', 'מחיר', 'למשל: 220 ₪ לאדם', 40], ['l', 'כמה זמן', 'למשל: מפגש אחד של שלוש שעות', 40], ['g', 'כמה משתתפים', 'למשל: עד 6', 40], ['a', 'למי זה מתאים', 'למשל: למתחילים, מגיל 12', 60], ['m', 'עוד פרטים', 'למשל: מה כלול במחיר, באילו ימים ומה להביא', 200]];
+const WS_MAX = 600;
+function parseWS(info) {
+  const t = String(info || '').trim();
+  if (t.charAt(0) === '{') { try { const o = JSON.parse(t); if (o && typeof o === 'object' && WS_PARTS.some(([k]) => typeof o[k] === 'string')) return Object.fromEntries(WS_PARTS.map(([k]) => [k, typeof o[k] !== 'string' ? '' : k === 'm' ? cleanBlock(o[k], WS_MAX) : cleanText(o[k], 100)])); } catch (e) { /* plain text */ } }
+  return Object.fromEntries(WS_PARTS.map(([k]) => [k, k === 'm' ? cleanBlock(t, WS_MAX) : '']));
 }
-const readWorkshops = fd => { const on = !!fd.get('gives_workshops'); return { gives_workshops: on, workshop_info: on ? String(fd.get('workshop_info') || '').replace(/\r\n?/g, '\n').trim().slice(0, 600) : '' }; };
-const workshopSection = m => !m.workshops ? '' : `<section aria-labelledby="h-ws"><div class="sec-head"><h2 class="sec-title" id="h-ws">סדנאות</h2></div>${m.workshopInfo ? `<p class="rstory">${esc(m.workshopInfo)}</p>` : `<p class="muted">${esc(m.name)}: יש סדנאות. אפשר לשאול על הפרטים.</p>`}${m.contact ? `<a class="btn ghost block" style="margin-top:12px" href="${esc(`${m.contact.wa}?text=${encodeURIComponent(`היי ${firstName(m)}, ראיתי בבהזמנה שיש לך סדנאות. אשמח לשמוע פרטים.`)}`)}" ${OUT}>לשאול על סדנה</a>` : ''}</section>`;
+const packWS = v => { const f = WS_PARTS.filter(([k]) => v[k]); return !f.length ? '' : f.length === 1 && f[0][0] === 'm' && v.m.charAt(0) !== '{' ? v.m : JSON.stringify(Object.fromEntries(f.map(([k]) => [k, v[k]]))); };
+const wsPlain = info => Object.values(parseWS(info)).filter(Boolean).join(' ');
+const wsLines = info => { const v = parseWS(info); return WS_PARTS.filter(([k]) => v[k]).map(([k, label]) => `${label}: ${v[k]}`).join(String.fromCharCode(10)); };
+function wsFields(pre, m, show) {
+  const v = parseWS(m.workshopInfo);
+  const one = ([k, label, ph, max]) => `<label class="wsrow" for="${pre}-ws-${k}"><span>${label}</span>${k === 'm' ? `<textarea class="input" id="${pre}-ws-${k}" name="ws_${k}" rows="3" maxlength="${Math.max(max, v[k].length)}" placeholder="${ph}">${esc(v[k])}</textarea>` : `<input class="input" id="${pre}-ws-${k}" name="ws_${k}" type="text" maxlength="${max}" autocomplete="off" placeholder="${ph}" value="${esc(v[k])}">`}</label>`;
+  return `<fieldset class="field wsfields" ${show ? '' : 'hidden'}><legend class="lbl">סדנאות <span class="m">(לא חובה)</span></legend><label class="opt"><input type="checkbox" name="gives_workshops" ${m.workshops ? 'checked' : ''}><span class="grow">יש לי סדנה</span></label><div class="wsmore"><span class="hint">ממלאים מה שרלוונטי. שדה ריק לא יופיע בדף.</span>${WS_PARTS.map(one).join('')}</div></fieldset>`;
+}
+const readWorkshops = fd => { const on = !!fd.get('gives_workshops'); const v = Object.fromEntries(WS_PARTS.map(([k]) => { const raw = String(fd.get('ws_' + k) || ''); return [k, k === 'm' ? cleanBlock(raw, WS_MAX) : cleanText(raw, 100)]; })); return { gives_workshops: on, workshop_info: on ? packWS(v) : '' }; };
+const wsTooLong = fd => readWorkshops(fd).workshop_info.length > WS_MAX;
+const WS_LONG_NOTE = 'פרטי הסדנה ארוכים מדי. קצרו קצת את "עוד פרטים".';
+function workshopSection(m) {
+  if (!m.workshops) return '';
+  const v = parseWS(m.workshopInfo), rows = WS_PARTS.filter(([k]) => k !== 'n' && k !== 'm' && v[k]);
+  const body = (v.n ? `<p class="wsname">${esc(v.n)}</p>` : '') + (rows.length ? `<dl class="specs">${rows.map(([k, label]) => `<div><dt>${label}</dt><dd>${esc(v[k])}</dd></div>`).join('')}</dl>` : '') + (v.m ? `<p class="rstory wsabout">${esc(v.m)}</p>` : '');
+  return `<section aria-labelledby="h-ws"><div class="sec-head"><h2 class="sec-title" id="h-ws">סדנאות</h2></div>${body || `<p class="muted">${esc(m.name)}: יש סדנאות. אפשר לשאול על הפרטים.</p>`}${m.contact ? `<a class="btn ghost block" style="margin-top:12px" href="${esc(`${m.contact.wa}?text=${encodeURIComponent(`היי ${firstName(m)}, ראיתי בבהזמנה שיש לך סדנאות. אשמח לשמוע פרטים.`)}`)}" ${OUT}>לשאול על סדנה</a>` : ''}</section>`;
+}
 const okUrl = u => { u = String(u || '').trim(); if (!/^https:\/\/[^\s]{4,280}$/.test(u)) return ''; try { return new URL(u).protocol === 'https:' ? u : ''; } catch (e) { return ''; } };
 const contactActs = m => m.contact || m.email ? `<span class="macts">${m.contact ? `<a class="cbtn wa" href="${esc(waHref(m))}" ${OUT} aria-label="${esc(`שליחת וואטסאפ ל${firstName(m)}`)}">${svg(UI.wa)}</a><a class="cbtn" href="${esc(m.contact.tel)}" aria-label="${esc(`התקשרות אל ${firstName(m)}`)}">${svg(UI.phone)}</a>` : ''}${m.email ? `<a class="cbtn" href="${esc(mailHref(m))}" aria-label="${esc(`שליחת מייל ל${firstName(m)}`)}">${svg(UI.mail)}</a>` : ''}</span>` : '';
 /* favourite makers: a signed-in buyer marks makers with a heart; a signed-out tap opens the buyer sign-up sheet */
@@ -3540,10 +3586,16 @@ const favBtn = m => `<button type="button" class="cbtn fav" data-act="fav" data-
 const favLink = m => `<button type="button" class="link fav" data-act="fav" data-v="${esc(m.id)}" aria-pressed="${favOn(m.id)}">${svg(UI.heart)}<span>${favOn(m.id) ? 'במועדפים' : 'להוסיף למועדפים'}</span></button>`;
 const cardActs = m => `<span class="macts">${favBtn(m)}${contactActs(m).replace(/^<span class="macts">|<\/span>$/g, '')}</span>`;
 const realAv = m => `<span class="av">${m.portrait || m.photos[0] ? rImg(m.portrait || m.photos[0]) : `<span class="ini">${esc(initials(m.name))}</span>`}</span>`;
-const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftsLine(m))}${m.city ? ` · ${h(m.city)}` : ''}</span>${m.workshops ? '<span class="wstag">יש סדנאות</span>' : ''}${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
+const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftsLine(m))}${m.city ? ` · ${h(m.city)}` : ''}</span>${m.workshops ? '<span class="wstag">גם סדנאות</span>' : ''}${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
 const emptyMakers = () => `<div class="s-empty"><p class="say">עוד אין כאן יוצרים, האתר חדש.</p>${AU.maker ? '' : JOINED ? '<p class="small muted">אחרי האישור הפרופיל יופיע כאן.</p>'
   : `<p class="small muted">יוצרים? ספרו לנו על העבודה. אחרי האישור הפרופיל יופיע כאן.</p>
   <button type="button" class="btn" data-act="join">להצטרף כיוצרים</button>`}</div>`;
+/* the makers' order is mixed, not alphabetical, so everyone gets a turn at the top. Each maker holds a random place; going to the home page or the makers page deals new places.
+   Going back keeps them, so the list is where you left it */
+let MIX = new Map();
+const mixAt = id => { if (!MIX.has(id)) MIX.set(id, Math.random()); return MIX.get(id); };
+const byMix = (a, b) => mixAt(a.id) - mixAt(b.id);
+function remix() { MIX = new Map(); REAL.list.sort(byMix); }
 function makersBlock(list, limit) {
   const st = realState();
   if (st === 'loading') return '<p class="muted" role="status">טוענים את היוצרים</p>';
@@ -3721,6 +3773,7 @@ async function submitJoin(f) {
     : !contactPhone(phone) ? ['j-phone', 'הטלפון יוצג באתר. כתבו מספר ישראלי, למשל 050-1234567.']
     : !JP.portrait ? ['j-portrait', 'הוסיפו תמונה שלכם.'] : !JP.length ? ['j-pick', 'הוסיפו תמונת עבודה.']
     : soc.bad ? [`j-soc-${soc.bad}`, `${socName(soc.bad)}: כתבו קישור מלא, או שם משתמש.`]
+    : REAL.workshops && wsTooLong(new FormData(f)) ? ['j-ws-m', WS_LONG_NOTE]
     : !d.consent ? ['j-consent', 'סמנו הסכמה לתנאים ולפרטיות.'] : null;
   if (bad) { const el = f.querySelector('#' + bad[0]); if (el.classList.contains('input')) el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; el.focus(); return; }
   err.hidden = true;
@@ -4087,6 +4140,7 @@ function meMode() {
 async function loadAccountRequests() {
   if (!SB || !AD.session) return;
   const r = await dbq(s => s.from('my_requests').select('token,title,created_at').order('created_at', { ascending: false }).limit(50));
+  if (PV !== 'admin') return;
   if (r.gone || r.error || !Array.isArray(r.data) || !r.data.length) return;
   const have = new Set(MYREQ.map(x => x.token)); let add = 0;
   r.data.forEach(x => { const t = String(x.token || '').toLowerCase(); if (UUID_RE.test(t) && !have.has(t)) { MYREQ.push({ token: t, title: cleanText(x.title, 120), createdAt: String(x.created_at || '') }); have.add(t); add++; } });
@@ -4114,6 +4168,7 @@ function favPaint(id) {
 }
 async function favToggle(id) {
   if (!SB || !AD.session) { openSignup(); return; }
+  if (PV !== 'admin') { toast(PV_NOTE); return; }
   id = String(id); if (FAV.busy.has(id)) return; FAV.busy.add(id);
   const uid = String(AD.session.user.id), was = favOn(id);
   if (was) FAV.ids.delete(id); else FAV.ids.add(id);
@@ -4373,7 +4428,7 @@ async function saveListing(f, vals) {
 /* ---- the buyer: requests sent from this device, and what became of them ---- */
 const MYREQ_KEY = 'behazmana.myRequests';
 let MYREQ = lsGet(MYREQ_KEY, Array.isArray, []).filter(x => x && typeof x.token === 'string' && UUID_RE.test(x.token.toLowerCase()) && typeof x.title === 'string').map(x => ({ token: x.token.toLowerCase(), title: x.title.slice(0, 120), createdAt: String(x.createdAt || '').slice(0, 40) })).slice(0, 50);
-const saveMyReq = () => lsSet(MYREQ_KEY, MYREQ);
+const saveMyReq = () => PV !== 'admin' || lsSet(MYREQ_KEY, MYREQ);
 const RQ = {}, EDIT = { st: 'unknown', data: null };
 const REQ_LABEL = { new: 'אנחנו עוד קוראים אותה', routed: 'נשלחה ליוצרים', closed: 'נסגרה' };
 const RT_BUYER = { sent: 'עוד לא ראה', seen: 'ראה', thinking: 'חושב על זה', offered: 'הציע', declined: 'לא מתאים' };
@@ -4384,6 +4439,7 @@ function normReq(d) {
   return { title: cleanText(d.title, 120), text: cleanBlock(d.text, 2000), crafts: (Array.isArray(d.crafts) ? d.crafts : []).map(c => String(c).slice(0, 30)), due: cleanText(d.due, 80), status: ['new', 'routed', 'closed'].includes(d.status) ? d.status : 'new', created: String(d.created_at || ''), closed: !!d.closed || d.status === 'closed', routes };
 }
 async function loadReq(token) {
+  if (PV !== 'admin') return;
   const o = RQ[token] || (RQ[token] = { st: 'loading' }); if (o.busy) return;
   if (!CFG_ON) { o.st = 'gone'; reqRedraw(); return; }
   if (!SB) { o.st = AD.failed ? 'failed' : 'loading'; reqRedraw(); return; }
@@ -4867,9 +4923,70 @@ const EP = { m: null, works: [], portrait: '', portraitUrl: '', busy: false };
 const epImg = (x, alt) => `<img src="${esc(x.url || photoURL(x.path))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
 const storyHint = (id, v) => `<ul class="sthint" aria-label="מה כדאי לכתוב"><li><b>חומרים:</b> באילו חומרים אתם עובדים</li><li><b>כמה זמן:</b> כמה שנים אתם עושים את זה</li><li><b>ידע וניסיון:</b> מה למדתם ומה אתם יודעים לעשות</li></ul><span class="hint">החיפוש באתר קורא את הסיפור, ולכן ככל שתכתבו יותר פרטים, קל יותר למצוא אתכם.</span><span class="hint sthint-c" id="${id}" data-story-count>${storyCue(v)}</span>`;
 const storyCue = v => { const n = Array.from(String(v || '').trim()).length; return n >= 200 ? `${n} מתוך 1000. זה כבר סיפור מלא.` : n ? `${n} מתוך 1000. עוד קצת ויהיה לכם סיפור מלא.` : 'עוד לא כתבתם כלום. התחילו ממה שאתם מכינים.'; };
-const epWorksHTML = () => EP.works.map((x, i) => `<div class="art">${epImg(x, 'עבודה ' + (i + 1))}<button type="button" class="rm" data-act="epwrm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button>${i === 0 ? '<span class="mk1 on">מוצגת ראשונה</span>' : `<button type="button" class="mk1" data-act="epfirst" data-v="${i}" aria-label="להציג את תמונה ${i + 1} ראשונה">להציג ראשונה</button>`}</div>`).join('') + (EP.works.length < MAX_PHOTOS ? '<button type="button" class="add-photo" data-act="epwpick" aria-label="הוספת תמונה">+</button>' : '');
+const epWorksHTML = () => EP.works.map((x, i) => `<div class="art" data-i="${i}">${epImg(x, 'עבודה ' + (i + 1))}<button type="button" class="rm" data-act="epwrm" data-v="${i}" aria-label="הסרת תמונה ${i + 1}">${svg(UI.close)}</button>${i === 0 ? '<span class="mk1 on">מוצגת ראשונה</span>' : `<button type="button" class="mk1" data-act="epfirst" data-v="${i}" aria-label="להציג את תמונה ${i + 1} ראשונה">להציג ראשונה</button>`}</div>`).join('') + (EP.works.length < MAX_PHOTOS ? '<button type="button" class="add-photo" data-act="epwpick" aria-label="הוספת תמונה">+</button>' : '');
 const epPortraitHTML = () => EP.portrait ? `<div class="art">${epImg({ url: EP.portraitUrl, path: EP.portrait }, 'התמונה שלכם')}<button type="button" class="rm" data-act="epprm" aria-label="הסרת התמונה שלכם">${svg(UI.close)}</button></div><button type="button" class="chip" data-act="eppick">החלפת תמונה</button>` : '<button type="button" class="add-photo" data-act="eppick" aria-label="הוספת תמונה שלכם">+</button>';
-function drawEP() { const a = document.getElementById('ep-works'), b = document.getElementById('ep-portrait'), c = document.getElementById('ep-count'); if (a) a.innerHTML = epWorksHTML(); if (b) b.innerHTML = epPortraitHTML(); if (c) c.textContent = `${EP.works.length} מתוך ${MAX_PHOTOS} תמונות`; }
+function drawEP() { if (EPD) epDragEnd(false); const a = document.getElementById('ep-works'), b = document.getElementById('ep-portrait'), c = document.getElementById('ep-count'); if (a) a.innerHTML = epWorksHTML(); if (b) b.innerHTML = epPortraitHTML(); if (c) c.textContent = `${EP.works.length} מתוך ${MAX_PHOTOS} תמונות`; }
+/* dragging a photo to a new place. With a finger: hold it for a moment first, so an ordinary swipe still scrolls the page. With a mouse: just drag */
+let EPD = null, EPP = null;
+const epTiles = grid => [...grid.querySelectorAll('.art')];
+function epDragPlace() {
+  const d = EPD; d.el.style.transform = '';
+  const r = d.el.getBoundingClientRect();
+  d.el.style.transform = `translate(${d.x - d.dx - r.left}px, ${d.y - d.dy - r.top}px) scale(1.04)`;
+}
+function epDragOver() {
+  const d = EPD; d.el.style.transform = '';
+  const all = epTiles(d.grid), over = all.find(t => { if (t === d.el) return false; const r = t.getBoundingClientRect(); return d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom; });
+  if (over) d.grid.insertBefore(d.el, all.indexOf(over) > all.indexOf(d.el) ? over.nextSibling : over);
+  epDragPlace();
+}
+function epDragStart(el, x, y) {
+  const r = el.getBoundingClientRect();
+  EPD = { el, grid: el.parentNode, x, y, dx: x - r.left, dy: y - r.top, raf: 0 };
+  el.classList.add('dragging'); try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* ignore */ }
+  const tick = () => {   /* near the top or bottom edge the page scrolls along */
+    if (!EPD) return; if (!EPD.el.isConnected) { EPD = null; return; }
+    const step = EPD.y < 90 ? -8 : EPD.y > innerHeight - 90 ? 8 : 0;
+    if (step) { window.scrollBy(0, step); epDragOver(); }
+    EPD.raf = requestAnimationFrame(tick);
+  };
+  EPD.raf = requestAnimationFrame(tick); epDragPlace();
+}
+function epDragMove(x, y) { if (!EPD) return; EPD.x = x; EPD.y = y; epDragOver(); }
+function epDragEnd(keep) {
+  const d = EPD; if (!d) return; EPD = null; cancelAnimationFrame(d.raf);
+  d.el.classList.remove('dragging'); d.el.style.transform = '';
+  const order = epTiles(d.grid).map(t => +t.dataset.i);
+  if (keep && order.length === EP.works.length) EP.works = order.map(i => EP.works[i]);
+  drawEP();
+}
+const epDrop = () => { if (EPP) { clearTimeout(EPP.t); EPP = null; } };
+const epTileAt = t => t && t.closest && !t.closest('button') ? t.closest('#ep-works .art') : null;
+document.addEventListener('touchstart', e => {
+  if (e.touches.length > 1) { epDrop(); epDragEnd(false); return; }
+  const el = epTileAt(e.target); if (!el || EP.works.length < 2) return;
+  const q = e.touches[0]; epDrop(); EPP = { el, x: q.clientX, y: q.clientY };
+  EPP.t = setTimeout(() => { const w = EPP; EPP = null; if (w && w.el.isConnected) epDragStart(w.el, w.x, w.y); }, 280);
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  const q = e.touches[0]; if (!q) return;
+  if (EPD) { if (e.cancelable) e.preventDefault(); epDragMove(q.clientX, q.clientY); }
+  else if (EPP && Math.hypot(q.clientX - EPP.x, q.clientY - EPP.y) > 8) epDrop();
+}, { passive: false });
+document.addEventListener('touchend', () => { epDrop(); epDragEnd(true); });
+document.addEventListener('touchcancel', () => { epDrop(); epDragEnd(false); });
+document.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0) return; const el = epTileAt(e.target); if (el && EP.works.length > 1) { e.preventDefault(); EPP = { el, x: e.clientX, y: e.clientY, mouse: true }; } });
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  if (EPD) epDragMove(e.clientX, e.clientY);
+  else if (EPP && EPP.mouse && Math.hypot(e.clientX - EPP.x, e.clientY - EPP.y) > 6) { const w = EPP; EPP = null; epDragStart(w.el, w.x, w.y); epDragMove(e.clientX, e.clientY); }
+});
+document.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { epDrop(); epDragEnd(true); } });
+['contextmenu', 'dragstart'].forEach(n => document.addEventListener(n, e => { if (e.target && e.target.closest && e.target.closest('#ep-works')) e.preventDefault(); }));
+/* the colour list: the sample next to the button follows the choice, and a tap on a colour closes the list */
+function epColors(open) { const list = document.getElementById('ep-swatches'), b = document.querySelector('[data-act="epcolors"]'); if (!list || !b) return; list.hidden = !open; b.setAttribute('aria-expanded', String(open)); b.textContent = open ? 'לסגור' : 'עוד צבעים'; }
+document.addEventListener('change', e => { const t = e.target; if (!t || t.name !== 'theme') return; const th = THEMES[themeKey(t.value)], sw = document.getElementById('ep-cursw'), nm = document.getElementById('ep-curname'); if (sw) { sw.style.background = th.b; sw.style.color = th.t; } if (nm) nm.textContent = th.l; });
+document.addEventListener('click', e => { if (e.detail > 0 && e.target.closest && e.target.closest('#ep-swatches .swatch')) setTimeout(() => epColors(false), 180); });
 async function epUpload(files, asPortrait) {
   const msg = document.getElementById('ep-msg'), notes = [];
   for (const f of files) {
@@ -4903,9 +5020,9 @@ SCREENS.editprofile = () => {
       <label class="opt"><input type="checkbox" name="email_public" ${m.emailPublic ? 'checked' : ''}><span class="grow">להציג את המייל באתר</span></label>
       ${socFields('ep', m.socials, m.hasSocials)}
       ${wsFields('ep', m, m.hasWorkshops)}
-      <fieldset class="field"><legend class="lbl">צבע הדף שלכם</legend><div class="swatches">${Object.entries(THEMES).map(([k, t]) => `<label class="swatch"><input type="radio" name="theme" value="${k}" ${themeKey(m.theme) === k ? 'checked' : ''}><span class="sw" style="background:${t.b};color:${t.t}"><b>${esc(m.name || 'אב')}</b><span class="sr">${t.l}</span></span><span class="swl">${t.l}</span></label>`).join('')}</div><span class="hint">הצבע מופיע בכותרת הדף שלכם וברשימת היוצרים. בחרו את זה שהכי מתאים לכם.</span></fieldset>
+      <fieldset class="field"><legend class="lbl">צבע הדף שלכם</legend><div class="colorrow">${(t => `<span class="sw" id="ep-cursw" aria-hidden="true" style="background:${t.b};color:${t.t}"><b>${esc(m.name || 'אב')}</b></span><span class="grow" id="ep-curname">${t.l}</span>`)(themeOf(m))}<button type="button" class="chip" data-act="epcolors" aria-expanded="false" aria-controls="ep-swatches">עוד צבעים</button></div><div class="swatches" id="ep-swatches" hidden>${Object.entries(THEMES).map(([k, t]) => `<label class="swatch"><input type="radio" name="theme" value="${k}" ${themeKey(m.theme) === k ? 'checked' : ''}><span class="sw" style="background:${t.b};color:${t.t}"><b>${esc(m.name || 'אב')}</b><span class="sr">${t.l}</span></span><span class="swl">${t.l}</span></label>`).join('')}</div><span class="hint">הצבע מופיע בכותרת הדף שלכם וברשימת היוצרים.</span></fieldset>
       <div class="field"><span class="lbl">התמונה שלכם</span><div class="pt-row"><div class="photos" id="ep-portrait">${epPortraitHTML()}</div></div><input type="file" id="ep-pfile" accept="image/jpeg,image/png,image/webp" hidden aria-label="בחירת תמונה שלכם"></div>
-      <div class="field"><span class="lbl">תמונות מהעבודות</span><span class="hint">התמונה הראשית היא התמונה שמוצגת ראשונה: בכרטיס שלכם ברשימת היוצרים ובראש הדף שלכם. כדי להחליף, לחצו על ״להציג ראשונה״ מתחת לתמונה אחרת.</span><div class="photos" id="ep-works">${epWorksHTML()}</div><input type="file" id="ep-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות"><span class="hint" id="ep-count">${EP.works.length} מתוך ${MAX_PHOTOS} תמונות</span><span class="hint" id="ep-msg" role="status" aria-live="polite"></span></div>
+      <div class="field"><span class="lbl">תמונות מהעבודות</span><span class="hint">זה הסדר שבו התמונות מופיעות בדף שלכם. כדי לשנות אותו גוררים תמונה למקום אחר. בטלפון לוחצים עליה רגע ואז גוררים.</span><div class="epfeed" id="ep-works">${epWorksHTML()}</div><input type="file" id="ep-file" accept="image/jpeg,image/png,image/webp" multiple hidden aria-label="בחירת תמונות"><span class="hint" id="ep-count">${EP.works.length} מתוך ${MAX_PHOTOS} תמונות</span><span class="hint" id="ep-msg" role="status" aria-live="polite"></span></div>
       <p class="form-err" id="ep-err" role="alert" hidden></p>
       <button class="btn block" type="submit">שמירת השינויים</button>
     </form></div>`;
@@ -4920,6 +5037,7 @@ async function saveProfile(f) {
     : Array.from(story).length > 1000 ? ['ep-story', 'הסיפור ארוך מדי (עד 1000 תווים).']
     : phone && !(phoneOK(phone) && contactPhone(phone)) ? ['ep-phone', 'הטלפון לא נראה נכון. כתבו מספר ישראלי רגיל, למשל 050-1234567.']
     : AU.maker.hasSocials && soc.bad ? [`ep-soc-${soc.bad}`, `${socName(soc.bad)}: כתבו קישור מלא, או שם משתמש.`]
+    : AU.maker.hasWorkshops && wsTooLong(fd) ? ['ep-ws-m', WS_LONG_NOTE]
     : !EP.portrait ? ['ep-portrait', 'הוסיפו תמונה שלכם.'] : !EP.works.length ? ['ep-works', 'השאירו לפחות תמונה אחת של העבודות.'] : null;
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
   if (bad) { const el = f.querySelector('#' + bad[0]) || f.querySelector('#' + bad[0].replace('ep-portrait', 'ep-pfile')); if (el && el.classList.contains('input')) el.setAttribute('aria-invalid', 'true'); err.textContent = bad[1]; err.hidden = false; if (el && el.focus) el.focus(); return; }
@@ -4938,13 +5056,16 @@ async function saveProfile(f) {
 .bgrid .btn{width:100%;min-height:54px;padding:10px 12px;line-height:1.2;text-align:center}
 .bgrid .wide{grid-column:1/-1}
 .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px 8px}
+.swatches[hidden]{display:none}
+.colorrow{display:flex;align-items:center;gap:10px}
+.colorrow .sw{flex:none;width:72px;height:48px;display:grid;place-items:center;overflow:hidden;font-family:var(--display);font-size:var(--fs-2);line-height:1;text-align:center;padding:4px}
+.colorrow .grow{flex:1}
 .swatch{position:relative;display:flex;flex-direction:column;gap:4px;cursor:pointer}
 .swatch input{position:absolute;opacity:0;inset:0}
 .swatch .sw{display:grid;place-items:center;min-height:52px;font-family:var(--display);font-size:var(--fs-2);padding:4px;text-align:center;line-height:1;overflow:hidden}
 .swatch .swl{font-size:var(--fs-1);text-align:center}
 .swatch input:checked ~ .sw{outline:3px solid var(--stamp);outline-offset:2px}
 .swatch input:focus-visible ~ .sw{outline:3px solid var(--ink);outline-offset:2px}
-#ep-works .art{width:104px;height:104px}
 .sthint{margin:4px 0 2px;padding:0;list-style:none;display:grid;gap:2px;font-size:var(--fs-1);line-height:1.4}
 .sthint li::before{content:"– "}
 .mk1{position:absolute;bottom:0;inset-inline:0;z-index:2;border:0;padding:5px 2px;font-size:12px;line-height:1.1;background:var(--paper);color:var(--ink);text-align:center}
@@ -5024,6 +5145,7 @@ function plPaint(i) {
 async function plToggle(i) {
   const x = tileItems()[+i]; if (!x || x.k !== 'p') return;
   if (!SB || !AD.session) { openSignup(); return; }
+  if (PV !== 'admin') { toast(PV_NOTE); return; }
   const key = plKey(x.m.id, x.p); if (LKS.busy.has(key)) return; LKS.busy.add(key);
   const uid = String(AD.session.user.id), was = LKS.set.has(key);
   if (was) LKS.set.delete(key); else LKS.set.add(key);
@@ -5165,7 +5287,7 @@ function matchList() {
   if (MT.dist && bp) rows = rows.filter(x => x.km === null || x.km <= MT.dist);
   if (MT.stars) rows = rows.filter(x => x.rt && x.rt.avg >= MT.stars);
   const nl = (a, b) => (a === null ? 1e9 : a) - (b === null ? 1e9 : b), byRt = (a, b) => (b.rt ? b.rt.avg : -1) - (a.rt ? a.rt.avg : -1) || (b.rt ? b.rt.n : 0) - (a.rt ? a.rt.n : 0), byName = (a, b) => a.m.name.localeCompare(b.m.name, 'he');
-  rows.sort(MT.sort === 'near' ? (a, b) => nl(a.km, b.km) || byRt(a, b) || byName(a, b) : MT.sort === 'rating' ? (a, b) => byRt(a, b) || nl(a.km, b.km) || byName(a, b) : MT.sort === 'name' ? byName : (a, b) => b.fit - a.fit || nl(a.km, b.km) || byRt(a, b) || byName(a, b));
+  rows.sort(MT.sort === 'near' ? (a, b) => nl(a.km, b.km) || byRt(a, b) : MT.sort === 'rating' ? (a, b) => byRt(a, b) || nl(a.km, b.km) : MT.sort === 'name' ? byName : (a, b) => b.fit - a.fit || nl(a.km, b.km) || byRt(a, b));
   return rows;
 }
 function matchResults() {
@@ -5363,7 +5485,7 @@ function adminBody() {
           <div class="face-row">${m.portrait ? `<a class="av" href="${esc(photoURL(m.portrait))}" target="_blank" rel="noopener" aria-label="התמונה של ${esc(m.name)}, בגודל מלא">${rImg(m.portrait)}</a>` : `<span class="av"><span class="ini">${esc(initials(m.name))}</span></span>`}<div><b>${esc(m.name)}</b><div class="small muted">${esc(craftsLine(m))} · ${esc(m.city)} · ${esc(dateHe(m.created_at))}</div>${m.portrait ? '' : '<div class="small muted">בלי תמונה אישית</div>'}</div></div>
           <dl class="specs">${m.email ? `<div><dt>מייל</dt><dd dir="ltr">${esc(m.email)}</dd></div>` : ''}${m.phone ? `<div><dt>טלפון</dt><dd dir="ltr">${esc(m.phone)}</dd></div><div><dt>הטלפון באתר</dt><dd>${m.phone_public ? 'יוצג' : 'לא יוצג'}</dd></div>` : ''}${m.email ? `<div><dt>המייל באתר</dt><dd>${m.email_public ? 'יוצג' : 'לא יוצג'}</dd></div>` : ''}</dl>
           ${m.story ? `<p class="small rstory">${esc(m.story)}</p>` : ''}
-          ${m.gives_workshops ? `<p class="small rstory"><b>סדנאות:</b> ${esc(cleanBlock(m.workshop_info, 600)) || 'בלי פרטים'}</p>` : ''}
+          ${m.gives_workshops ? `<p class="small rstory"><b>סדנאות:</b> ${m.workshop_info ? '<br>' + esc(wsLines(m.workshop_info)) : 'בלי פרטים'}</p>` : ''}
           ${cleanSocials(m.socials).map(u => `<p class="small"><a class="link" href="${esc(u)}" ${OUT}>${socName(socKind(u))}: <bdi dir="ltr">${esc(u.replace('https://', ''))}</bdi></a></p>`).join('')}
           ${(m.photos || []).length ? `<div class="strip" style="grid-template-columns:repeat(3,1fr)">${m.photos.map((p, i) => `<a href="${esc(photoURL(p))}" target="_blank" rel="noopener" aria-label="עבודה ${i + 1} של ${esc(m.name)}, בגודל מלא">${rImg(p, `עבודה של ${m.name}`)}</a>`).join('')}</div>` : '<p class="small muted">לא הועלו תמונות.</p>'}
           <div class="row"><button class="btn small" data-act="radapprove" data-v="${esc(m.id)}">אישור</button><button class="btn small danger" data-act="radreject" data-v="${esc(m.id)}">דחייה</button></div></article>`).join('') || '<p class="empty">אין הרשמות שמחכות.</p>'}
@@ -5706,6 +5828,7 @@ Object.assign(ACT, {
   eppick: () => { const i = document.getElementById('ep-pfile'); if (i) i.click(); },
   epwpick: () => { const i = document.getElementById('ep-file'); if (i) i.click(); },
   epprm: () => { EP.portrait = ''; EP.portraitUrl = ''; drawEP(); },
+  epcolors: () => { const l = document.getElementById('ep-swatches'); if (l) epColors(l.hidden); },
   epfirst: v => { const i = +v; if (i > 0 && i < EP.works.length) { const [x] = EP.works.splice(i, 1); EP.works.unshift(x); drawEP(); } },
   epwrm: v => { EP.works.splice(+v, 1); drawEP(); },
   rvkit: v => { const m = (AU.maker && AU.maker.id === v) ? AU.maker : REAL.list.find(x => x.id === v); if (m) openSheet(reviewKitSheet(m), 'ביקורות מלקוחות'); },

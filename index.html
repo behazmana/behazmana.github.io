@@ -3209,12 +3209,14 @@ const reviewSheet = m => `<form class="sheet-body" data-form="review" data-v="${
     <div class="field"><label for="rv-name">השם שלכם <span class="m">(לא חובה)</span></label><input class="input" id="rv-name" name="name" maxlength="60" autocomplete="given-name" aria-required="true"></div>
     <fieldset class="field"><legend class="lbl">דירוג (5 הוא הכי טוב)</legend><div style="display:flex;gap:6px 16px;flex-wrap:wrap">${[1, 2, 3, 4, 5].map(i => `<label class="opt" style="flex:none;width:auto;padding:6px 4px"><input type="radio" name="stars" value="${i}"><span>${i}</span></label>`).join('')}</div></fieldset>
     <div class="field"><label for="rv-body">מה תרצו לספר <span class="m">(לא חובה)</span></label><textarea class="input" id="rv-body" name="body" rows="4" maxlength="800" aria-required="true"></textarea><span class="hint">מספיק לבחור דירוג. אם בא לכם, ספרו מה הזמנתם ואיך היה לעבוד איתם. עד 800 תווים.</span></div>
+    <div class="hp" aria-hidden="true"><label for="rv-hp">אל תמלאו את השדה הזה</label><input id="rv-hp" name="hp_site" type="text" tabindex="-1" autocomplete="off"></div>
     <p class="form-err" id="rv-err" role="alert" hidden></p>
     <div class="row"><button type="button" class="btn ghost block" data-act="closesheet">ביטול</button><button type="submit" class="btn block">שליחה</button></div></form>`;
 async function submitReview(f, id) {
   const fd = new FormData(f), name = String(fd.get('name') || '').trim(), stars = +fd.get('stars') || 0, body = String(fd.get('body') || '').trim(), err = f.querySelector('#rv-err');
   const bad = !stars ? ['', 'בחרו דירוג מ־1 עד 5.'] : null;
   if (bad) { err.textContent = bad[1]; err.hidden = false; const el = bad[0] && f.querySelector('#' + bad[0]); if (el) el.focus(); return; }
+  if (fd.get('hp_site')) { closeSheet(true); toast('תודה. הביקורת עלתה'); return; }   /* a bot filled the hidden field: look like success, send nothing */
   const btn = f.querySelector('button[type="submit"]'); btn.disabled = true;
   const r = await dbq(s => s.from('reviews').insert({ maker_id: id, name: (name || 'לקוח').slice(0, 60), stars, body: body.slice(0, 800) }));
   if (r.error) { err.textContent = friendly(r.error) || 'השליחה לא הצליחה. נסו שוב.'; err.hidden = false; btn.disabled = false; return; }
@@ -4790,6 +4792,7 @@ function postForm({ edit = false, token = '', title = '', hint, vals = null } = 
           <div class="field"><label for="p-date">תאריך יעד</label><input class="input" id="p-date" name="due_date" type="date" min="${todayStr()}"></div></fieldset>`}
         ${edit ? `<div class="field"><label for="p-due">עד מתי? <span class="m">(לא חובה)</span></label><input class="input" id="p-due" name="due" maxlength="80" placeholder="למשל לפני יום ההולדת, ב־12.12" value="${esc(due)}"></div>` : ''}
         <div class="field"><label for="p-contact">איך חוזרים אליכם?</label><input class="input" id="p-contact" name="contact" dir="auto" maxlength="120" autocomplete="email" placeholder="מייל או טלפון" aria-required="true" aria-describedby="p-contact-h" value="${esc(contact)}"><span class="hint" id="p-contact-h">${edit ? 'רק ליוצרים שמתאימים.' : 'רק ליוצרים שמתאימים.'}</span></div>
+        ${edit ? '' : '<div class="hp" aria-hidden="true"><label for="p-hp">אל תמלאו את השדה הזה</label><input id="p-hp" name="hp_site" type="text" tabindex="-1" autocomplete="off"></div>'}
         <p class="form-err" id="p-err" role="alert" hidden></p>
         <button class="btn block" type="submit">${edit ? 'שמירת השינויים' : 'שליחת הבקשה'}</button>
         ${edit ? '' : `<p class="small muted" id="p-agree">בשליחה אתם מסכימים שנעביר את הבקשה ופרטי הקשר שלכם ליוצרים שמתאימים.</p><div class="links-col"><button type="button" class="link" data-act="privacy">מדיניות הפרטיות</button></div>`}
@@ -4818,6 +4821,7 @@ async function submitPost(f) {
   err.hidden = true;
   const sent = (demo, tracked, kept = true) => { S.stack = [{ s: 'home' }, { s: 'sent', demo, tr: !!tracked && kept, ns: !!tracked && !kept, em: EMAIL_RE.test(String(v.contact || '').trim()) ? String(v.contact).trim() : '' }]; replaceH(); render(true); };
   if (!CFG_ON) { sent(true); return; }
+  const trap = f.querySelector('[name="hp_site"]'); if (trap && trap.value) { sent(false, false); return; }   /* a bot filled the hidden field: look like success, send nothing */
   /* never say "sent" when nothing was saved: the library is still loading, or it could not load at all */
   if (!SB) { err.textContent = AD.failed ? 'אין חיבור, והבקשה לא נשמרה. רעננו ונסו שוב.' : 'החיבור נטען. נסו שוב.'; err.hidden = false; err.scrollIntoView({ block: 'nearest' }); return; }
   btn.disabled = true; btn.textContent = 'שולחים...';

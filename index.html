@@ -394,6 +394,12 @@ body.sheet-open { overflow: hidden; }
 .nav .plus .c { width: 40px; height: 40px; background: var(--stamp); color: var(--paper); display: grid; place-items: center; }
 .nav .plus .c svg { width: 20px; height: 20px; stroke-width: 2; }
 .no-nav .nav { display: none; }
+.askbar { position: fixed; z-index: 19; left: 0; right: 0; margin-inline: auto; width: min(440px, 100%); bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); padding: 6px var(--gr) 6px var(--gl); background: var(--paper); }
+.askbar .btn { width: 100%; min-height: 44px; padding: 6px 18px; }
+.no-nav .askbar { bottom: 0; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
+.kb-open .askbar { visibility: hidden; pointer-events: none; }
+.has-askbar .app { padding-bottom: calc(var(--nav-h) + 96px + env(safe-area-inset-bottom, 0px)); }
+.has-askbar .toast { bottom: calc(var(--nav-h) + 72px + env(safe-area-inset-bottom, 0px)); }
 /* keyboard open: the tab bar steps aside instead of riding up with the keyboard */
 .kb-open .nav { visibility: hidden; pointer-events: none; }
 
@@ -4757,12 +4763,10 @@ const SCREENS = {
       <div class="copy g"><h2>${esc(m.name)}</h2><span class="where">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></div></section>
     <div class="stack g">
       ${profileButtons(m)}
-      ${m.contact || m.email ? '' : `<div class="askline"><button type="button" class="link" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button></div>`}
       ${m.story ? `<section><div class="sec-head"><h2 class="sec-title">הסיפור</h2></div><p class="rstory">${esc(m.story)}</p></section>` : ''}
       ${workshopSection(m)}
       ${works.length ? `<section><div class="sec-head"><h2 class="sec-title">מהעבודות</h2></div><div class="strip">${works.map((p, i) => zoomBtn(m, p, rImg(p, `עבודה של ${m.name}, ${i + 1}`))).join('')}</div></section>` : ''}
       ${reviewsHTML(m)}
-      ${m.contact || m.email ? `<button class="btn block" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>` : ''}
       <div class="row wrap">${favLink(m)}${writeBtn(m)}${shareBtn(m)}</div>
     </div>`; },
 
@@ -5206,6 +5210,11 @@ async function saveProfile(f) {
 .bgrid .btn{width:100%;min-height:54px;padding:10px 12px;line-height:1.2;text-align:center}
 .bgrid .wide{grid-column:1/-1}
 .ep-see{align-self:flex-start}
+.mt-btn{align-self:flex-start;min-width:112px}
+.mt-btn .cnt{background:var(--stamp);color:var(--paper);min-width:22px;padding:0 6px;display:inline-block;line-height:22px}
+.mt-panel{display:flex;flex-direction:column;gap:18px;padding:0 0 6px}
+.mt-panel[hidden]{display:none}
+.mt-done{align-self:flex-start}
 .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px 8px}
 .swatches[hidden]{display:none}
 .colorrow{display:flex;align-items:center;gap:10px}
@@ -5441,7 +5450,7 @@ function discoverHTML() {
       : `<button type="button" class="dquote" id="dt-${i}" style="--i:${i % 12};background:var(--stamp);color:var(--paper)" data-act="dstory" data-v="${i}" aria-haspopup="dialog"><p>${esc(excerpt(x.m.story))}</p><span class="by" style="color:#dfe3ef">${esc(x.m.name)} · ${esc(craftsLine(x.m))}</span></button>`).join('')}</div>`;
 }
 /* ---------- the makers who fit a request: sort and filter by fit, distance and reviews ---------- */
-const MT = { crafts: [], city: '', sort: 'fit', dist: 0, stars: 0, only: true };
+const MT = { crafts: [], city: '', sort: 'fit', dist: 0, stars: 0, only: true, open: false };
 const RATE = { loaded: false, map: {} };
 async function loadRatings() {
   if (!SB || RATE.loaded) return;
@@ -5481,17 +5490,23 @@ function matchResults() {
 function drawMatch() {
   const el = document.getElementById('mt-results'); if (!el) return;
   el.innerHTML = matchResults();
+  const fb = document.getElementById('mt-btn'); if (fb) fb.innerHTML = mtLabel();
   const c = document.getElementById('mt-count'); if (c) { const n = REAL.loaded ? matchList().length : 0; c.textContent = REAL.loaded && !n ? 'אין יוצרים שמתאימים' : ''; }
 }
+const mtOn = () => (MT.crafts.length ? 1 : 0) + (MT.city ? 1 : 0) + (MT.sort !== 'fit' ? 1 : 0) + (MT.dist ? 1 : 0) + (MT.stars ? 1 : 0);
+const mtLabel = () => `סינון${mtOn() ? ` <span class="cnt" aria-label="${mtOn()} פעילים">${mtOn()}</span>` : ''}`;
 SCREENS.match = () => `${head('יוצרים שמתאימים לכם')}
   <div class="stack tight g">
-    <p class="muted">סינון לפי תחום, מרחק ודירוג.</p>
+    <button type="button" class="btn small ghost mt-btn" id="mt-btn" data-act="mtfilter" aria-expanded="${!!MT.open}" aria-controls="mt-panel">${mtLabel()}</button>
+    <div id="mt-panel" class="mt-panel" ${MT.open ? '' : 'hidden'}>
     <fieldset class="field"><legend class="lbl">תחום</legend><div class="filters" style="flex-wrap:wrap;overflow:visible" role="group" aria-label="תחום הבקשה">${Object.entries(CRAFTS).map(([k, v]) => `<button type="button" data-act="mtcraft" data-v="${k}" aria-pressed="${MT.crafts.includes(k)}">${v}</button>`).join('')}</div>
       <label class="opt"><input type="checkbox" data-mt="only" ${MT.only ? 'checked' : ''}><span class="grow">רק יוצרים בתחומים שבחרתי</span></label></fieldset>
     <div class="field"><label for="mt-city">עיר מגורים</label><input class="input" id="mt-city" data-mt="city" data-city maxlength="60" autocomplete="off" value="${esc(MT.city)}"></div>
     <div class="field"><label for="mt-sort">סדר</label><select class="input" id="mt-sort" data-mt="sort">${[['fit', 'התאמה לבקשה'], ['near', 'הכי קרוב אליי'], ['rating', 'דירוג גבוה'], ['name', 'לפי שם']].map(([k, l]) => `<option value="${k}" ${MT.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div class="field"><label for="mt-dist">מרחק</label><select class="input" id="mt-dist" data-mt="dist">${[[0, 'לא משנה'], [25, 'עד 25 ק״מ'], [50, 'עד 50 ק״מ'], [100, 'עד 100 ק״מ']].map(([k, l]) => `<option value="${k}" ${MT.dist === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div class="field"><label for="mt-stars">דירוג</label><select class="input" id="mt-stars" data-mt="stars">${[[0, 'לא משנה'], [4, '4 ומעלה'], [4.5, '4.5 ומעלה']].map(([k, l]) => `<option value="${k}" ${MT.stars === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <button type="button" class="btn small mt-done" data-act="mtfilter">להציג את היוצרים</button>
+    </div>
     <p class="small muted" id="mt-count" role="status" aria-live="polite">${REAL.loaded && !matchList().length ? 'אין יוצרים שמתאימים' : ''}</p>
     <div id="mt-results">${matchResults()}</div>
     <button class="btn block" data-act="tab" data-v="post">לכתוב בקשה</button>
@@ -5925,6 +5940,15 @@ function drawNav(noNav, on) {
     : `<button data-act="tab" data-v="${k}" ${on === k ? 'aria-current="page"' : ''}>${svg(icon)}${label}</button>`).join(''));
 }
 /* what a screen needs to fetch the moment it appears (each is guarded, so a repaint never fetches twice) */
+/* it lives outside the screen, so page transitions never move it */
+function drawAskBar(c) {
+  let bar = document.getElementById('askbar');
+  const m = c.s === 'rmaker' ? REAL.list.find(x => x.id === c.id) : null;
+  document.body.classList.toggle('has-askbar', !!m);
+  if (!m) { if (bar) bar.remove(); return; }
+  if (!bar) { bar = document.createElement('div'); bar.id = 'askbar'; bar.className = 'askbar'; const nav = document.querySelector('.nav'); nav.parentNode.insertBefore(bar, nav); }
+  bar.innerHTML = `<button type="button" class="btn" data-act="ask" data-v="${esc(m.craft)}">לכתוב בקשה</button>`;
+}
 function screenHooks(c) {
   if (LF.active && c.s !== 'lform') clearListingForm(true);
   if (c.s === 'listing' && !LST.has(c.id) && !LFETCH[c.id]) fetchListing(c.id);
@@ -5942,6 +5966,7 @@ function paint(scroll, top) {
   document.body.classList.toggle('no-nav', noNav);
   document.body.classList.toggle('gallery', c.s === 'shop' || c.s === 'liked');
   drawNav(noNav, navOn());
+  drawAskBar(c);
   if (scroll) { window.scrollTo(0, top || 0); if (BOOTED && !(c.s === 'search' && c.focus)) view.focus({ preventScroll: true }); }
   if (c.s === 'search' && c.focus) { delete c.focus; const i = document.getElementById('sq'); if (i) { i.focus({ preventScroll: true }); i.setSelectionRange(i.value.length, i.value.length); } }
   motionFor(c);
@@ -6062,8 +6087,12 @@ const adFind = id => AD.lpend.find(x => x.id === id) || AD.lappr.find(x => x.id 
 const adDrop = id => { AD.lpend = AD.lpend.filter(x => x.id !== id); AD.lappr = AD.lappr.filter(x => x.id !== id); };
 Object.assign(ACT, {
   mtcraft: v => { const i = MT.crafts.indexOf(v); if (i < 0) MT.crafts.push(v); else MT.crafts.splice(i, 1); const b = document.querySelector(`[data-act="mtcraft"][data-v="${v}"]`); if (b) b.setAttribute('aria-pressed', String(i < 0)); drawMatch(); },
-  matchopen: () => { const f = document.querySelector('form[data-form="post"]'); if (f) { MT.crafts = [...new Set(new FormData(f).getAll('crafts').filter(hasCraft))]; MT.city = String(new FormData(f).get('city') || '').trim().slice(0, 60); } MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
-  matchsent: () => { MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
+  mtfilter: () => {
+    const p = document.getElementById('mt-panel'), b = document.getElementById('mt-btn'); if (!p || !b) return;
+    MT.open = p.hidden; p.hidden = !MT.open; b.setAttribute('aria-expanded', String(MT.open)); if (!MT.open) { b.focus({ preventScroll: true }); window.scrollTo(0, 0); }
+  },
+  matchopen: () => { MT.open = false; const f = document.querySelector('form[data-form="post"]'); if (f) { MT.crafts = [...new Set(new FormData(f).getAll('crafts').filter(hasCraft))]; MT.city = String(new FormData(f).get('city') || '').trim().slice(0, 60); } MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
+  matchsent: () => { MT.open = false; MT.only = true; MT.sort = 'fit'; MT.dist = 0; MT.stars = 0; go('match'); loadRatings(); },
   settings: () => go('settings'),
   installadmin: () => { const d = DEFER_INSTALL; if (d && d.prompt) { d.prompt(); DEFER_INSTALL = null; } },
   clearreqs: () => openSheet(confirmSheet('למחוק את הרשימה?', 'הבקשות נשארות אצלנו, אבל כאן כבר לא תוכלו לראות מה קרה איתן.', 'clearreqsyes', '1', 'כן, למחוק'), 'מחיקת הרשימה'),

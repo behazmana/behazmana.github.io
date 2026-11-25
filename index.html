@@ -205,7 +205,20 @@ mark { background: var(--stamp); color: var(--paper); padding-inline: 2px; }
 .cbtn.fav[aria-pressed="true"] svg, .link.fav[aria-pressed="true"] svg { fill: var(--clay); stroke: var(--clay); }
 .link.fav { display: inline-flex; align-items: center; gap: 8px; }
 .link.fav svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.mrow .av { width: 56px; height: 64px; }
+.mrow .av { width: 84px; height: 105px; }
+.mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stack.g > .mgrid, .stack.g > section > .mgrid { margin-inline: calc(8px - var(--gr)) calc(8px - var(--gl)); }
+.mcard { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--tone); min-width: 0; }
+.mcard .mopen { display: block; position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; background: none; text-align: start; color: #fff; }
+.mcard .art { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; }
+.mcard .art img { object-position: 50% 30%; }
+.mcard .ini { position: absolute; inset: 0; display: grid; place-items: center; background: var(--ink); color: var(--paper); font-family: var(--display); font-size: 48px; }
+.mcard .mcap { position: absolute; inset-inline: 0; bottom: 0; display: flex; flex-direction: column; gap: 2px; padding: 40px 10px 8px; background: linear-gradient(transparent, rgba(0, 0, 0, .78)); text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.mcard .nm { font-size: 14px; font-weight: 700; line-height: 1.25; }
+.mcard .sub { font-size: 11.5px; line-height: 1.3; color: #eceee4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mcard .wstag { margin-bottom: 4px; font-size: 12px; text-shadow: none; }
+.mcard .cbtn.fav { position: absolute; top: 0; inset-inline-end: 0; z-index: 2; background: none; color: #fff; }
+.mcard .cbtn.fav svg { width: 19px; height: 19px; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .7)); }
 .mrow .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .mrow .nm { font-family: var(--display); font-size: var(--fs-4); line-height: 1; }
 .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -3598,6 +3611,9 @@ const favLink = m => `<button type="button" class="link fav" data-act="fav" data
 const cardActs = m => `<span class="macts">${favBtn(m)}${contactActs(m).replace(/^<span class="macts">|<\/span>$/g, '')}</span>`;
 const realAv = m => `<span class="av">${m.portrait || m.photos[0] ? rImg(m.portrait || m.photos[0]) : `<span class="ini">${esc(initials(m.name))}</span>`}</span>`;
 const realRow = (m, h = esc, extra = '') => `<div class="mrow"><button type="button" class="mmain" data-act="rmaker" data-v="${esc(m.id)}">${realAv(m)}<span class="info"><span class="nm">${h(m.name)}</span><span class="small muted">${h(craftsLine(m))}${m.city ? ` · ${h(m.city)}` : ''}</span>${m.workshops ? '<span class="wstag">גם סדנאות</span>' : ''}${extra || (m.story ? `<span class="small clamp">${esc(m.story)}</span>` : '')}</span></button>${cardActs(m)}</div>`;
+const makerCard = m => { const pic = m.portrait || m.photos[0];
+  return `<div class="mcard"><button type="button" class="mopen" data-act="rmaker" data-v="${esc(m.id)}">${pic ? rImg(pic, '') : `<span class="ini" aria-hidden="true">${esc(initials(m.name))}</span>`}<span class="mcap">${m.workshops ? '<span class="wstag">גם סדנאות</span>' : ''}<span class="nm">${esc(m.name)}</span><span class="sub">${esc(craftsLine(m))}${m.city ? ` · ${esc(m.city)}` : ''}</span></span></button>${favBtn(m)}</div>`; };
+const makerGrid = list => `<div class="mgrid">${list.map(makerCard).join('')}</div>`;
 const emptyMakers = () => `<div class="s-empty"><p class="say">עוד אין כאן יוצרים, האתר חדש.</p>${AU.maker ? '' : JOINED ? '<p class="small muted">אחרי האישור הפרופיל יופיע כאן.</p>'
   : `<p class="small muted">יוצרים? ספרו לנו על העבודה. אחרי האישור הפרופיל יופיע כאן.</p>
   <button type="button" class="btn" data-act="join">להצטרף כיוצרים</button>`}</div>`;
@@ -3613,7 +3629,7 @@ function makersBlock(list, limit) {
   if (st === 'failed') return '<p class="note">הרשימה לא נטענה. נסו לרענן את הדף.</p>';
   if (!REAL.list.length) return emptyMakers();
   const shown = limit ? list.slice(0, limit) : list;
-  return `<div class="mlist">${shown.map(m => realRow(m)).join('')}</div>${limit && list.length > limit ? `<button type="button" class="link" data-act="tab" data-v="makers">לכל היוצרים</button>` : ''}`;
+  return `${makerGrid(shown)}${limit && list.length > limit ? `<button type="button" class="link" data-act="tab" data-v="makers">לכל היוצרים</button>` : ''}`;
 }
 
 /* ---------- the owner's screen: what waits for a decision, 200 at a time ---------- */
@@ -4194,7 +4210,7 @@ async function favToggle(id) {
 }
 function favBody() {
   const list = REAL.list.filter(m => favOn(m.id));
-  return list.length ? `<div class="mlist">${list.map(m => realRow(m)).join('')}</div>`
+  return list.length ? makerGrid(list)
     : FAV.st === 'loading' ? '<p class="muted" role="status">טוענים</p>'
     : FAV.st === 'failed' || FAV.st === 'gone' ? '<p class="note">המועדפים לא נטענו.</p>'
     : '<div class="s-empty"><p>עוד אין מועדפים. לחצו על הלב ליד יוצר.</p><button type="button" class="btn small" data-act="tab" data-v="makers">ליוצרים</button></div>';
